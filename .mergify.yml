@@ -1,23 +1,4 @@
 pull_request_rules:
-  - name: Automatic merge
-    description: Merge when PR passes all branch protection and has label automerge
-    conditions:
-      - label = automerge
-    actions:
-      merge:
-        method: squash
-  - name: Ping PR author when conflicting and add label
-    conditions:
-      - conflict
-      - -closed
-    actions:
-      comment:
-        message: >
-          👋 {{author}} your PR is conflicting and needs to be updated to be
-          merged
-      label:
-        toggle:
-          - conflict
   - name: Add automerge label to pre-commit.ci autoupdates
     conditions:
       - author = pre-commit-ci[bot]
@@ -26,3 +7,23 @@ pull_request_rules:
       label:
         toggle:
           - automerge
+
+  - name: Automatic merge
+    description: Merge when PR passes all branch protection and has label automerge
+    conditions:
+      - label = automerge
+    actions:
+      merge:
+        method: squash
+
+  - name: Ping PR author when conflicting and add label
+    conditions:
+      - conflict
+      - -closed
+    actions:
+      comment:
+        message: >
+          👋 {{author}}, your PR is conflicting and needs to be updated to be merged
+      label:
+        toggle:
+          - conflict
