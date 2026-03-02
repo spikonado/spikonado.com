@@ -9,7 +9,7 @@ Install Nix: https://nixos.org/nix/download.html
 #### 1. Clone the repository
 
 ```bash
-git clone https://github.com/spikonado.com.git ~/spikonado.com
+git clone https://github.com/spikonado/spikonado.com.git ~/spikonado.com
 ```
 
 #### 2. Activate the nix environment
