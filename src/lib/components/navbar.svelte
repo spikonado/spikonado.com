@@ -41,6 +41,7 @@
 			class="flex items-center"
 		>
 			<img
+				loading="lazy"
 				src={github}
 				alt="GitHub"
 				class="h-8 w-8 transition-transform duration-150 hover:scale-105"
