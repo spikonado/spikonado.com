@@ -13,7 +13,7 @@
 			href={resolve('/')}
 			class="group flex items-center space-x-2 transition-transform duration-150 hover:scale-102"
 		>
-			<img src={logo} alt="Spikonado" class="h-8 w-8" />
+			<img loading="lazy" src={logo} alt="Spikonado" class="h-8 w-8" />
 			<span class="hidden font-serif text-2xl tracking-tight text-foreground sm:block">
 				Spikonado
 			</span>
@@ -41,6 +41,7 @@
 			class="flex items-center"
 		>
 			<img
+				loading="lazy"
 				src={github}
 				alt="GitHub"
 				class="h-8 w-8 transition-transform duration-150 hover:scale-105"

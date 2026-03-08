@@ -2,10 +2,10 @@
 	import { resolve } from '$app/paths';
 	import logo from '$lib/assets/logo.png';
 	import github_logo from '$lib/assets/github_logo.svg';
-	import x_logo from '$lib/assets/x_logo.png';
-	import youtube_logo from '$lib/assets/youtube_logo.png';
-	import instagram_logo from '$lib/assets/instagram_logo.png';
-	import facebook_logo from '$lib/assets/facebook_logo.png';
+	import x_logo from '$lib/assets/x_logo.svg';
+	import youtube_logo from '$lib/assets/youtube_logo.svg';
+	import instagram_logo from '$lib/assets/instagram_logo.svg';
+	import facebook_logo from '$lib/assets/facebook_logo.svg';
 	import { cn } from '$lib/utils';
 	import { marketingSectionOverlayClass, marketingSectionShellClass } from '$lib/styles/marketing';
 
@@ -44,7 +44,7 @@
 				href={resolve('/')}
 				class="flex items-center gap-2 transition-transform duration-150 hover:scale-105"
 			>
-				<img src={logo} alt="Spikonado" class="h-8 w-8" />
+				<img loading="lazy" src={logo} alt="Spikonado" class="h-8 w-8" />
 				<span class="font-serif text-2xl tracking-tight text-foreground"> Spikonado </span>
 			</a>
 			<p class="text-muted-foreground">
@@ -83,7 +83,7 @@
 					rel="noopener noreferrer"
 					class="transition-transform duration-150 hover:scale-105"
 				>
-					<img src={link.src} alt={link.label} class="h-6" />
+					<img loading="lazy" src={link.src} alt={link.label} class="h-6" />
 				</a>
 			{/each}
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
