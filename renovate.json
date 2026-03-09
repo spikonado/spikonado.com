@@ -10,7 +10,7 @@
       "matchDepTypes": ["devDependencies"],
       "automerge": true
     }
-  ]
+  ],
 	"nix": {
 		"enabled": true
 	}
