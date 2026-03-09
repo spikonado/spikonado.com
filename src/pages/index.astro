@@ -1,0 +1,94 @@
+---
+import Footer from '@/components/footer.svelte';
+import TextRotator from '@/components/text-rotator.svelte';
+import BaseLayout from '@/layouts/base-layout.astro';
+import {
+	marketingSectionBodyClass,
+	marketingSectionHeadingClass,
+	marketingSectionOverlayClass,
+	marketingSectionShellClass
+} from '@/styles/marketing';
+import { cn } from '@/utils';
+
+const animatedWords = [
+	'competition-winning solution',
+	'demo',
+	'MVP',
+	'minimum evolvable product',
+	'product',
+	'shipped product'
+];
+
+const showcaseSections = [
+	{
+		id: 'vario',
+		title: 'Vario',
+		description: 'Modular robotics hardware supporting a wide variety of use cases.'
+	},
+	{
+		id: 'sprocket',
+		title: 'Sprocket',
+		description: 'A platform that simplifies every step of robotics development.'
+	}
+] as const;
+
+const baseSectionClass = cn(marketingSectionShellClass, 'flex min-h-svh pt-14');
+---
+
+<BaseLayout>
+	<main class="scroller">
+		<section class={cn(baseSectionClass, 'items-center justify-center')}>
+			<div class="max-w-5xl px-6 text-center">
+				<h1 class={marketingSectionHeadingClass}>
+					Creating tech that transforms <br />
+					your ideas into a <br />
+					<TextRotator
+						client:load
+						words={animatedWords}
+						interval={2000}
+						class="mt-2 bg-linear-to-r from-blue-400 via-blue-300 to-blue-200 bg-clip-text text-transparent"
+					/>
+				</h1>
+				<p class={cn(marketingSectionBodyClass, 'mx-auto')}>
+					Mind-blowing open-source hardware and software for creators, learners, and researchers.
+				</p>
+			</div>
+		</section>
+
+		{
+			showcaseSections.map((section) => (
+				<section
+					id={section.id}
+					class={cn(baseSectionClass, 'items-center justify-start border-t border-border/10')}
+				>
+					<div class={marketingSectionOverlayClass} />
+					<div class="relative max-w-5xl px-12 md:px-24 lg:px-32">
+						<h2 class={marketingSectionHeadingClass}>{section.title}</h2>
+						<p class={marketingSectionBodyClass}>{section.description}</p>
+					</div>
+				</section>
+			))
+		}
+
+		<Footer />
+	</main>
+</BaseLayout>
+
+<style is:global>
+	html {
+		scroll-snap-type: y mandatory;
+	}
+
+	.scroller > section,
+	.scroller > footer {
+		scroll-snap-align: start;
+		scroll-snap-stop: always;
+	}
+
+	@media (pointer: coarse) {
+		.scroller > section,
+		.scroller > footer {
+			scroll-snap-stop: normal;
+		}
+	}
+</style>

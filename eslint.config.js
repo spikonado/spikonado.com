@@ -1,12 +1,13 @@
-import prettier from 'eslint-config-prettier';
-import path from 'node:path';
+import { defineConfig } from 'eslint/config';
+import eslintPluginAstro from 'eslint-plugin-astro';
+import globals from 'globals';
 import { includeIgnoreFile } from '@eslint/compat';
 import js from '@eslint/js';
+import path from 'node:path';
+import prettier from 'eslint-config-prettier';
 import svelte from 'eslint-plugin-svelte';
-import { defineConfig } from 'eslint/config';
-import globals from 'globals';
-import ts from 'typescript-eslint';
 import svelteConfig from './svelte.config.js';
+import ts from 'typescript-eslint';
 
 const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 
@@ -17,6 +18,8 @@ export default defineConfig(
 	...svelte.configs.recommended,
 	prettier,
 	...svelte.configs.prettier,
+	...eslintPluginAstro.configs.recommended,
+	...eslintPluginAstro.configs['jsx-a11y-recommended'],
 	{
 		languageOptions: { globals: { ...globals.browser, ...globals.node } },
 		rules: {
