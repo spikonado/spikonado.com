@@ -1,0 +1,44 @@
+---
+import '@/styles/global.css';
+import favicon from '@/assets/logo.png';
+import Navbar from '@/components/navbar.svelte';
+
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const {
+	title = 'Spikonado - Build Your Own Future',
+	description = 'Creating mind-blowing open-source hardware and software for creators, learners, and researchers.'
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="icon" href={favicon.src} />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<script>
+			import posthog from 'posthog-js';
+
+			const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
+
+			if (posthogKey) {
+				posthog.init(posthogKey, {
+					api_host: '/ph',
+					ui_host: 'https://eu.posthog.com',
+					defaults: '2026-01-30',
+					person_profiles: 'identified_only'
+				});
+			}
+		</script>
+	</head>
+	<body>
+		<Navbar client:load />
+		<slot />
+	</body>
+</html>
