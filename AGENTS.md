@@ -3,11 +3,11 @@
 ## Project Overview
 
 This is a website.
-Our core frameworks include pnpm, Svelte, SvelteKit, TailwindCSS, and shadcn-svelte.
+Our core frameworks include pnpm, Astro, Svelte, TailwindCSS, and shadcn-svelte (alongside some other UI component libraries).
 
 ## Testing
 
-1. Run `pnpm check`, `pnpm lint`, and `pre-commit run -a`.
+1. Run `pnpm check`, `pnpm lint`, `pnpm build` and `pre-commit run -a`.
 2. Use `pnpm format` and `pre-commit run -a` for formatting when necessary.
 
 ## Priorities in Order
