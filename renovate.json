@@ -1,6 +1,11 @@
 {
 	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
-	"extends": ["config:recommended", "schedule:earlyMondays", ":semanticCommitTypeAll(build)"],
+	"extends": [
+		"config:recommended",
+		"schedule:earlyMondays",
+		":dependencyDashboard",
+		":semanticCommitTypeAll(build)"
+	],
 	"lockFileMaintenance": {
 		"automerge": true,
 		"enabled": true
