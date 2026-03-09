@@ -1,11 +1,8 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    ":semanticCommitTypeAll(build)"
-  ],
-  "lockFileMaintenance": { "enabled": true },
-  "nix": {
-    "enabled": true
-  }
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": ["config:recommended", ":semanticCommitTypeAll(build)"],
+	"lockFileMaintenance": { "enabled": true },
+	"nix": {
+		"enabled": true
+	}
 }
