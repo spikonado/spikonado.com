@@ -1,6 +1,7 @@
 name: Prek
 
 on:
+  merge_group:
   pull_request:
   push:
     branches: [main]
