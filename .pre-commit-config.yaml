@@ -58,6 +58,7 @@ repos:
         name: 'astro check'
         language: system
         entry: pnpm astro check
+        pass_filenames: false
 
       - id: eslint
         name: eslint
