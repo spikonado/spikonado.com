@@ -43,10 +43,7 @@
 				<img loading="lazy" src={logo.src} alt="Spikonado" class="h-8 w-8" />
 				<span class="font-serif text-2xl tracking-tight text-foreground"> Spikonado </span>
 			</a>
-			<p class="text-muted-foreground">
-				Empowering creators, learners, and researchers with mind-blowing open-source hardware and
-				software.
-			</p>
+			<p class="text-muted-foreground">We want you to make a robot.</p>
 		</div>
 
 		<!-- Navigation Section -->

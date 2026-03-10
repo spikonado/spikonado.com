@@ -10,15 +10,6 @@ import {
 } from '@/styles/marketing';
 import { cn } from '@/utils';
 
-const animatedWords = [
-	'competition-winning solution',
-	'demo',
-	'MVP',
-	'minimum evolvable product',
-	'product',
-	'shipped product'
-];
-
 const showcaseSections = [
 	{
 		id: 'vario',
@@ -28,7 +19,8 @@ const showcaseSections = [
 	{
 		id: 'sprocket',
 		title: 'Sprocket',
-		description: 'A platform that simplifies every step of robotics development.'
+		description:
+			"The world's best IDE for creating MCU firmware, ROS 2 packages, high-level robot apps, and even initial hardware designs."
 	}
 ] as const;
 
@@ -39,18 +31,22 @@ const baseSectionClass = cn(marketingSectionShellClass, 'flex min-h-svh pt-14');
 	<main class="scroller">
 		<section class={cn(baseSectionClass, 'items-center justify-center')}>
 			<div class="max-w-5xl px-6 text-center">
-				<h1 class={marketingSectionHeadingClass}>
-					Creating tech that transforms <br />
-					your ideas into a <br />
-					<TextRotator
-						client:load
-						words={animatedWords}
-						interval={2000}
-						class="mt-2 bg-linear-to-r from-blue-400 via-blue-300 to-blue-200 bg-clip-text text-transparent"
-					/>
+				<TextRotator
+					client:load
+					class={marketingSectionHeadingClass}
+					interval={2500}
+					words={['Allowing everyone to build their own', 'Improving your experience of building']}
+				/>
+				<h1
+					class={cn(
+						marketingSectionHeadingClass,
+						'mt-2 bg-linear-to-r from-blue-400 via-blue-300 to-blue-200 bg-clip-text text-transparent'
+					)}
+				>
+					robots and robot apps
 				</h1>
 				<p class={cn(marketingSectionBodyClass, 'mx-auto')}>
-					Mind-blowing open-source hardware and software for creators, learners, and researchers.
+					A platform that simplifies every step of robotics development.
 				</p>
 			</div>
 		</section>
