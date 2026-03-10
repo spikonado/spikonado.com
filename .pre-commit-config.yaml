@@ -1,29 +1,35 @@
 # To use:
 #
-#     pre-commit run -a
+#     prek run -a --hook-stage manual
 #
 # Or:
 #
-#     pre-commit install  # (runs every time you commit in git)
+#     prek install --prepare-hooks -f  # (runs every time you commit in git)
 #
 # To update this file:
 #
-#     pre-commit autoupdate
+#     prek autoupdate
 #
-# See https://github.com/pre-commit/pre-commit
+# See https://prek.j178.dev/
+
+default_stages:
+  - manual
+  - pre-commit
 
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+  - repo: builtin
     hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-json
       - id: check-merge-conflict
-      - id: check-xml
+      - id: check-symlinks
       - id: check-yaml
-        args: ['--allow-multiple-documents']
+      - id: check-xml
       - id: end-of-file-fixer
+      - id: fix-byte-order-marker
       - id: mixed-line-ending
       - id: trailing-whitespace
-      - id: fix-byte-order-marker
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.2
@@ -35,9 +41,39 @@ repos:
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.37.0
     hooks:
-      - id: check-github-workflows
-        args: ['--verbose']
       - id: check-github-actions
         args: ['--verbose']
-      - id: check-dependabot
+      - id: check-github-workflows
         args: ['--verbose']
+
+  - repo: local
+    hooks:
+      - id: commitlint
+        name: commitlint
+        language: system
+        entry: commitlint --edit
+        stages: [commit-msg]
+
+      - id: astro-check
+        name: 'astro check'
+        language: system
+        entry: pnpm astro check
+
+      - id: eslint
+        name: eslint
+        language: system
+        entry: pnpm eslint
+
+      - id: prettier-check
+        name: prettier
+        language: system
+        entry: pnpm prettier --check .
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: prettier-write
+        name: prettier
+        language: system
+        entry: pnpm prettier --write .
+        pass_filenames: false
+        stages: [manual]

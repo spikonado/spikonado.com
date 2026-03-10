@@ -16,6 +16,10 @@
 			"automerge": true
 		}
 	],
+	"pre-commit": {
+		"automerge": true,
+		"enabled": true
+	},
 	"nix": {
 		"enabled": true
 	}
