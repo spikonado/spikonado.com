@@ -20,7 +20,9 @@
 
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
+            commitlint
             nodejs_24
+            prek
             (pnpm.override { withNode = false; })
           ];
         };
