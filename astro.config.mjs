@@ -14,9 +14,6 @@ export default defineConfig({
 	adapter: vercel(),
 
 	vite: {
-		// Astro 5 types Vite 6 here while Tailwind's plugin resolves against Vite 7 via Vitest.
-		// Runtime behavior is correct; this narrows the transient type mismatch.
-		// @ts-expect-error Vite plugin types are split across Astro/Vitest dependency trees.
 		plugins: [tailwindcss()]
 	}
 });
