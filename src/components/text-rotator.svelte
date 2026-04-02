@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { fly } from 'svelte/transition';
-	import { cubicOut } from 'svelte/easing';
 
 	interface Props {
 		words: string[];
