@@ -40,7 +40,7 @@ importers:
         version: 5.18.1(@types/node@25.5.0)(@vercel/functions@2.2.13)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.0)(typescript@5.9.3)(yaml@2.8.3)
       bits-ui:
         specifier: ^2.16.3
-        version: 2.16.3(@internationalized/date@3.12.0)(svelte@5.54.1)
+        version: 2.16.5(@internationalized/date@3.12.0)(svelte@5.54.1)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1604,8 +1604,8 @@ packages:
   bindings@1.5.0:
     resolution: {integrity: sha512-p2q/t/mhvuOj/UeLlV6566GD/guowlr0hHxClI0W9m7MWYkL1F0hLo+0Aexs9HSPCtR1SXQ0TD3MMKrXZajbiQ==}
 
-  bits-ui@2.16.3:
-    resolution: {integrity: sha512-5hJ5dEhf5yPzkRFcxzgQHScGodeo0gK0MUUXrdLlRHWaBOBGZiacWLG96j/wwFatKwZvouw7q+sn14i0fx3RIg==}
+  bits-ui@2.16.5:
+    resolution: {integrity: sha512-Dx+Sc1DGzRaRfzpxrBI40d+O7vykIZ8E2G6tCaOzqYLzg+mN3YYK+8f8ysAFLfkHzey1MACGrYO3IcO6ROKlSA==}
     engines: {node: '>=20'}
     peerDependencies:
       '@internationalized/date': ^3.8.1
@@ -5560,7 +5560,7 @@ snapshots:
     dependencies:
       file-uri-to-path: 1.0.0
 
-  bits-ui@2.16.3(@internationalized/date@3.12.0)(svelte@5.54.1):
+  bits-ui@2.16.5(@internationalized/date@3.12.0)(svelte@5.54.1):
     dependencies:
       '@floating-ui/core': 1.7.5
       '@floating-ui/dom': 1.7.6
