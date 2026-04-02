@@ -14,6 +14,9 @@ export default defineConfig({
 	adapter: vercel(),
 
 	vite: {
-		plugins: [tailwindcss()]
+		plugins: [tailwindcss()],
+		resolve: {
+			noExternal: ['@lucide/svelte', 'bits-ui', 'runed', 'svelte-toolbelt']
+		}
 	}
 });
