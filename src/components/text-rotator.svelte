@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { cubicOut } from 'svelte/easing';
+	import { fly } from 'svelte/transition';
 	import { onMount, onDestroy } from 'svelte';
 
 	interface Props {
