@@ -9,7 +9,7 @@
 	],
 	"packageRules": [
 		{
-			"matchDepTypes": ["action", "uses-with"],
+			"matchDepTypes": ["action", "devDependencies", "uses-with"],
 			"automerge": true
 		}
 	],
@@ -17,12 +17,6 @@
 		"automerge": true,
 		"enabled": true
 	},
-	"packageRules": [
-		{
-			"matchDepTypes": ["devDependencies"],
-			"automerge": true
-		}
-	],
 	"pre-commit": {
 		"automerge": true,
 		"enabled": true
