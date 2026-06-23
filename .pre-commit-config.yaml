@@ -1,6 +1,6 @@
 # To use:
 #
-#     prek run -a --hook-stage manual
+#     prek run -a
 #
 # Or:
 #
@@ -65,16 +65,8 @@ repos:
         language: system
         entry: pnpm eslint
 
-      - id: prettier-check
-        name: prettier
-        language: system
-        entry: pnpm prettier --check .
-        pass_filenames: false
-        stages: [pre-commit]
-
       - id: prettier-write
         name: prettier
         language: system
         entry: pnpm prettier --write .
         pass_filenames: false
-        stages: [manual]
