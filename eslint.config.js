@@ -1,7 +1,6 @@
-import { defineConfig } from 'eslint/config';
+import { defineConfig, includeIgnoreFile } from 'eslint/config';
 import eslintPluginAstro from 'eslint-plugin-astro';
 import globals from 'globals';
-import { includeIgnoreFile } from '@eslint/compat';
 import js from '@eslint/js';
 import path from 'node:path';
 import prettier from 'eslint-config-prettier';
