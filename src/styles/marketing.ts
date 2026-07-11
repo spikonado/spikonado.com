@@ -5,9 +5,27 @@ export const marketingSectionShellClass = 'relative overflow-hidden bg-backgroun
 export const marketingSectionOverlayClass =
 	'pointer-events-none absolute inset-0 bg-linear-to-b from-blue-500/5 to-transparent';
 
-// Large serif heading used for the homepage hero and showcase titles.
-export const marketingSectionHeadingClass =
-	'font-serif text-4xl leading-[1.1] tracking-tight text-foreground md:text-6xl lg:text-7xl';
+const marketingHeadingBaseClass =
+	'text-6xl font-normal leading-[1.05] tracking-tight text-foreground md:text-7xl lg:text-8xl';
+
+// Large sans heading used for the homepage hero.
+export const marketingSectionHeadingClass = `font-sans ${marketingHeadingBaseClass}`;
+
+// Product titles (Sprocket, Vario) share the brand typeface.
+export const marketingProductHeadingClass = `font-brand ${marketingHeadingBaseClass}`;
 
 // Shared supporting copy style for the homepage and footer.
-export const marketingSectionBodyClass = 'mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl';
+export const marketingSectionBodyClass =
+	'max-w-3xl text-xl leading-relaxed text-muted-foreground md:text-2xl';
+
+// Spacing for a block of supporting copy under a marketing heading.
+export const marketingSectionBodyStackClass = 'mt-8 space-y-3';
+
+// Blue treatment for emphasized words in marketing headlines.
+export const marketingAccentTextClass = 'text-blue-400';
+
+// Blue underline treatment for emphasized body phrases.
+export const marketingAccentEmphClass = `${marketingAccentTextClass} font-medium underline`;
+
+// Brand wordmark used in the navbar and footer.
+export const marketingBrandClass = 'font-brand font-normal tracking-tight text-foreground';

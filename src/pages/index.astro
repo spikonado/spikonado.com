@@ -1,9 +1,13 @@
 ---
 import Footer from '@/components/footer.svelte';
-import TextRotator from '@/components/text-rotator.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
+import githubLogo from '@/assets/github_logo.svg';
 import {
+	marketingAccentEmphClass,
+	marketingAccentTextClass,
+	marketingProductHeadingClass,
 	marketingSectionBodyClass,
+	marketingSectionBodyStackClass,
 	marketingSectionHeadingClass,
 	marketingSectionOverlayClass,
 	marketingSectionShellClass
@@ -12,40 +16,49 @@ import { cn } from '@/utils';
 
 const showcaseSections = [
 	{
-		id: 'vario',
-		title: 'Vario',
-		description: 'Modular robotics hardware supporting a wide variety of use cases.'
-	},
-	{
 		id: 'sprocket',
 		title: 'Sprocket',
-		description:
-			"The world's best IDE for creating MCU firmware, ROS 2 packages, high-level robot apps, and even initial hardware designs."
+		githubHref: 'https://github.com/spikonado/sprocket',
+		description: [
+			[{ text: 'Agentic platform for streamlining robotics development.' }],
+			[
+				{ text: 'Autonomously', accent: true },
+				{ text: ' train robots in simulations and ship across the entire robotics stack ' },
+				{ text: 'much faster than ever before', accent: true },
+				{ text: '.' }
+			]
+		]
+	},
+	{
+		id: 'vario',
+		title: 'Vario',
+		description: [
+			[
+				{ text: 'Modular', accent: true },
+				{ text: ' robotics hardware for ' },
+				{ text: 'every use case', accent: true },
+				{ text: '.' }
+			]
+		]
 	}
 ] as const;
 
-const baseSectionClass = cn(marketingSectionShellClass, 'flex min-h-svh pt-14');
+const baseSectionClass = cn(marketingSectionShellClass, 'flex min-h-svh pt-16');
 ---
 
 <BaseLayout>
 	<main class="scroller">
 		<section class={cn(baseSectionClass, 'items-center justify-center')}>
-			<div class="max-w-5xl px-6 text-center">
-				<TextRotator
-					client:load
-					class={marketingSectionHeadingClass}
-					interval={2500}
-					words={['Allowing everyone to build their own', 'Improving your experience of building']}
-				/>
-				<h1
-					class={cn(
-						marketingSectionHeadingClass,
-						'mt-2 bg-linear-to-r from-blue-400 via-blue-300 to-blue-200 bg-clip-text text-transparent'
-					)}
-				>
-					robots and robot apps
+			<div class="mx-auto max-w-4xl px-6 text-center">
+				<h1 class={marketingSectionHeadingClass}>
+					<span class="block">The <span class={marketingAccentTextClass}>new way</span></span>
+					<span class="block">of building</span>
+					<span class="block whitespace-nowrap"
+						><span class={marketingAccentTextClass}>robots</span> &amp;{' '}
+						<span class={marketingAccentTextClass}>robot apps</span></span
+					>
 				</h1>
-				<p class={cn(marketingSectionBodyClass, 'mx-auto')}>
+				<p class={cn(marketingSectionBodyStackClass, marketingSectionBodyClass, 'mx-auto')}>
 					A platform that simplifies every step of robotics development.
 				</p>
 			</div>
@@ -59,8 +72,37 @@ const baseSectionClass = cn(marketingSectionShellClass, 'flex min-h-svh pt-14');
 				>
 					<div class={marketingSectionOverlayClass} />
 					<div class="relative max-w-5xl px-12 md:px-24 lg:px-32">
-						<h2 class={marketingSectionHeadingClass}>{section.title}</h2>
-						<p class={marketingSectionBodyClass}>{section.description}</p>
+						<div class="flex items-center gap-6 md:gap-8 lg:gap-10">
+							<h2 class={marketingProductHeadingClass}>{section.title}</h2>
+							{'githubHref' in section && section.githubHref && (
+								<a
+									href={section.githubHref}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="shrink-0 transition-transform duration-150 hover:scale-105"
+									aria-label={`${section.title} on GitHub`}
+								>
+									<img
+										src={githubLogo.src}
+										alt=""
+										class="h-12 w-12 md:h-14 md:w-14 lg:h-16 lg:w-16"
+									/>
+								</a>
+							)}
+						</div>
+						<div class={marketingSectionBodyStackClass}>
+							{section.description.map((paragraph) => (
+								<p class={marketingSectionBodyClass}>
+									{paragraph.map((part) =>
+										'accent' in part && part.accent ? (
+											<span class={marketingAccentEmphClass}>{part.text}</span>
+										) : (
+											part.text
+										)
+									)}
+								</p>
+							))}
+						</div>
 					</div>
 				</section>
 			))
