@@ -8,10 +8,7 @@ node_modules/
 !.env.test
 
 # Logs
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+bun-debug.log*
 
 # macOS-specific files
 .DS_Store

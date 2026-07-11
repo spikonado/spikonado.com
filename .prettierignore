@@ -2,7 +2,7 @@
 flake*
 
 # Package Managers
-pnpm-lock.yaml
+bun.lock
 
 # Miscellaneous
 /static/

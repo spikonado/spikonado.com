@@ -12,10 +12,6 @@
 #
 # See https://prek.j178.dev/
 
-default_stages:
-  - manual
-  - pre-commit
-
 repos:
   - repo: builtin
     hooks:
@@ -35,7 +31,7 @@ repos:
     rev: v2.4.2
     hooks:
       - id: codespell
-        exclude: ^pnpm-lock\.yaml$
+        exclude: ^bun\.lock$
         exclude_types: [svg]
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
@@ -48,25 +44,19 @@ repos:
 
   - repo: local
     hooks:
-      - id: commitlint
-        name: commitlint
-        language: system
-        entry: commitlint --edit
-        stages: [commit-msg]
-
       - id: astro-check
         name: 'astro check'
         language: system
-        entry: pnpm astro check
+        entry: bun run astro check
         pass_filenames: false
 
       - id: eslint
         name: eslint
         language: system
-        entry: pnpm eslint
+        entry: bun run eslint
 
-      - id: prettier-write
+      - id: prettier
         name: prettier
         language: system
-        entry: pnpm prettier --write .
+        entry: bun run prettier --write .
         pass_filenames: false
