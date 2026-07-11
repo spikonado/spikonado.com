@@ -5,7 +5,7 @@
 	import { cn } from '@/utils';
 </script>
 
-<header class="fixed top-0 z-50 h-16 w-full bg-background/80 backdrop-blur-md">
+<header class="fixed top-0 z-50 h-14 w-full bg-background/80 backdrop-blur-md">
 	<div
 		class="relative mx-auto flex h-full max-w-screen-2xl items-center justify-between px-4 sm:px-8"
 	>
@@ -13,8 +13,8 @@
 			href="/"
 			class="group flex items-center space-x-2 transition-transform duration-150 hover:scale-[1.02]"
 		>
-			<img src={logo.src} alt="Spikonado" class="h-9 w-9" />
-			<span class={cn(marketingBrandClass, 'hidden text-3xl sm:block')}> Spikonado </span>
+			<img src={logo.src} alt="Spikonado" class="h-8 w-8" />
+			<span class={cn(marketingBrandClass, 'hidden text-2xl sm:block')}> Spikonado </span>
 		</a>
 
 		<a
@@ -27,7 +27,7 @@
 				loading="lazy"
 				src={github.src}
 				alt="GitHub"
-				class="h-9 w-9 transition-transform duration-150 hover:scale-105"
+				class="h-8 w-8 transition-transform duration-150 hover:scale-105"
 			/>
 		</a>
 	</div>
