@@ -9,12 +9,6 @@
 		"build": "astro build",
 		"preview": "astro preview"
 	},
-	"trustedDependencies": [
-		"core-js",
-		"esbuild",
-		"protobufjs",
-		"sharp"
-	],
 	"dependencies": {
 		"@astrojs/sitemap": "^3.7.2",
 		"@astrojs/svelte": "^8.0.4",
@@ -47,5 +41,8 @@
 		"prettier-plugin-tailwindcss": "^0.8.0",
 		"typescript-eslint": "^8.56.1",
 		"vite": "^7.3.5"
-	}
+	},
+	"trustedDependencies": [
+		"core-js"
+	]
 }
