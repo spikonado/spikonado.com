@@ -18,14 +18,21 @@
       {
         formatter = pkgs.nixfmt-tree;
 
-        devShells.default = pkgs.mkShell {
+        devShells.default = pkgs.mkShell.override { stdenv = pkgs.clangStdenv; } {
+          name = "spikonado.com-shell";
           packages = with pkgs; [
-            commitlint
-            nodejs_24
+            bun
             prek
-            (pnpm.override { withNode = false; })
           ];
         };
       }
     );
+  nixConfig = {
+    extra-substituters = [
+      "https://spikonado.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "spikonado.cachix.org-1:MwA4hqRN0+DdP7/UnTn0yvJgVu65S1S0QVnAnsguev4="
+    ];
+  };
 }

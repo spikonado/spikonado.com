@@ -1,4 +1,4 @@
-name: Prek
+name: Build
 
 on:
   merge_group:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  prek:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.3
@@ -35,6 +35,6 @@ jobs:
         shell: 'nix develop --profile spikonado.com-shell -c bash -e {0}'
         run: bun install --frozen-lockfile
 
-      - name: Run prek
+      - name: Build
         shell: 'nix develop --profile spikonado.com-shell -c bash -e {0}'
-        run: prek run -a
+        run: bun run build --mode test
