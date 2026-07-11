@@ -22,7 +22,7 @@ export const marketingSectionBodyClass =
 export const marketingSectionBodyStackClass = 'mt-8 space-y-3';
 
 // Blue treatment for emphasized words in marketing headlines.
-export const marketingAccentTextClass = 'text-blue-400';
+export const marketingAccentTextClass = 'text-blue-600';
 
 // Blue underline treatment for emphasized body phrases.
 export const marketingAccentEmphClass = `${marketingAccentTextClass} font-medium underline`;

@@ -47,69 +47,71 @@ const baseSectionClass = cn(marketingSectionShellClass, 'flex min-h-svh pt-14');
 ---
 
 <BaseLayout>
-	<main class="scroller">
-		<section class={cn(baseSectionClass, 'items-center justify-center')}>
-			<div class="mx-auto max-w-4xl px-6 text-center">
-				<h1 class={marketingSectionHeadingClass}>
-					<span class="block">The <span class={marketingAccentTextClass}>new way</span></span>
-					<span class="block">of building</span>
-					<span class="block whitespace-nowrap"
-						><span class={marketingAccentTextClass}>robots</span> &amp;{' '}
-						<span class={marketingAccentTextClass}>robot apps</span></span
-					>
-				</h1>
-				<p class={cn(marketingSectionBodyStackClass, marketingSectionBodyClass, 'mx-auto')}>
-					A platform that simplifies every step of robotics development.
-				</p>
-			</div>
-		</section>
+	<div class="scroller">
+		<main>
+			<section class={cn(baseSectionClass, 'items-center justify-center')}>
+				<div class="mx-auto max-w-4xl px-6 text-center">
+					<h1 class={marketingSectionHeadingClass}>
+						<span class="block">The <span class={marketingAccentTextClass}>new way</span></span>
+						<span class="block">of building</span>
+						<span class="block sm:whitespace-nowrap"
+							><span class={marketingAccentTextClass}>robots</span> &amp;{' '}
+							<span class={marketingAccentTextClass}>robot apps</span></span
+						>
+					</h1>
+					<p class={cn(marketingSectionBodyStackClass, marketingSectionBodyClass, 'mx-auto')}>
+						A platform that simplifies every step of robotics development.
+					</p>
+				</div>
+			</section>
 
-		{
-			showcaseSections.map((section) => (
-				<section
-					id={section.id}
-					class={cn(baseSectionClass, 'items-center justify-start border-t border-border/10')}
-				>
-					<div class={marketingSectionOverlayClass} />
-					<div class="relative max-w-5xl px-12 md:px-24 lg:px-32">
-						<div class="flex items-center gap-6 md:gap-8 lg:gap-10">
-							<h2 class={marketingProductHeadingClass}>{section.title}</h2>
-							{'githubHref' in section && section.githubHref && (
-								<a
-									href={section.githubHref}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="shrink-0 transition-transform duration-150 hover:scale-105"
-									aria-label={`${section.title} on GitHub`}
-								>
-									<img
-										src={githubLogo.src}
-										alt=""
-										class="h-12 w-12 md:h-14 md:w-14 lg:h-16 lg:w-16"
-									/>
-								</a>
-							)}
+			{
+				showcaseSections.map((section) => (
+					<section
+						id={section.id}
+						class={cn(baseSectionClass, 'items-center justify-start border-t border-border/10')}
+					>
+						<div class={marketingSectionOverlayClass} />
+						<div class="relative max-w-5xl px-12 md:px-24 lg:px-32">
+							<div class="flex items-center gap-6 md:gap-8 lg:gap-10">
+								<h2 class={marketingProductHeadingClass}>{section.title}</h2>
+								{'githubHref' in section && section.githubHref && (
+									<a
+										href={section.githubHref}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="shrink-0 transition-transform duration-150 hover:scale-105"
+										aria-label={`${section.title} on GitHub`}
+									>
+										<img
+											src={githubLogo.src}
+											alt=""
+											class="h-12 w-12 md:h-14 md:w-14 lg:h-16 lg:w-16"
+										/>
+									</a>
+								)}
+							</div>
+							<div class={marketingSectionBodyStackClass}>
+								{section.description.map((paragraph) => (
+									<p class={marketingSectionBodyClass}>
+										{paragraph.map((part) =>
+											'accent' in part && part.accent ? (
+												<span class={marketingAccentEmphClass}>{part.text}</span>
+											) : (
+												part.text
+											)
+										)}
+									</p>
+								))}
+							</div>
 						</div>
-						<div class={marketingSectionBodyStackClass}>
-							{section.description.map((paragraph) => (
-								<p class={marketingSectionBodyClass}>
-									{paragraph.map((part) =>
-										'accent' in part && part.accent ? (
-											<span class={marketingAccentEmphClass}>{part.text}</span>
-										) : (
-											part.text
-										)
-									)}
-								</p>
-							))}
-						</div>
-					</div>
-				</section>
-			))
-		}
+					</section>
+				))
+			}
+		</main>
 
 		<Footer />
-	</main>
+	</div>
 </BaseLayout>
 
 <style is:global>
@@ -117,14 +119,14 @@ const baseSectionClass = cn(marketingSectionShellClass, 'flex min-h-svh pt-14');
 		scroll-snap-type: y mandatory;
 	}
 
-	.scroller > section,
+	.scroller main > section,
 	.scroller > footer {
 		scroll-snap-align: start;
 		scroll-snap-stop: always;
 	}
 
 	@media (pointer: coarse) {
-		.scroller > section,
+		.scroller main > section,
 		.scroller > footer {
 			scroll-snap-stop: normal;
 		}
