@@ -1,4 +1,6 @@
 ---
+import '@fontsource-variable/dm-sans/wght.css';
+import '@fontsource-variable/ibm-plex-sans/wght.css';
 import '@/styles/global.css';
 import favicon from '@/assets/logo.png';
 import Navbar from '@/components/navbar.svelte';
@@ -38,7 +40,7 @@ const {
 		</script>
 	</head>
 	<body>
-		<Navbar client:load />
+		<Navbar />
 		<slot />
 	</body>
 </html>
