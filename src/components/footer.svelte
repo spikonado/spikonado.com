@@ -50,10 +50,7 @@
 		class="relative mx-auto grid w-full max-w-7xl grid-cols-1 gap-16 text-center md:grid-cols-[minmax(0,2fr)_minmax(12rem,1fr)_minmax(12rem,1fr)] md:gap-20 md:text-left"
 	>
 		<div class="flex flex-col items-center gap-6 md:items-start">
-			<a
-				href="/"
-				class="flex items-center gap-3 transition-transform duration-150 hover:scale-105"
-			>
+			<a href="/" class="flex items-center gap-3 transition-transform duration-150 hover:scale-105">
 				<img loading="lazy" src={logo.src} alt="Spikonado" class="h-9 w-9" />
 				<span class={cn(marketingBrandClass, 'text-3xl')}>Spikonado</span>
 			</a>
