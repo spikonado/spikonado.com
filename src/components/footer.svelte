@@ -19,7 +19,7 @@
 	] as const;
 
 	const companyLinks = [
-		{ label: 'Privacy Policy', path: '/' },
+		{ label: 'Privacy Policy', path: '/privacy' },
 		{ label: 'Terms of Service', path: '/' }
 	] as const;
 
