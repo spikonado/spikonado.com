@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getSecret } from 'astro:env/server';
+import { checkBotId } from 'botid/server';
 import {
 	NEWSLETTER_FORM,
 	NEWSLETTER_SUBSCRIBE_FAILED_EVENT,
@@ -87,6 +88,16 @@ export const POST: APIRoute = async ({ request }) => {
 	const origin = request.headers.get('origin');
 	if (!origin || origin !== new URL(request.url).origin) {
 		return json(false, 403);
+	}
+
+	try {
+		const verification = await checkBotId();
+		if (!verification.isHuman) {
+			return json(false, 403);
+		}
+	} catch {
+		// Fail closed so a BotID outage or misconfiguration cannot consume Resend quota.
+		return json(false, 503);
 	}
 
 	const resendApiKey = getSecret('RESEND_API_KEY')?.trim();
