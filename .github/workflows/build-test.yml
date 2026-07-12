@@ -1,4 +1,4 @@
-name: Build
+name: Build and Test
 
 on:
   merge_group:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.3
@@ -38,3 +38,7 @@ jobs:
       - name: Build
         shell: 'nix develop --profile spikonado.com-shell -c bash -e {0}'
         run: bun run build --mode test
+
+      - name: Test
+        shell: 'nix develop --profile spikonado.com-shell -c bash -e {0}'
+        run: bun test
