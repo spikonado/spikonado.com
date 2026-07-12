@@ -1,5 +1,6 @@
 ---
 import Footer from '@/components/footer.svelte';
+import BuildLogForm from '@/components/build-log-form.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
 import githubLogo from '@/assets/github_logo.svg';
 import {
@@ -108,6 +109,22 @@ const baseSectionClass = cn(marketingSectionShellClass, 'flex min-h-svh pt-14');
 					</section>
 				))
 			}
+
+			<section
+				id="build-log"
+				class={cn(baseSectionClass, 'items-center justify-start border-t border-border/10')}
+			>
+				<div class={marketingSectionOverlayClass}></div>
+				<div class="relative max-w-5xl px-12 md:px-24 lg:px-32">
+					<h2 class={marketingSectionHeadingClass}>
+						<span class="block">Stay in the <span class={marketingAccentTextClass}>loop</span></span
+						>
+					</h2>
+					<div class={marketingSectionBodyStackClass}>
+						<BuildLogForm client:visible />
+					</div>
+				</div>
+			</section>
 		</main>
 
 		<Footer />

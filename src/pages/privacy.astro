@@ -1,0 +1,73 @@
+---
+import BaseLayout from '@/layouts/base-layout.astro';
+
+const sections = [
+	{
+		title: 'Information we collect',
+		body: [
+			'When you subscribe to the Spikonado newsletter, we collect the email address you provide and a record of your subscription. Our website may also collect limited technical and usage information needed to operate, secure, and improve the site.'
+		]
+	},
+	{
+		title: 'How we use it',
+		body: [
+			'We use your email address only to send you our newsletter (if you have subscribed) and other important updates. We do not sell your information.'
+		]
+	},
+	{
+		title: 'Service providers',
+		body: [
+			'We use Vercel to host the website, Resend to manage and deliver emails, and PostHog to understand website usage. These providers may process information on our behalf to provide their services.'
+		]
+	},
+	{
+		title: 'Your choices',
+		body: [
+			'You can unsubscribe at any time using the link in every marketing email. We may retain a minimal suppression record so that we can continue to respect an unsubscribe request.'
+		]
+	},
+	{
+		title: 'Contact',
+		body: [
+			'For privacy questions or requests to access or delete your information, email privacy@spikonado.com.'
+		]
+	}
+] as const;
+---
+
+<BaseLayout
+	title="Privacy - Spikonado"
+	description="How Spikonado collects and uses information provided through this website."
+>
+	<main class="min-h-svh bg-background px-6 pt-28 pb-20 sm:px-8 sm:pt-32">
+		<article class="mx-auto max-w-3xl">
+			<p class="font-sans text-sm font-medium tracking-wide text-blue-600 uppercase">Privacy</p>
+			<h1 class="mt-3 font-sans text-5xl leading-tight tracking-tight text-foreground sm:text-6xl">
+				Privacy notice
+			</h1>
+			<p class="mt-5 font-sans text-sm text-muted-foreground">Last updated July 12, 2026</p>
+
+			<div class="mt-12 space-y-10">
+				{
+					sections.map((section) => (
+						<section>
+							<h2 class="font-brand text-2xl text-foreground">{section.title}</h2>
+							{section.body.map((paragraph) => (
+								<p class="mt-3 font-sans text-lg leading-relaxed text-muted-foreground">
+									{paragraph}
+								</p>
+							))}
+						</section>
+					))
+				}
+			</div>
+
+			<a
+				href="/"
+				class="mt-14 inline-flex font-sans text-base font-medium text-blue-600 transition-colors hover:text-blue-700"
+			>
+				Return home
+			</a>
+		</article>
+	</main>
+</BaseLayout>

@@ -25,7 +25,12 @@ const {
 		<title>{title}</title>
 		<meta name="description" content={description} />
 		<script>
+			import { initBotId } from 'botid/client/core';
 			import posthog from 'posthog-js';
+
+			initBotId({
+				protect: [{ path: '/api/build-log/subscribe', method: 'POST' }]
+			});
 
 			const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
 
