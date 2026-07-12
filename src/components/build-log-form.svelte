@@ -1,4 +1,6 @@
 <script lang="ts">
+	import posthog from 'posthog-js';
+	import { NEWSLETTER_FORM, NEWSLETTER_SUBSCRIBE_FAILED_EVENT } from '@/lib/build-log/analytics';
 	import { marketingSectionBodyClass } from '@/styles/marketing';
 	import { cn } from '@/utils';
 
@@ -38,6 +40,42 @@
 		}
 	}
 
+	function posthogRequestHeaders(): Record<string, string> {
+		try {
+			const distinctId = posthog.get_distinct_id?.();
+			const sessionId = posthog.get_session_id?.();
+			return {
+				...(distinctId ? { 'X-POSTHOG-DISTINCT-ID': distinctId } : {}),
+				...(sessionId ? { 'X-POSTHOG-SESSION-ID': sessionId } : {})
+			};
+		} catch {
+			return {};
+		}
+	}
+
+	function identifySubscriber(subscriberEmail: string) {
+		try {
+			posthog.identify(subscriberEmail, {
+				email: subscriberEmail,
+				subscribed_to_build_log: true
+			});
+		} catch {
+			// Analytics must not break the subscribe UX.
+		}
+	}
+
+	function captureSubscribeFailure(reason: string) {
+		try {
+			posthog.capture(NEWSLETTER_SUBSCRIBE_FAILED_EVENT, {
+				form: NEWSLETTER_FORM,
+				source: 'client',
+				reason
+			});
+		} catch {
+			// Analytics must not break the subscribe UX.
+		}
+	}
+
 	async function onSubmit(event: SubmitEvent) {
 		event.preventDefault();
 
@@ -58,7 +96,8 @@
 				signal: controller.signal,
 				headers: {
 					'Content-Type': 'application/json',
-					Accept: 'application/json'
+					Accept: 'application/json',
+					...posthogRequestHeaders()
 				},
 				body: JSON.stringify({
 					email: trimmedEmail,
@@ -67,6 +106,7 @@
 			});
 
 			if (response.ok) {
+				identifySubscriber(trimmedEmail.toLowerCase());
 				email = '';
 				company = '';
 				status = 'success';
@@ -75,14 +115,22 @@
 			}
 
 			if (response.status === 400 || response.status === 422) {
+				captureSubscribeFailure('invalid_email');
 				status = 'invalid';
 				statusMessage = 'Please enter a valid email address.';
 				return;
 			}
 
+			// Server already records Resend/API failures; avoid duplicate client events.
 			status = 'error';
 			statusMessage = 'Something went wrong. Please try again in a moment.';
-		} catch {
+		} catch (error) {
+			captureSubscribeFailure(error instanceof Error ? error.name : 'network_error');
+			try {
+				posthog.captureException(error);
+			} catch {
+				// Analytics must not break the subscribe UX.
+			}
 			status = 'error';
 			statusMessage = 'Something went wrong. Please try again in a moment.';
 		} finally {

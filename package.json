@@ -20,6 +20,7 @@
 		"astro": "6.4.8",
 		"clsx": "^2.1.1",
 		"posthog-js": "^1.360.0",
+		"posthog-node": "^5.41.0",
 		"resend": "^6.17.2",
 		"sharp": "^0.34.5",
 		"svelte": "^5.53.7",
