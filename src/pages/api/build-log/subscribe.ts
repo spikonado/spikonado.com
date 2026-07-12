@@ -12,6 +12,13 @@ export const prerender = false;
 
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
+/** Practical shape check — rejects values browsers' type=email would also reject. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isValidEmail(email: string): boolean {
+	return email.length > 0 && email.length <= 254 && EMAIL_RE.test(email);
+}
+
 function json(ok: true): Response;
 function json(ok: false, status: number): Response;
 function json(ok: boolean, status = 200): Response {
@@ -78,7 +85,7 @@ async function captureNewsletterEvent(options: {
 
 export const POST: APIRoute = async ({ request }) => {
 	const origin = request.headers.get('origin');
-	if (origin && origin !== new URL(request.url).origin) {
+	if (!origin || origin !== new URL(request.url).origin) {
 		return json(false, 403);
 	}
 
@@ -106,7 +113,7 @@ export const POST: APIRoute = async ({ request }) => {
 		return json(true);
 	}
 
-	if (!email) {
+	if (!isValidEmail(email)) {
 		return json(false, 400);
 	}
 
