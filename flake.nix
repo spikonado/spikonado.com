@@ -22,6 +22,7 @@
           name = "spikonado.com-shell";
           packages = with pkgs; [
             bun
+            ffmpeg
             prek
           ];
         };

@@ -1,6 +1,8 @@
 ---
 import '@fontsource-variable/dm-sans/wght.css';
 import '@fontsource-variable/ibm-plex-sans/wght.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
 import '@/styles/global.css';
 import favicon from '@/assets/logo.png';
 import Navbar from '@/components/navbar.svelte';
@@ -11,8 +13,8 @@ interface Props {
 }
 
 const {
-	title = 'Spikonado - Build Your Own Robot',
-	description = 'A platform that simplifies every step of robotics development.'
+	title = 'Spikonado - Build more tech, faster',
+	description = 'A way for anyone to build any kind of technology. Start with Sprocket, the lightweight coding agent for hardware and software.'
 } = Astro.props;
 ---
 
@@ -24,6 +26,12 @@ const {
 		<link rel="icon" href={favicon.src} />
 		<title>{title}</title>
 		<meta name="description" content={description} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:type" content="website" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
 		<script>
 			import { initBotId } from 'botid/client/core';
 			import posthog from 'posthog-js';
@@ -45,7 +53,13 @@ const {
 		</script>
 	</head>
 	<body>
-		<Navbar />
+		<a
+			href="#main"
+			class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-100 focus:rounded-full focus:bg-foreground focus:px-4 focus:py-2 focus:text-sm focus:text-background"
+		>
+			Skip to content
+		</a>
+		<Navbar client:load />
 		<slot />
 	</body>
 </html>
