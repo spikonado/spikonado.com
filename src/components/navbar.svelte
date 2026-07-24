@@ -1,7 +1,7 @@
 <script lang="ts">
 	import logo from '@/assets/logo.png';
 	import github from '@/assets/github_logo.svg';
-	import { trapFocus } from '@/lib/focus-trap';
+	import { inertBackground, trapFocus } from '@/lib/focus-trap';
 	import { marketingBrandClass, marketingButtonPrimaryClass } from '@/styles/marketing';
 	import { cn } from '@/utils';
 
@@ -12,7 +12,6 @@
 	] as const;
 
 	let menuOpen = $state(false);
-	let menuPanel: HTMLDivElement | undefined = $state();
 	let menuButton: HTMLButtonElement | undefined = $state();
 
 	function closeMenu() {
@@ -23,22 +22,19 @@
 		menuOpen = !menuOpen;
 	}
 
+	let headerEl: HTMLElement | undefined = $state();
+
 	$effect(() => {
-		if (!menuOpen || !menuPanel) {
+		if (!menuOpen || !headerEl) {
 			return;
 		}
 
 		const previousOverflow = document.body.style.overflow;
 		document.body.style.overflow = 'hidden';
 
-		const inertTargets = [document.getElementById('main'), document.querySelector('footer')].filter(
-			(element): element is HTMLElement => element instanceof HTMLElement
-		);
-		for (const element of inertTargets) {
-			element.inert = true;
-		}
-
-		const releaseFocus = trapFocus(menuPanel);
+		// Keep the header (menu + toggle) available; inert the rest for SR browse mode.
+		const releaseBackground = inertBackground(headerEl);
+		const releaseFocus = trapFocus(headerEl);
 
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (event.key === 'Escape') {
@@ -49,16 +45,17 @@
 
 		return () => {
 			document.body.style.overflow = previousOverflow;
-			for (const element of inertTargets) {
-				element.inert = false;
-			}
+			releaseBackground();
 			releaseFocus();
 			window.removeEventListener('keydown', onKeyDown);
 		};
 	});
 </script>
 
-<header class="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95">
+<header
+	bind:this={headerEl}
+	class="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95"
+>
 	<div
 		class="relative mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8"
 	>
@@ -144,12 +141,12 @@
 
 	{#if menuOpen}
 		<div
-			bind:this={menuPanel}
 			id="mobile-nav"
 			class="border-t border-border/40 bg-background md:hidden"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Site navigation"
+			tabindex="-1"
 		>
 			<nav class="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-4 sm:px-6" aria-label="Mobile">
 				{#each navLinks as link (link.label)}

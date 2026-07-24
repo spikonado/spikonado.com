@@ -1,6 +1,6 @@
 <script lang="ts">
 	import fallback from '@/assets/sprocket.webp';
-	import { trapFocus } from '@/lib/focus-trap';
+	import { inertBackground, portal, trapFocus } from '@/lib/focus-trap';
 	import { SPROCKET_IMAGE_REMOTE_URL } from '@/lib/sprocket-image';
 
 	interface Props {
@@ -42,20 +42,8 @@
 
 		const previousOverflow = document.body.style.overflow;
 		document.body.style.overflow = 'hidden';
-
-		const inertTargets = [
-			document.querySelector('header'),
-			document.getElementById('main'),
-			document.querySelector('footer')
-		].filter((element): element is HTMLElement => element instanceof HTMLElement);
-		for (const element of inertTargets) {
-			// Keep the dialog usable even though it lives under main.
-			if (element.contains(dialog)) {
-				continue;
-			}
-			element.inert = true;
-		}
-
+		// Dialog is portaled to body, so page chrome can safely be inert for SR browse mode.
+		const releaseBackground = inertBackground(dialog);
 		const releaseFocus = trapFocus(dialog);
 
 		const onKeyDown = (event: KeyboardEvent) => {
@@ -67,9 +55,7 @@
 
 		return () => {
 			document.body.style.overflow = previousOverflow;
-			for (const element of inertTargets) {
-				element.inert = false;
-			}
+			releaseBackground();
 			releaseFocus();
 			window.removeEventListener('keydown', onKeyDown);
 		};
@@ -97,20 +83,25 @@
 {#if open}
 	<div
 		bind:this={dialog}
-		class="fixed inset-0 z-100 flex items-center justify-center bg-ink/90 p-4 sm:p-8"
+		use:portal
+		class="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-8"
 		role="dialog"
 		aria-modal="true"
 		aria-label="Sprocket screenshot"
-		onclick={closeLightbox}
+		tabindex="-1"
 	>
 		<button
 			type="button"
-			class="absolute top-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-ink/60 text-white transition-colors hover:bg-ink/80 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
+			class="absolute inset-0 bg-ink/90"
 			aria-label="Close full size image"
-			onclick={(event) => {
-				event.stopPropagation();
-				closeLightbox();
-			}}
+			onclick={closeLightbox}
+		></button>
+
+		<button
+			type="button"
+			class="absolute top-4 right-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-ink/60 text-white transition-colors hover:bg-ink/80 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
+			aria-label="Close full size image"
+			onclick={closeLightbox}
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -129,7 +120,7 @@
 		<img
 			{src}
 			{alt}
-			class="max-h-[min(92svh,100%)] max-w-full rounded-lg object-contain shadow-2xl"
+			class="relative z-10 max-h-[min(92svh,100%)] max-w-full rounded-lg object-contain shadow-2xl"
 			referrerpolicy="no-referrer"
 			onerror={handleError}
 		/>

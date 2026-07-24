@@ -2,9 +2,12 @@ export const SITE_NAME = 'Spikonado';
 export const SITE_URL = 'https://spikonado.com';
 export const TWITTER_HANDLE = '@spikonado';
 
+/** Stable social preview image generated at build time (`src/pages/og.png.ts`). */
+export const DEFAULT_OG_IMAGE = '/og.png';
+
 export const DEFAULT_TITLE = 'Spikonado | Build any kind of technology, faster';
 export const DEFAULT_DESCRIPTION =
-	'Spikonado helps anyone build apps, robots, devices, and the systems that glue them together. Start with Sprocket, an engineering agent with best-in-class web and open-source context.';
+	'Spikonado helps anyone build apps, robots, devices, and the systems that glue them together.';
 
 export const ORGANIZATION_SAME_AS = [
 	'https://github.com/spikonado',
