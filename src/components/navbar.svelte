@@ -1,6 +1,7 @@
 <script lang="ts">
 	import logo from '@/assets/logo.png';
 	import github from '@/assets/github_logo.svg';
+	import { trapFocus } from '@/lib/focus-trap';
 	import { marketingBrandClass, marketingButtonPrimaryClass } from '@/styles/marketing';
 	import { cn } from '@/utils';
 
@@ -11,6 +12,8 @@
 	] as const;
 
 	let menuOpen = $state(false);
+	let menuPanel: HTMLDivElement | undefined = $state();
+	let menuButton: HTMLButtonElement | undefined = $state();
 
 	function closeMenu() {
 		menuOpen = false;
@@ -21,28 +24,41 @@
 	}
 
 	$effect(() => {
-		if (!menuOpen) {
+		if (!menuOpen || !menuPanel) {
 			return;
 		}
+
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+
+		const inertTargets = [document.getElementById('main'), document.querySelector('footer')].filter(
+			(element): element is HTMLElement => element instanceof HTMLElement
+		);
+		for (const element of inertTargets) {
+			element.inert = true;
+		}
+
+		const releaseFocus = trapFocus(menuPanel);
 
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (event.key === 'Escape') {
 				closeMenu();
 			}
 		};
-
-		const previousOverflow = document.body.style.overflow;
-		document.body.style.overflow = 'hidden';
 		window.addEventListener('keydown', onKeyDown);
 
 		return () => {
 			document.body.style.overflow = previousOverflow;
+			for (const element of inertTargets) {
+				element.inert = false;
+			}
+			releaseFocus();
 			window.removeEventListener('keydown', onKeyDown);
 		};
 	});
 </script>
 
-<header class="fixed top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
+<header class="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95">
 	<div
 		class="relative mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8"
 	>
@@ -87,6 +103,7 @@
 			</a>
 
 			<button
+				bind:this={menuButton}
 				type="button"
 				class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface text-foreground transition-colors hover:bg-accent-soft focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none md:hidden"
 				aria-label={menuOpen ? 'Close menu' : 'Open menu'}
@@ -127,6 +144,7 @@
 
 	{#if menuOpen}
 		<div
+			bind:this={menuPanel}
 			id="mobile-nav"
 			class="border-t border-border/40 bg-background md:hidden"
 			role="dialog"

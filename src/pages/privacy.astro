@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@/layouts/base-layout.astro';
+import { titleWithBrand } from '@/lib/seo';
 
 const sections = [
 	{
@@ -36,10 +37,10 @@ const sections = [
 ---
 
 <BaseLayout
-	title="Privacy - Spikonado"
-	description="How Spikonado collects and uses information provided through this website."
+	title={titleWithBrand('Privacy Policy')}
+	description="Learn how Spikonado collects, uses, and protects information from website visitors and build log subscribers."
 >
-	<main class="atmosphere min-h-svh px-6 pt-28 pb-20 sm:px-8 sm:pt-32">
+	<main id="main" class="atmosphere min-h-svh px-6 pt-28 pb-20 sm:px-8 sm:pt-32">
 		<article class="mx-auto max-w-3xl">
 			<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
 				Privacy
@@ -47,7 +48,7 @@ const sections = [
 			<h1
 				class="mt-3 font-brand text-5xl leading-tight font-semibold tracking-tight text-foreground sm:text-6xl"
 			>
-				Privacy notice
+				Privacy Policy
 			</h1>
 			<p class="mt-5 font-sans text-sm text-muted-foreground">Last updated July 12, 2026</p>
 

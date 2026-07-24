@@ -1,5 +1,6 @@
 <script lang="ts">
 	import fallback from '@/assets/sprocket.webp';
+	import { trapFocus } from '@/lib/focus-trap';
 	import { SPROCKET_IMAGE_REMOTE_URL } from '@/lib/sprocket-image';
 
 	interface Props {
@@ -9,12 +10,14 @@
 
 	let {
 		class: className = 'h-auto w-full',
-		alt = 'Sprocket agent interface showing multi-step coding work across a project'
+		alt = 'Sprocket engineering agent interface showing multi-step work across a project'
 	}: Props = $props();
 
 	let src = $state(SPROCKET_IMAGE_REMOTE_URL);
 	let usingFallback = $state(false);
 	let open = $state(false);
+	let dialog: HTMLDivElement | undefined = $state();
+	let trigger: HTMLButtonElement | undefined = $state();
 
 	function handleError() {
 		if (usingFallback) {
@@ -33,28 +36,48 @@
 	}
 
 	$effect(() => {
-		if (!open) {
+		if (!open || !dialog) {
 			return;
 		}
+
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+
+		const inertTargets = [
+			document.querySelector('header'),
+			document.getElementById('main'),
+			document.querySelector('footer')
+		].filter((element): element is HTMLElement => element instanceof HTMLElement);
+		for (const element of inertTargets) {
+			// Keep the dialog usable even though it lives under main.
+			if (element.contains(dialog)) {
+				continue;
+			}
+			element.inert = true;
+		}
+
+		const releaseFocus = trapFocus(dialog);
 
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (event.key === 'Escape') {
 				closeLightbox();
 			}
 		};
-
-		const previousOverflow = document.body.style.overflow;
-		document.body.style.overflow = 'hidden';
 		window.addEventListener('keydown', onKeyDown);
 
 		return () => {
 			document.body.style.overflow = previousOverflow;
+			for (const element of inertTargets) {
+				element.inert = false;
+			}
+			releaseFocus();
 			window.removeEventListener('keydown', onKeyDown);
 		};
 	});
 </script>
 
 <button
+	bind:this={trigger}
 	type="button"
 	class="block w-full cursor-zoom-in border-0 bg-transparent p-0 text-left"
 	aria-label="View Sprocket screenshot full size"
@@ -73,16 +96,12 @@
 
 {#if open}
 	<div
-		class="fixed inset-0 z-100 flex items-center justify-center bg-ink/85 p-4 backdrop-blur-sm sm:p-8"
+		bind:this={dialog}
+		class="fixed inset-0 z-100 flex items-center justify-center bg-ink/90 p-4 sm:p-8"
 		role="dialog"
 		aria-modal="true"
 		aria-label="Sprocket screenshot"
 		onclick={closeLightbox}
-		onkeydown={(event) => {
-			if (event.key === 'Enter' || event.key === ' ') {
-				closeLightbox();
-			}
-		}}
 	>
 		<button
 			type="button"

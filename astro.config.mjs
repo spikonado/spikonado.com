@@ -9,7 +9,12 @@ import vercel from '@astrojs/vercel';
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://spikonado.com',
-	integrations: [sitemap(), svelte()],
+	integrations: [
+		sitemap({
+			filter: (page) => !page.includes('/api/')
+		}),
+		svelte()
+	],
 	adapter: vercel(),
 
 	vite: {

@@ -1,6 +1,7 @@
 ---
 import CopyCommand from '@/components/copy-command.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
+import { SITE_URL, titleWithBrand } from '@/lib/seo';
 import {
 	marketingButtonPrimaryClass,
 	marketingCopyCommandSurfaceClass,
@@ -9,12 +10,30 @@ import {
 	marketingTextLinkClass
 } from '@/styles/marketing';
 import { cn } from '@/utils';
+
+const title = titleWithBrand('Sprocket engineering agent');
+const description =
+	"Sprocket is Spikonado's engineering agent for hardware and software. It writes high-quality code and retrieves best-in-class context from the web and open-source projects. Start with npx @spikonado/sprocket --web.";
+
+const softwareLd = {
+	'@type': 'SoftwareApplication',
+	name: 'Sprocket',
+	applicationCategory: 'DeveloperApplication',
+	operatingSystem: 'Windows, macOS, Linux',
+	url: `${SITE_URL}/sprocket`,
+	description,
+	downloadUrl: 'https://www.npmjs.com/package/@spikonado/sprocket',
+	installUrl: 'https://www.npmjs.com/package/@spikonado/sprocket',
+	offers: {
+		'@type': 'Offer',
+		price: '0',
+		priceCurrency: 'USD'
+	},
+	publisher: { '@id': `${SITE_URL}/#organization` }
+};
 ---
 
-<BaseLayout
-	title="Sprocket - Spikonado"
-	description="Sprocket writes high-quality code, and retrieves best-in-class context from the web and open-source projects."
->
+<BaseLayout title={title} description={description} jsonLd={softwareLd}>
 	<main id="main" class="atmosphere min-h-svh px-4 pt-28 pb-20 sm:px-6 sm:pt-32 lg:px-8">
 		<article class="mx-auto max-w-3xl">
 			<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
@@ -31,7 +50,7 @@ import { cn } from '@/utils';
 			</p>
 
 			<CopyCommand
-				client:load
+				client:idle
 				class={cn('mt-8 w-full max-w-md', marketingCopyCommandSurfaceClass)}
 			/>
 

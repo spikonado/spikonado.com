@@ -5,6 +5,7 @@ import CopyCommand from '@/components/copy-command.svelte';
 import GetStarted from '@/components/get-started.svelte';
 import SprocketScreenshot from '@/components/sprocket-screenshot.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_URL } from '@/lib/seo';
 import {
 	marketingButtonPrimaryClass,
 	marketingCopyCommandSurfaceClass,
@@ -29,18 +30,31 @@ const solvedItems = [
 		body: 'A stack designed so AI and people can ship together, without fighting the tools along the way.'
 	}
 ] as const;
+
+const softwareLd = {
+	'@type': 'SoftwareApplication',
+	name: 'Sprocket',
+	applicationCategory: 'DeveloperApplication',
+	operatingSystem: 'Windows, macOS, Linux',
+	url: `${SITE_URL}/sprocket`,
+	description:
+		'Sprocket writes high-quality code and retrieves best-in-class context from the web and open-source projects.',
+	offers: {
+		'@type': 'Offer',
+		price: '0',
+		priceCurrency: 'USD'
+	},
+	publisher: { '@id': `${SITE_URL}/#organization` }
+};
 ---
 
-<BaseLayout
-	title="Spikonado - Build more tech, faster"
-	description="A way for anyone to build any kind of technology. Start with Sprocket, the lightweight coding agent for hardware and software."
->
+<BaseLayout title={DEFAULT_TITLE} description={DEFAULT_DESCRIPTION} jsonLd={softwareLd}>
 	<main id="main">
 		<!-- Hero -->
 		<section class="atmosphere relative overflow-hidden pt-14">
 			<div class="hero-mesh pointer-events-none absolute inset-0" aria-hidden="true"></div>
 			<div
-				class="hero-orb animate-orb pointer-events-none absolute top-[28%] right-[-8%] h-[28rem] w-[28rem] rounded-full md:top-[18%] md:right-[2%] md:h-[34rem] md:w-[34rem]"
+				class="hero-orb pointer-events-none absolute top-[28%] right-[-8%] h-[28rem] w-[28rem] rounded-full md:top-[18%] md:right-[2%] md:h-[34rem] md:w-[34rem]"
 				aria-hidden="true"
 			>
 			</div>
@@ -50,20 +64,20 @@ const solvedItems = [
 			>
 				<div>
 					<h1
-						class="animate-rise max-w-xl font-brand text-3xl leading-[1.1] font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl"
+						class="max-w-xl font-brand text-3xl leading-[1.1] font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl"
 					>
 						A way for anyone to build{' '}
 						<span class="mark-accent">any kind of technology</span>
 					</h1>
-					<p class={cn(marketingSectionBodyClass, 'animate-rise-delay-1 mt-6')}>
+					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
 						<span class="mark-verb">Our goal is simple</span>: give everyone the{' '}
 						<span class="mark-verb">tools to invent apps, robots, devices</span>, and the{' '}
 						<span class="mark-verb">systems</span> that glue them together.
 					</p>
 				</div>
 
-				<div class="animate-rise-delay-2 flex flex-col items-stretch gap-5 lg:items-end">
-					<GetStarted client:load />
+				<div class="flex flex-col items-stretch gap-5 lg:items-end">
+					<GetStarted client:idle />
 					<div
 						class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground lg:justify-end"
 					>
@@ -88,7 +102,7 @@ const solvedItems = [
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
 						The world's best platform for developing{' '}
 						<span class="mark-verb">hardware</span> and{' '}
-						<span class="mark-verb">software</span>, starting as a lightweight coding agent.
+						<span class="mark-verb">software</span>, starting as a lightweight engineering agent.
 					</p>
 					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
 						Sprocket writes <span class="mark-verb">high-quality code</span>, and retrieves{' '}

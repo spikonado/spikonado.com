@@ -5,17 +5,66 @@ import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
 import '@/styles/global.css';
 import favicon from '@/assets/logo.png';
+import defaultOgImage from '@/assets/sprocket.webp';
 import Navbar from '@/components/navbar.svelte';
+import {
+	DEFAULT_DESCRIPTION,
+	DEFAULT_TITLE,
+	ORGANIZATION_SAME_AS,
+	SITE_NAME,
+	SITE_URL,
+	TWITTER_HANDLE,
+	absoluteUrl
+} from '@/lib/seo';
 
 interface Props {
 	title?: string;
 	description?: string;
+	/** Path or absolute URL for social preview image. */
+	image?: string;
+	/** Optional JSON-LD objects merged after the default Organization graph. */
+	jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+	noindex?: boolean;
 }
 
 const {
-	title = 'Spikonado - Build more tech, faster',
-	description = 'A way for anyone to build any kind of technology. Start with Sprocket, the lightweight coding agent for hardware and software.'
+	title = DEFAULT_TITLE,
+	description = DEFAULT_DESCRIPTION,
+	image = defaultOgImage.src,
+	jsonLd,
+	noindex = false
 } = Astro.props;
+
+const canonicalURL = absoluteUrl(Astro.url.pathname, Astro.site ?? SITE_URL);
+const imageURL = absoluteUrl(image, Astro.site ?? SITE_URL);
+const robots = noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large';
+
+const organizationLd = {
+	'@type': 'Organization',
+	'@id': `${SITE_URL}/#organization`,
+	name: SITE_NAME,
+	url: SITE_URL,
+	logo: absoluteUrl(favicon.src, Astro.site ?? SITE_URL),
+	description: DEFAULT_DESCRIPTION,
+	sameAs: [...ORGANIZATION_SAME_AS],
+	email: 'privacy@spikonado.com'
+};
+
+const websiteLd = {
+	'@type': 'WebSite',
+	'@id': `${SITE_URL}/#website`,
+	name: SITE_NAME,
+	url: SITE_URL,
+	description: DEFAULT_DESCRIPTION,
+	publisher: { '@id': `${SITE_URL}/#organization` },
+	inLanguage: 'en'
+};
+
+const extraLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+const jsonLdDocument = {
+	'@context': 'https://schema.org',
+	'@graph': [organizationLd, websiteLd, ...extraLd]
+};
 ---
 
 <!doctype html>
@@ -23,32 +72,63 @@ const {
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<link rel="icon" href={favicon.src} />
+		<meta name="color-scheme" content="light" />
+		<meta name="theme-color" content="#f0f4eb" />
+		<link rel="icon" type="image/png" href={favicon.src} />
+		<link rel="apple-touch-icon" href={favicon.src} />
+		<link rel="canonical" href={canonicalURL} />
+		<link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+
 		<title>{title}</title>
 		<meta name="description" content={description} />
+		<meta name="robots" content={robots} />
+		<meta name="author" content={SITE_NAME} />
+		<meta name="generator" content={Astro.generator} />
+
+		<meta property="og:site_name" content={SITE_NAME} />
+		<meta property="og:locale" content="en_US" />
+		<meta property="og:type" content="website" />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
-		<meta property="og:type" content="website" />
+		<meta property="og:url" content={canonicalURL} />
+		<meta property="og:image" content={imageURL} />
+		<meta property="og:image:alt" content={title} />
+
 		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:site" content={TWITTER_HANDLE} />
+		<meta name="twitter:creator" content={TWITTER_HANDLE} />
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={imageURL} />
+		<meta name="twitter:image:alt" content={title} />
+
+		<script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLdDocument)} />
+
 		<script>
 			import { initBotId } from 'botid/client/core';
 			import posthog from 'posthog-js';
 
-			initBotId({
-				protect: [{ path: '/api/build-log/subscribe', method: 'POST' }]
-			});
-
-			const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
-
-			if (posthogKey) {
-				posthog.init(posthogKey, {
-					api_host: 'https://kpg.spikonado.com',
-					ui_host: 'https://eu.posthog.com',
-					defaults: '2026-01-30',
-					person_profiles: 'identified_only'
+			const bootClient = () => {
+				initBotId({
+					protect: [{ path: '/api/build-log/subscribe', method: 'POST' }]
 				});
+
+				const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
+
+				if (posthogKey) {
+					posthog.init(posthogKey, {
+						api_host: 'https://kpg.spikonado.com',
+						ui_host: 'https://eu.posthog.com',
+						defaults: '2026-01-30',
+						person_profiles: 'identified_only'
+					});
+				}
+			};
+
+			if (typeof requestIdleCallback === 'function') {
+				requestIdleCallback(bootClient, { timeout: 2000 });
+			} else {
+				setTimeout(bootClient, 1);
 			}
 		</script>
 	</head>
@@ -59,7 +139,7 @@ const {
 		>
 			Skip to content
 		</a>
-		<Navbar client:load />
+		<Navbar client:idle />
 		<slot />
 	</body>
 </html>
