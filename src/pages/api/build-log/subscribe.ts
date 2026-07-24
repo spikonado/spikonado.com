@@ -13,7 +13,7 @@ export const prerender = false;
 
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
-/** Practical shape check — rejects values browsers' type=email would also reject. */
+/** Practical shape check - rejects values browsers' type=email would also reject. */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function isValidEmail(email: string): boolean {

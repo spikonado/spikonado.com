@@ -17,7 +17,7 @@
 	const isLocked = $derived(status === 'submitting' || status === 'success');
 
 	const fieldClass = cn(
-		'w-full min-w-0 flex-1 border border-border bg-background px-3 py-2.5',
+		'w-full min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2.5',
 		'font-sans text-base text-foreground outline-none transition-colors',
 		'placeholder:text-muted-foreground',
 		'focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40',
@@ -26,8 +26,8 @@
 	);
 
 	const submitClass = cn(
-		'shrink-0 border border-foreground bg-foreground px-4 py-2.5',
-		'font-sans text-base text-background transition-opacity',
+		'shrink-0 rounded-full border border-foreground bg-foreground px-5 py-2.5',
+		'font-sans text-base font-medium text-background transition-opacity',
 		'hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
 		'disabled:cursor-not-allowed disabled:opacity-50',
 		'motion-reduce:transition-none'
@@ -139,10 +139,9 @@
 	}
 </script>
 
-<div class="flex w-full flex-col items-center gap-4 text-center md:items-start md:text-left">
-	<p class={marketingSectionBodyClass}>
-		Subscribe to our build log to get notified when we start launching our first products.
-		Unsubscribe anytime.
+<div class="flex w-full flex-col gap-4">
+	<p class={cn(marketingSectionBodyClass, 'text-base md:text-lg')}>
+		Subscribe for launch notes and progress as we build the platform. Unsubscribe anytime.
 	</p>
 
 	<form class="relative flex w-full max-w-md flex-col gap-3" aria-busy={isBusy} onsubmit={onSubmit}>
@@ -196,7 +195,7 @@
 			class={cn(
 				'min-h-5 font-sans text-sm leading-snug',
 				status === 'success' && 'text-foreground',
-				(status === 'invalid' || status === 'error') && 'text-blue-600',
+				(status === 'invalid' || status === 'error') && 'text-accent-strong',
 				(status === 'idle' || status === 'submitting') && 'text-muted-foreground'
 			)}
 			role="status"

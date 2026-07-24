@@ -1,151 +1,232 @@
 ---
 import Footer from '@/components/footer.svelte';
 import BuildLogForm from '@/components/build-log-form.svelte';
+import CopyCommand from '@/components/copy-command.svelte';
+import GetStarted from '@/components/get-started.svelte';
+import SprocketScreenshot from '@/components/sprocket-screenshot.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
-import githubLogo from '@/assets/github_logo.svg';
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_URL } from '@/lib/seo';
 import {
-	marketingAccentEmphClass,
-	marketingAccentTextClass,
+	marketingButtonPrimaryClass,
+	marketingCopyCommandSurfaceClass,
 	marketingProductHeadingClass,
 	marketingSectionBodyClass,
-	marketingSectionBodyStackClass,
 	marketingSectionHeadingClass,
-	marketingSectionOverlayClass,
-	marketingSectionShellClass
+	marketingTextLinkClass
 } from '@/styles/marketing';
 import { cn } from '@/utils';
 
-const showcaseSections = [
+const solvedItems = [
 	{
-		id: 'sprocket',
-		title: 'Sprocket',
-		githubHref: 'https://github.com/spikonado/sprocket',
-		description: [
-			[{ text: 'Agentic platform for streamlining robotics development.' }],
-			[
-				{ text: 'Autonomously', accent: true },
-				{ text: ' train robots in simulations and ship across the entire robotics stack ' },
-				{ text: 'much faster than ever before', accent: true },
-				{ text: '.' }
-			]
-		]
+		title: 'Hardware and software, same platform',
+		body: 'Start with agents that ship code today. Grow into robots, electronics, and full systems tomorrow.'
 	},
 	{
-		id: 'vario',
-		title: 'Vario',
-		description: [
-			[
-				{ text: 'Modular', accent: true },
-				{ text: ' robotics hardware for ' },
-				{ text: 'every use case', accent: true },
-				{ text: '.' }
-			]
-		]
+		title: 'Built for anyone who invents',
+		body: 'Apps, robots, devices, and the systems that glue them together should all be in reach, not locked behind expert-only tooling.'
+	},
+	{
+		title: 'Built for agents and humans',
+		body: 'A stack designed so AI and people can ship together, without fighting the tools along the way.'
 	}
 ] as const;
 
-const baseSectionClass = cn(marketingSectionShellClass, 'flex min-h-svh pt-14');
+const softwareLd = {
+	'@type': 'SoftwareApplication',
+	name: 'Sprocket',
+	applicationCategory: 'DeveloperApplication',
+	operatingSystem: 'Windows, macOS, Linux',
+	url: `${SITE_URL}/sprocket`,
+	description:
+		'Sprocket writes high-quality code and retrieves best-in-class context from the web and open-source projects.',
+	offers: {
+		'@type': 'Offer',
+		price: '0',
+		priceCurrency: 'USD'
+	},
+	publisher: { '@id': `${SITE_URL}/#organization` }
+};
 ---
 
-<BaseLayout>
-	<div class="scroller">
-		<main>
-			<section class={cn(baseSectionClass, 'items-center justify-center')}>
-				<div class="mx-auto max-w-4xl px-6 text-center">
-					<h1 class={marketingSectionHeadingClass}>
-						<span class="block">The <span class={marketingAccentTextClass}>new way</span></span>
-						<span class="block">of building</span>
-						<span class="block sm:whitespace-nowrap"
-							><span class={marketingAccentTextClass}>robots</span> &amp;{' '}
-							<span class={marketingAccentTextClass}>robot apps</span></span
-						>
+<BaseLayout title={DEFAULT_TITLE} description={DEFAULT_DESCRIPTION} jsonLd={softwareLd}>
+	<main id="main">
+		<!-- Hero -->
+		<section class="atmosphere relative overflow-hidden pt-14">
+			<div class="hero-mesh pointer-events-none absolute inset-0" aria-hidden="true"></div>
+			<div
+				class="hero-orb pointer-events-none absolute top-[28%] right-[-8%] h-[28rem] w-[28rem] rounded-full md:top-[18%] md:right-[2%] md:h-[34rem] md:w-[34rem]"
+				aria-hidden="true"
+			>
+			</div>
+
+			<div
+				class="relative mx-auto grid max-w-6xl items-start gap-10 px-4 pt-16 pb-16 sm:px-6 sm:pt-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] lg:gap-14 lg:px-8 lg:pt-24 lg:pb-20"
+			>
+				<div>
+					<h1
+						class="max-w-xl font-brand text-3xl leading-[1.1] font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl"
+					>
+						A way for anyone to build{' '}
+						<span class="mark-accent">any kind of technology</span>
 					</h1>
-					<p class={cn(marketingSectionBodyStackClass, marketingSectionBodyClass, 'mx-auto')}>
-						A platform that simplifies every step of robotics development.
+					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
+						<span class="mark-verb">Our goal is simple</span>: give everyone the{' '}
+						<span class="mark-verb">tools to invent apps, robots, devices</span>, and the{' '}
+						<span class="mark-verb">systems</span> that glue them together.
 					</p>
 				</div>
-			</section>
 
-			{
-				showcaseSections.map((section) => (
-					<section
-						id={section.id}
-						class={cn(baseSectionClass, 'items-center justify-start border-t border-border/10')}
+				<div class="flex flex-col items-stretch gap-5 lg:items-end">
+					<GetStarted client:idle />
+					<div
+						class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground lg:justify-end"
 					>
-						<div class={marketingSectionOverlayClass} />
-						<div class="relative max-w-5xl px-12 md:px-24 lg:px-32">
-							<div class="flex items-center gap-6 md:gap-8 lg:gap-10">
-								<h2 class={marketingProductHeadingClass}>{section.title}</h2>
-								{'githubHref' in section && section.githubHref && (
-									<a
-										href={section.githubHref}
-										target="_blank"
-										rel="noopener noreferrer"
-										class="shrink-0 transition-transform duration-150 hover:scale-105"
-										aria-label={`${section.title} on GitHub`}
-									>
-										<img
-											src={githubLogo.src}
-											alt=""
-											class="h-12 w-12 md:h-14 md:w-14 lg:h-16 lg:w-16"
-										/>
-									</a>
-								)}
-							</div>
-							<div class={marketingSectionBodyStackClass}>
-								{section.description.map((paragraph) => (
-									<p class={marketingSectionBodyClass}>
-										{paragraph.map((part) =>
-											'accent' in part && part.accent ? (
-												<span class={marketingAccentEmphClass}>{part.text}</span>
-											) : (
-												part.text
-											)
-										)}
-									</p>
-								))}
-							</div>
-						</div>
-					</section>
-				))
-			}
-
-			<section
-				id="build-log"
-				class={cn(baseSectionClass, 'items-center justify-start border-t border-border/10')}
-			>
-				<div class={marketingSectionOverlayClass}></div>
-				<div class="relative max-w-5xl px-12 md:px-24 lg:px-32">
-					<h2 class={marketingSectionHeadingClass}>
-						<span class="block">Stay in the <span class={marketingAccentTextClass}>loop</span></span
-						>
-					</h2>
-					<div class={marketingSectionBodyStackClass}>
-						<BuildLogForm client:visible />
+						<a href="https://github.com/spikonado" class={marketingTextLinkClass}> Open source </a>
+						<a href="/#build-log" class={marketingTextLinkClass}> Read the build log </a>
+						<a href="/#platform" class={marketingTextLinkClass}> See the platform </a>
 					</div>
 				</div>
-			</section>
-		</main>
+			</div>
+		</section>
 
-		<Footer />
-	</div>
+		<!-- Sprocket -->
+		<section id="sprocket" class="border-t border-border/50 bg-background">
+			<div
+				class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28"
+			>
+				<div>
+					<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
+						Product
+					</p>
+					<h2 class={cn(marketingProductHeadingClass, 'mt-3')}>Sprocket</h2>
+					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
+						The world's best platform for developing{' '}
+						<span class="mark-verb">hardware</span> and{' '}
+						<span class="mark-verb">software</span>, starting as a lightweight coding agent.
+					</p>
+					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
+						Sprocket writes <span class="mark-verb">high-quality code</span>, and retrieves{' '}
+						<span class="mark-verb">best-in-class context</span> from the{' '}
+						<span class="mark-verb">web and open-source projects</span>.
+					</p>
+					<div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+						<CopyCommand
+							client:visible
+							class={cn('w-full min-w-0 sm:max-w-md', marketingCopyCommandSurfaceClass)}
+						/>
+						<a href="/sprocket" class={cn(marketingButtonPrimaryClass, 'shrink-0')}>
+							Learn more →
+						</a>
+					</div>
+				</div>
+
+				<div class="relative">
+					<div
+						class="pointer-events-none absolute -inset-4 rounded-[2rem] bg-linear-to-br from-accent/15 via-transparent to-accent/5 blur-2xl"
+						aria-hidden="true"
+					>
+					</div>
+					<figure
+						class="relative overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]"
+					>
+						<SprocketScreenshot client:visible />
+					</figure>
+				</div>
+			</div>
+		</section>
+
+		<!-- Platform / Solved -->
+		<section id="platform" class="border-t border-border/50 bg-surface">
+			<div
+				class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-8 lg:py-28"
+			>
+				<div>
+					<h2 class={marketingSectionHeadingClass}>Solved.</h2>
+					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
+						We take on the hard parts of building technology so you, and your agents, can move from
+						idea to working system{' '}
+						<span class="mark-verb">without reinventing the stack</span>.
+					</p>
+					<p class="mt-8 font-brand text-xl font-semibold text-foreground">
+						Spikonado is better than stitching it together yourself.
+					</p>
+					<a href="/#sprocket" class={cn(marketingButtonPrimaryClass, 'mt-8')}>
+						Here's how to start →
+					</a>
+				</div>
+
+				<ul class="divide-y divide-border/60 border-y border-border/60">
+					{
+						solvedItems.map((item) => (
+							<li class="flex gap-4 py-7 md:py-8">
+								<span
+									class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-strong md:h-8 md:w-8"
+									aria-hidden="true"
+								>
+									<svg viewBox="0 0 16 16" class="h-4 w-4 md:h-[1.1rem] md:w-[1.1rem]" fill="none">
+										<path
+											d="M3.5 8.5 6.5 11.5 12.5 4.5"
+											stroke="currentColor"
+											stroke-width="1.8"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+										/>
+									</svg>
+								</span>
+								<div>
+									<p class="font-brand text-lg font-semibold text-foreground md:text-xl">
+										{item.title}
+									</p>
+									<p class="mt-2 text-base leading-relaxed text-muted-foreground md:text-lg">
+										{item.body}
+									</p>
+								</div>
+							</li>
+						))
+					}
+				</ul>
+			</div>
+		</section>
+
+		<!-- Vario -->
+		<section id="vario" class="border-t border-border/50 bg-background">
+			<div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+				<div class="max-w-3xl">
+					<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
+						Coming Soon
+					</p>
+					<h2 class={cn(marketingProductHeadingClass, 'mt-3')}>Vario</h2>
+					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
+						<span class="mark-verb">Modular</span> robotics hardware for{' '}
+						<span class="mark-verb">every use case</span>.
+					</p>
+					<a href="/#build-log" class={cn(marketingTextLinkClass, 'mt-8 inline-flex')}>
+						Get notified when Vario ships →
+					</a>
+				</div>
+			</div>
+		</section>
+
+		<!-- Build log -->
+		<section id="build-log" class="border-t border-border/50 bg-surface">
+			<div
+				class="mx-auto grid max-w-6xl items-start gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28"
+			>
+				<div>
+					<h2 class={marketingSectionHeadingClass}>
+						Stay in the <span class="mark-accent">loop</span>
+					</h2>
+					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
+						Product launches, architecture notes, and what we're building next, written for people
+						who actually ship.
+					</p>
+				</div>
+				<div>
+					<BuildLogForm client:visible />
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<Footer />
 </BaseLayout>
-
-<style is:global>
-	html {
-		scroll-snap-type: y mandatory;
-	}
-
-	.scroller main > section,
-	.scroller > footer {
-		scroll-snap-align: start;
-		scroll-snap-stop: always;
-	}
-
-	@media (pointer: coarse) {
-		.scroller main > section,
-		.scroller > footer {
-			scroll-snap-stop: normal;
-		}
-	}
-</style>

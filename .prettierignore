@@ -5,4 +5,4 @@ flake*
 bun.lock
 
 # Miscellaneous
-/static/
+/public/

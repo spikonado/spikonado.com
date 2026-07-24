@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@/layouts/base-layout.astro';
+import { titleWithBrand } from '@/lib/seo';
 
 const sections = [
 	{
@@ -36,14 +37,18 @@ const sections = [
 ---
 
 <BaseLayout
-	title="Privacy - Spikonado"
-	description="How Spikonado collects and uses information provided through this website."
+	title={titleWithBrand('Privacy Policy')}
+	description="Learn how Spikonado collects, uses, and protects information from website visitors and build log subscribers."
 >
-	<main class="min-h-svh bg-background px-6 pt-28 pb-20 sm:px-8 sm:pt-32">
+	<main id="main" class="atmosphere min-h-svh px-6 pt-28 pb-20 sm:px-8 sm:pt-32">
 		<article class="mx-auto max-w-3xl">
-			<p class="font-sans text-sm font-medium tracking-wide text-blue-600 uppercase">Privacy</p>
-			<h1 class="mt-3 font-sans text-5xl leading-tight tracking-tight text-foreground sm:text-6xl">
-				Privacy notice
+			<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
+				Privacy
+			</p>
+			<h1
+				class="mt-3 font-brand text-5xl leading-tight font-semibold tracking-tight text-foreground sm:text-6xl"
+			>
+				Privacy Policy
 			</h1>
 			<p class="mt-5 font-sans text-sm text-muted-foreground">Last updated July 12, 2026</p>
 
@@ -51,7 +56,7 @@ const sections = [
 				{
 					sections.map((section) => (
 						<section>
-							<h2 class="font-brand text-2xl text-foreground">{section.title}</h2>
+							<h2 class="font-brand text-2xl font-semibold text-foreground">{section.title}</h2>
 							{section.body.map((paragraph) => (
 								<p class="mt-3 font-sans text-lg leading-relaxed text-muted-foreground">
 									{paragraph}
@@ -64,7 +69,7 @@ const sections = [
 
 			<a
 				href="/"
-				class="mt-14 inline-flex font-sans text-base font-medium text-blue-600 transition-colors hover:text-blue-700"
+				class="mt-14 inline-flex font-sans text-base font-medium text-accent-strong underline decoration-accent-strong/30 underline-offset-4 transition-colors hover:decoration-accent-strong"
 			>
 				Return home
 			</a>
