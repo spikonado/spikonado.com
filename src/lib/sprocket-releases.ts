@@ -22,13 +22,16 @@ export interface SprocketRelease {
 	assets: SprocketDesktopAsset[];
 }
 
-export interface DetectedDesktopTarget {
-	platform: SprocketDesktopPlatform | null;
-	osLabel: string;
-}
-
 /** Brand mark family for download CTAs. */
 export type SprocketOsFamily = 'mac' | 'windows' | 'linux';
+
+export interface DetectedDesktopTarget {
+	/** Specific release asset when architecture is known; null if the visitor must choose. */
+	platform: SprocketDesktopPlatform | null;
+	/** Brand family for icons/labels even when architecture is unknown. */
+	osFamily: SprocketOsFamily | null;
+	osLabel: string;
+}
 
 export function osFamilyForPlatform(
 	platform: SprocketDesktopPlatform | null
@@ -158,8 +161,9 @@ type NavigatorLike = {
 
 /**
  * Best-effort desktop target from the browser environment.
- * Mobile OSes (Android/iOS) return null — they are not desktop download targets.
- * Defaults modern Macs to Apple Silicon and Linux to x64 when arch is unknown.
+ * Mobile OSes (Android/iOS) are not desktop download targets.
+ * macOS architecture is only selected from Client Hints — Safari still reports
+ * "Intel Mac OS X" on Apple Silicon, so guessing from the UA is unsafe.
  */
 export function detectDesktopTarget(
 	nav: NavigatorLike = typeof navigator === 'undefined'
@@ -179,25 +183,28 @@ export function detectDesktopTarget(
 		/iphone|ipad|ipod/i.test(ua) ||
 		(/mac/i.test(platform) && (nav.maxTouchPoints ?? 0) > 1);
 	if (isMobile) {
-		return { platform: null, osLabel: 'your device' };
+		return { platform: null, osFamily: null, osLabel: 'your device' };
 	}
 
 	const isWindows =
 		uaDataPlatform.includes('windows') || /win/i.test(platform) || /windows/i.test(ua);
 	if (isWindows) {
-		return { platform: 'win-x64', osLabel: 'Windows' };
+		return { platform: 'win-x64', osFamily: 'windows', osLabel: 'Windows' };
 	}
 
 	const isMac =
 		uaDataPlatform.includes('mac') || /mac/i.test(platform) || /macintosh|mac os x/i.test(ua);
 	if (isMac) {
-		// Safari still reports "Intel Mac OS X" on Apple Silicon, so only trust
-		// Client Hints architecture — default to arm64 for modern Macs.
 		const isIntel = architecture === 'x86' || architecture === 'x86_64';
+		const isArm = architecture === 'arm' || architecture === 'arm64';
 		if (isIntel) {
-			return { platform: 'mac-x64', osLabel: 'macOS' };
+			return { platform: 'mac-x64', osFamily: 'mac', osLabel: 'macOS' };
 		}
-		return { platform: 'mac-arm64', osLabel: 'macOS' };
+		if (isArm) {
+			return { platform: 'mac-arm64', osFamily: 'mac', osLabel: 'macOS' };
+		}
+		// Architecture unknown: show macOS CTA but do not auto-pick a DMG.
+		return { platform: null, osFamily: 'mac', osLabel: 'macOS' };
 	}
 
 	const isLinux = uaDataPlatform.includes('linux') || /linux/i.test(platform) || /linux/i.test(ua);
@@ -208,12 +215,12 @@ export function detectDesktopTarget(
 			/\baarch64\b/i.test(ua) ||
 			/\barm64\b/i.test(ua);
 		if (isArm) {
-			return { platform: 'linux-arm64', osLabel: 'Linux' };
+			return { platform: 'linux-arm64', osFamily: 'linux', osLabel: 'Linux' };
 		}
-		return { platform: 'linux-x86_64', osLabel: 'Linux' };
+		return { platform: 'linux-x86_64', osFamily: 'linux', osLabel: 'Linux' };
 	}
 
-	return { platform: null, osLabel: 'your OS' };
+	return { platform: null, osFamily: null, osLabel: 'your OS' };
 }
 
 export async function detectDesktopTargetAsync(

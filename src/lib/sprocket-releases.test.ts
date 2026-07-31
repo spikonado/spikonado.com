@@ -80,16 +80,16 @@ describe('detectDesktopTarget', () => {
 				userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
 				platform: 'Win32'
 			})
-		).toEqual({ platform: 'win-x64', osLabel: 'Windows' });
+		).toEqual({ platform: 'win-x64', osFamily: 'windows', osLabel: 'Windows' });
 	});
 
-	test('defaults Mac to Apple Silicon', () => {
+	test('does not guess Mac architecture without Client Hints', () => {
 		expect(
 			detectDesktopTarget({
 				userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
 				platform: 'MacIntel'
 			})
-		).toEqual({ platform: 'mac-arm64', osLabel: 'macOS' });
+		).toEqual({ platform: null, osFamily: 'mac', osLabel: 'macOS' });
 	});
 
 	test('uses architecture hint for Intel Mac', () => {
@@ -101,7 +101,19 @@ describe('detectDesktopTarget', () => {
 				},
 				'x86'
 			)
-		).toEqual({ platform: 'mac-x64', osLabel: 'macOS' });
+		).toEqual({ platform: 'mac-x64', osFamily: 'mac', osLabel: 'macOS' });
+	});
+
+	test('uses architecture hint for Apple Silicon Mac', () => {
+		expect(
+			detectDesktopTarget(
+				{
+					userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+					platform: 'MacIntel'
+				},
+				'arm'
+			)
+		).toEqual({ platform: 'mac-arm64', osFamily: 'mac', osLabel: 'macOS' });
 	});
 
 	test('detects Linux x64 by default', () => {
@@ -110,7 +122,7 @@ describe('detectDesktopTarget', () => {
 				userAgent: 'Mozilla/5.0 (X11; Linux x86_64)',
 				platform: 'Linux x86_64'
 			})
-		).toEqual({ platform: 'linux-x86_64', osLabel: 'Linux' });
+		).toEqual({ platform: 'linux-x86_64', osFamily: 'linux', osLabel: 'Linux' });
 	});
 
 	test('skips iOS devices', () => {
@@ -119,7 +131,7 @@ describe('detectDesktopTarget', () => {
 				userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
 				platform: 'iPhone'
 			})
-		).toEqual({ platform: null, osLabel: 'your device' });
+		).toEqual({ platform: null, osFamily: null, osLabel: 'your device' });
 	});
 
 	test('skips Android even when platform reports Linux', () => {
@@ -129,7 +141,7 @@ describe('detectDesktopTarget', () => {
 					'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
 				platform: 'Linux armv8l'
 			})
-		).toEqual({ platform: null, osLabel: 'your device' });
+		).toEqual({ platform: null, osFamily: null, osLabel: 'your device' });
 	});
 
 	test('skips Android Client Hints platform', () => {
@@ -139,7 +151,7 @@ describe('detectDesktopTarget', () => {
 				platform: 'Linux armv8l',
 				userAgentData: { platform: 'Android' }
 			})
-		).toEqual({ platform: null, osLabel: 'your device' });
+		).toEqual({ platform: null, osFamily: null, osLabel: 'your device' });
 	});
 });
 

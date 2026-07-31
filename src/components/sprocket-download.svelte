@@ -1,7 +1,6 @@
 <script lang="ts">
 	import {
 		detectDesktopTargetAsync,
-		osFamilyForPlatform,
 		otherDesktopAssets,
 		pickDesktopAsset,
 		SPROCKET_RELEASES_LATEST_URL,
@@ -36,7 +35,7 @@
 				return;
 			}
 			osLabel = target.osLabel;
-			osFamily = osFamilyForPlatform(target.platform);
+			osFamily = target.osFamily;
 			primaryAsset = pickDesktopAsset(assets, target.platform);
 			alternateAssets = otherDesktopAssets(assets, target.platform);
 			detected = true;
