@@ -116,13 +116,55 @@ describe('detectDesktopTarget', () => {
 		).toEqual({ platform: 'mac-arm64', osFamily: 'mac', osLabel: 'macOS' });
 	});
 
-	test('detects Linux x64 by default', () => {
+	test('detects Linux x64 when the UA/platform identify x86_64', () => {
 		expect(
 			detectDesktopTarget({
 				userAgent: 'Mozilla/5.0 (X11; Linux x86_64)',
 				platform: 'Linux x86_64'
 			})
 		).toEqual({ platform: 'linux-x86_64', osFamily: 'linux', osLabel: 'Linux' });
+	});
+
+	test('detects Linux ARM64 from UA or Client Hints', () => {
+		expect(
+			detectDesktopTarget({
+				userAgent: 'Mozilla/5.0 (X11; Ubuntu; Linux aarch64)',
+				platform: 'Linux aarch64'
+			})
+		).toEqual({ platform: 'linux-arm64', osFamily: 'linux', osLabel: 'Linux' });
+		expect(
+			detectDesktopTarget(
+				{
+					userAgent: 'Mozilla/5.0 (X11; Linux)',
+					platform: 'Linux'
+				},
+				'arm64'
+			)
+		).toEqual({ platform: 'linux-arm64', osFamily: 'linux', osLabel: 'Linux' });
+	});
+
+	test('does not auto-pick an AppImage for Linux ARMv7 or unknown arch', () => {
+		expect(
+			detectDesktopTarget({
+				userAgent: 'Mozilla/5.0 (X11; Linux armv7l)',
+				platform: 'Linux armv7l'
+			})
+		).toEqual({ platform: null, osFamily: 'linux', osLabel: 'Linux' });
+		expect(
+			detectDesktopTarget(
+				{
+					userAgent: 'Mozilla/5.0 (X11; Linux armv7l)',
+					platform: 'Linux armv7l'
+				},
+				'arm'
+			)
+		).toEqual({ platform: null, osFamily: 'linux', osLabel: 'Linux' });
+		expect(
+			detectDesktopTarget({
+				userAgent: 'Mozilla/5.0 (X11; Linux)',
+				platform: 'Linux'
+			})
+		).toEqual({ platform: null, osFamily: 'linux', osLabel: 'Linux' });
 	});
 
 	test('skips iOS devices', () => {

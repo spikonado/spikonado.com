@@ -209,15 +209,24 @@ export function detectDesktopTarget(
 
 	const isLinux = uaDataPlatform.includes('linux') || /linux/i.test(platform) || /linux/i.test(ua);
 	if (isLinux) {
-		const isArm =
-			architecture === 'arm' ||
-			architecture === 'arm64' ||
-			/\baarch64\b/i.test(ua) ||
-			/\barm64\b/i.test(ua);
-		if (isArm) {
+		// Only auto-pick when the arch is positively known. ARMv7 / unknown must not
+		// fall through to the x86_64 AppImage (unusable), or be treated as ARM64.
+		const isArm64 = architecture === 'arm64' || /\baarch64\b/i.test(ua) || /\barm64\b/i.test(ua);
+		if (isArm64) {
 			return { platform: 'linux-arm64', osFamily: 'linux', osLabel: 'Linux' };
 		}
-		return { platform: 'linux-x86_64', osFamily: 'linux', osLabel: 'Linux' };
+
+		const isX64 =
+			architecture === 'x86_64' ||
+			/\bx86_64\b/i.test(ua) ||
+			/\bamd64\b/i.test(ua) ||
+			/\bx86_64\b/i.test(platform) ||
+			/\bamd64\b/i.test(platform);
+		if (isX64) {
+			return { platform: 'linux-x86_64', osFamily: 'linux', osLabel: 'Linux' };
+		}
+
+		return { platform: null, osFamily: 'linux', osLabel: 'Linux' };
 	}
 
 	return { platform: null, osFamily: null, osLabel: 'your OS' };
