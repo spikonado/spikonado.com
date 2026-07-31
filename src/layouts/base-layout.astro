@@ -110,22 +110,21 @@ const jsonLdDocument = {
 
 		<script>
 			import { initBotId } from 'botid/client/core';
-			import { initPostHogAnalytics, installAnalyticsCapture } from '@/lib/analytics/bootstrap';
+			import { initPostHogAnalytics } from '@/lib/analytics/bootstrap';
 
-			// Capture server-rendered CTA clicks before idle PostHog init; queue until ready.
-			installAnalyticsCapture();
+			// Init PostHog eagerly so same-tab CTA navigations can beacon-flush captures.
+			initPostHogAnalytics();
 
-			const bootClient = () => {
+			const bootBotId = () => {
 				initBotId({
 					protect: [{ path: '/api/build-log/subscribe', method: 'POST' }]
 				});
-				initPostHogAnalytics();
 			};
 
 			if (typeof requestIdleCallback === 'function') {
-				requestIdleCallback(bootClient, { timeout: 2000 });
+				requestIdleCallback(bootBotId, { timeout: 2000 });
 			} else {
-				setTimeout(bootClient, 1);
+				setTimeout(bootBotId, 1);
 			}
 		</script>
 	</head>

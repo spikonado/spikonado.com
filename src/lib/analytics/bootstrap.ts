@@ -5,14 +5,8 @@ const PH_CAPTURE_ATTR = 'data-ph-capture';
 const PH_SECTION_ATTR = 'data-ph-section';
 const PH_PROP_PREFIX = 'data-ph-';
 
-type PendingCapture = {
-	event: string;
-	properties?: AnalyticsProperties;
-};
-
 let captureInstalled = false;
 let posthogInitialized = false;
-const pendingCaptures: PendingCapture[] = [];
 
 function propsFromElement(element: HTMLElement): AnalyticsProperties {
 	const props: AnalyticsProperties = {};
@@ -30,28 +24,30 @@ function propsFromElement(element: HTMLElement): AnalyticsProperties {
 	return props;
 }
 
-/** Capture now, or queue until `initPostHogAnalytics` finishes. */
-export function captureAnalyticsEvent(event: string, properties?: AnalyticsProperties): void {
+function isSameTabNavigationHref(href: string | null): boolean {
+	if (!href || href.startsWith('#') || href.startsWith('javascript:')) {
+		return false;
+	}
+	return true;
+}
+
+/** Capture after ensuring the SDK is initialized (survives same-tab navigation via beacon). */
+export function captureAnalyticsEvent(
+	event: string,
+	properties?: AnalyticsProperties,
+	options?: { sendInstantly?: boolean }
+): void {
 	if (!import.meta.env.PUBLIC_POSTHOG_KEY?.trim()) {
 		return;
 	}
 
-	if (posthogInitialized) {
-		posthog.capture(event, properties);
-		return;
-	}
+	initPostHogAnalytics();
 
-	pendingCaptures.push({ event, properties });
-}
-
-function flushPendingCaptures(): void {
-	while (pendingCaptures.length > 0) {
-		const next = pendingCaptures.shift();
-		if (!next) {
-			break;
-		}
-		posthog.capture(next.event, next.properties);
-	}
+	posthog.capture(
+		event,
+		properties,
+		options?.sendInstantly ? { send_instantly: true, transport: 'sendBeacon' } : undefined
+	);
 }
 
 function wireDelegatedClicks(): void {
@@ -79,7 +75,16 @@ function wireDelegatedClicks(): void {
 				props.href = href;
 			}
 
-			captureAnalyticsEvent(eventName, props);
+			// Plain primary clicks on same-tab links unload the document; beacon immediately.
+			const modifiedClick =
+				event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0;
+			const navigatesAway =
+				!modifiedClick &&
+				el.tagName === 'A' &&
+				isSameTabNavigationHref(href) &&
+				el.getAttribute('target') !== '_blank';
+
+			captureAnalyticsEvent(eventName, props, { sendInstantly: navigatesAway });
 		},
 		{ capture: true }
 	);
@@ -123,10 +128,7 @@ function wireSectionViews(): void {
 	}
 }
 
-/**
- * Attach conversion click capture immediately (before idle PostHog init).
- * Early clicks are queued until `initPostHogAnalytics` runs.
- */
+/** Attach conversion click capture (safe to call before or after init). */
 export function installAnalyticsCapture(): void {
 	if (captureInstalled || typeof document === 'undefined') {
 		return;
@@ -139,11 +141,17 @@ export function installAnalyticsCapture(): void {
 	wireDelegatedClicks();
 }
 
-/** Initialize PostHog, flush any queued early conversions, then wire section views. */
+/**
+ * Initialize PostHog immediately so conversion captures can use sendBeacon
+ * before a same-tab navigation unloads the document.
+ */
 export function initPostHogAnalytics(): void {
+	if (posthogInitialized) {
+		return;
+	}
+
 	const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY?.trim();
 	if (!posthogKey) {
-		pendingCaptures.length = 0;
 		return;
 	}
 
@@ -167,6 +175,5 @@ export function initPostHogAnalytics(): void {
 	});
 
 	posthogInitialized = true;
-	flushPendingCaptures();
 	wireSectionViews();
 }
