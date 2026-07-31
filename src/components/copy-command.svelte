@@ -1,12 +1,19 @@
 <script lang="ts">
+	import { captureEvent, captureExceptionSafe } from '@/lib/analytics/client';
+	import { INSTALL_COMMAND_COPIED_EVENT, type AnalyticsLocation } from '@/lib/analytics/events';
 	import { cn } from '@/utils';
 
 	interface Props {
 		command?: string;
 		class?: string;
+		location?: AnalyticsLocation;
 	}
 
-	let { command = 'npx @spikonado/sprocket', class: className = '' }: Props = $props();
+	let {
+		command = 'npx @spikonado/sprocket',
+		class: className = '',
+		location = 'home_hero'
+	}: Props = $props();
 
 	let copied = $state(false);
 	let copyTimer: ReturnType<typeof setTimeout> | undefined;
@@ -15,14 +22,23 @@
 		try {
 			await navigator.clipboard.writeText(command);
 			copied = true;
+			captureEvent(INSTALL_COMMAND_COPIED_EVENT, {
+				command,
+				location,
+				path: typeof window !== 'undefined' ? window.location.pathname : undefined
+			});
 			if (copyTimer) {
 				clearTimeout(copyTimer);
 			}
 			copyTimer = setTimeout(() => {
 				copied = false;
 			}, 1800);
-		} catch {
+		} catch (error) {
 			copied = false;
+			captureExceptionSafe(error, {
+				context: 'install_command_copy',
+				location
+			});
 		}
 	}
 </script>

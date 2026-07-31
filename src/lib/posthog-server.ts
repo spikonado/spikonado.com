@@ -33,3 +33,20 @@ export async function flushPostHogServer(): Promise<void> {
 		// Analytics must not break the subscribe response.
 	}
 }
+
+export function captureServerException(
+	error: unknown,
+	distinctId: string,
+	properties?: Record<string, string | number | boolean | null | undefined>
+): void {
+	const posthog = getPostHogServer();
+	if (!posthog) {
+		return;
+	}
+
+	try {
+		posthog.captureException(error, distinctId, properties);
+	} catch {
+		// Analytics must not break the request.
+	}
+}

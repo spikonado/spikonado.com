@@ -2,6 +2,7 @@
 import CopyCommand from '@/components/copy-command.svelte';
 import SprocketDownload from '@/components/sprocket-download.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
+import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
 import {
 	fetchLatestSprocketRelease,
 	SPROCKET_GITHUB_URL,
@@ -57,13 +58,17 @@ const softwareLd = {
 			</p>
 			<p class={cn(marketingSectionBodyClass, 'mt-4')}>More of this page is coming soon.</p>
 
-			<section class="mt-10" aria-labelledby="sprocket-install-heading">
+			<section
+				class="mt-10"
+				aria-labelledby="sprocket-install-heading"
+				data-ph-section="sprocket_install"
+			>
 				<h2 id="sprocket-install-heading" class="font-brand text-xl font-semibold text-foreground">
 					Install
 				</h2>
 
 				<div class="mt-6 max-w-md space-y-5">
-					<SprocketDownload client:idle release={release} />
+					<SprocketDownload client:idle release={release} location="sprocket_page" />
 
 					<div class="relative flex items-center gap-3" aria-hidden="true">
 						<div class="h-px flex-1 bg-border/80"></div>
@@ -74,6 +79,7 @@ const softwareLd = {
 					<CopyCommand
 						client:idle
 						command={SPROCKET_NPM_COMMAND}
+						location="sprocket_page"
 						class={cn('w-full', marketingCopyCommandSurfaceClass)}
 					/>
 				</div>
@@ -85,10 +91,22 @@ const softwareLd = {
 					class={marketingButtonPrimaryClass}
 					target="_blank"
 					rel="noopener noreferrer"
+					data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
+					data-ph-destination="github_sprocket"
+					data-ph-location="sprocket_page"
+					data-ph-cta="view_on_github"
 				>
 					View on GitHub →
 				</a>
-				<a href="/" class={marketingTextLinkClass}> Back home </a>
+				<a
+					href="/"
+					class={marketingTextLinkClass}
+					data-ph-capture={CTA_CLICKED_EVENT}
+					data-ph-cta="back_home"
+					data-ph-location="sprocket_page"
+				>
+					Back home
+				</a>
 			</div>
 		</article>
 	</main>

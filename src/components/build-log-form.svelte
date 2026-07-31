@@ -1,6 +1,15 @@
 <script lang="ts">
-	import posthog from 'posthog-js';
-	import { NEWSLETTER_FORM, NEWSLETTER_SUBSCRIBE_FAILED_EVENT } from '@/lib/build-log/analytics';
+	import {
+		captureEvent,
+		captureExceptionSafe,
+		identifySubscriber,
+		posthogRequestHeaders
+	} from '@/lib/analytics/client';
+	import {
+		NEWSLETTER_FORM,
+		NEWSLETTER_SUBSCRIBE_FAILED_EVENT,
+		NEWSLETTER_SUBSCRIBE_SUBMITTED_EVENT
+	} from '@/lib/analytics/events';
 	import { marketingSectionBodyClass } from '@/styles/marketing';
 	import { cn } from '@/utils';
 
@@ -40,40 +49,13 @@
 		}
 	}
 
-	function posthogRequestHeaders(): Record<string, string> {
-		try {
-			const distinctId = posthog.get_distinct_id?.();
-			const sessionId = posthog.get_session_id?.();
-			return {
-				...(distinctId ? { 'X-POSTHOG-DISTINCT-ID': distinctId } : {}),
-				...(sessionId ? { 'X-POSTHOG-SESSION-ID': sessionId } : {})
-			};
-		} catch {
-			return {};
-		}
-	}
-
-	function identifySubscriber(subscriberEmail: string) {
-		try {
-			posthog.identify(subscriberEmail, {
-				email: subscriberEmail,
-				subscribed_to_build_log: true
-			});
-		} catch {
-			// Analytics must not break the subscribe UX.
-		}
-	}
-
 	function captureSubscribeFailure(reason: string) {
-		try {
-			posthog.capture(NEWSLETTER_SUBSCRIBE_FAILED_EVENT, {
-				form: NEWSLETTER_FORM,
-				source: 'client',
-				reason
-			});
-		} catch {
-			// Analytics must not break the subscribe UX.
-		}
+		captureEvent(NEWSLETTER_SUBSCRIBE_FAILED_EVENT, {
+			form: NEWSLETTER_FORM,
+			source: 'client',
+			reason,
+			location: 'home_build_log'
+		});
 	}
 
 	async function onSubmit(event: SubmitEvent) {
@@ -87,6 +69,11 @@
 
 		status = 'submitting';
 		statusMessage = 'Submitting…';
+		captureEvent(NEWSLETTER_SUBSCRIBE_SUBMITTED_EVENT, {
+			form: NEWSLETTER_FORM,
+			source: 'client',
+			location: 'home_build_log'
+		});
 		const controller = new AbortController();
 		const timeout = window.setTimeout(() => controller.abort(), 10_000);
 
@@ -126,11 +113,10 @@
 			statusMessage = 'Something went wrong. Please try again in a moment.';
 		} catch (error) {
 			captureSubscribeFailure(error instanceof Error ? error.name : 'network_error');
-			try {
-				posthog.captureException(error);
-			} catch {
-				// Analytics must not break the subscribe UX.
-			}
+			captureExceptionSafe(error, {
+				context: 'newsletter_subscribe',
+				form: NEWSLETTER_FORM
+			});
 			status = 'error';
 			statusMessage = 'Something went wrong. Please try again in a moment.';
 		} finally {

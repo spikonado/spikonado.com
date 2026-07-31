@@ -5,6 +5,7 @@
 	import youtube_logo from '@/assets/youtube_logo.svg';
 	import instagram_logo from '@/assets/instagram_logo.svg';
 	import facebook_logo from '@/assets/facebook_logo.svg';
+	import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
 	import { cn } from '@/utils';
 	import {
 		marketingBrandClass,
@@ -13,21 +14,41 @@
 	} from '@/styles/marketing';
 
 	const productLinks = [
-		{ label: 'Sprocket', path: '/sprocket' },
-		{ label: 'Vario', path: '/#vario' }
+		{ label: 'Sprocket', path: '/sprocket', cta: 'footer_sprocket' },
+		{ label: 'Vario', path: '/#vario', cta: 'footer_vario' }
 	] as const;
 
 	const companyLinks = [
-		{ label: 'Build log', path: '/#build-log' },
-		{ label: 'Privacy Policy', path: '/privacy' }
+		{ label: 'Build log', path: '/#build-log', cta: 'footer_build_log' },
+		{ label: 'Privacy Policy', path: '/privacy', cta: 'footer_privacy' }
 	] as const;
 
 	const socialLinks = [
-		{ label: 'GitHub', href: 'https://github.com/spikonado', src: github_logo.src },
-		{ label: 'X', href: 'https://x.com/spikonado', src: x_logo.src },
-		{ label: 'YouTube', href: 'https://youtube.com/spikonado', src: youtube_logo.src },
-		{ label: 'Instagram', href: 'https://instagram.com/spikonado', src: instagram_logo.src },
-		{ label: 'Facebook', href: 'https://facebook.com/spikonado', src: facebook_logo.src }
+		{
+			label: 'GitHub',
+			href: 'https://github.com/spikonado',
+			src: github_logo.src,
+			destination: 'github_org'
+		},
+		{ label: 'X', href: 'https://x.com/spikonado', src: x_logo.src, destination: 'x' },
+		{
+			label: 'YouTube',
+			href: 'https://youtube.com/spikonado',
+			src: youtube_logo.src,
+			destination: 'youtube'
+		},
+		{
+			label: 'Instagram',
+			href: 'https://instagram.com/spikonado',
+			src: instagram_logo.src,
+			destination: 'instagram'
+		},
+		{
+			label: 'Facebook',
+			href: 'https://facebook.com/spikonado',
+			src: facebook_logo.src,
+			destination: 'facebook'
+		}
 	] as const;
 
 	const linkListClass = 'space-y-3';
@@ -47,7 +68,13 @@
 		class="relative mx-auto grid w-full max-w-6xl grid-cols-1 gap-12 text-center md:grid-cols-[minmax(0,2fr)_minmax(10rem,1fr)_minmax(10rem,1fr)] md:gap-16 md:text-left"
 	>
 		<div class="flex flex-col items-center gap-5 md:items-start">
-			<a href="/" class="flex items-center gap-3 transition-transform duration-150 hover:scale-105">
+			<a
+				href="/"
+				class="flex items-center gap-3 transition-transform duration-150 hover:scale-105"
+				data-ph-capture={CTA_CLICKED_EVENT}
+				data-ph-cta="brand_home"
+				data-ph-location="footer"
+			>
 				<img loading="lazy" src={logo.src} alt="" class="h-9 w-9" />
 				<span class={cn(marketingBrandClass, 'text-2xl sm:text-3xl')}>Spikonado</span>
 			</a>
@@ -59,7 +86,15 @@
 			<ul class={linkListClass}>
 				{#each productLinks as link (link.label)}
 					<li>
-						<a href={link.path} class={cn(linkClass, 'font-brand')}>{link.label}</a>
+						<a
+							href={link.path}
+							class={cn(linkClass, 'font-brand')}
+							data-ph-capture={CTA_CLICKED_EVENT}
+							data-ph-cta={link.cta}
+							data-ph-location="footer"
+						>
+							{link.label}
+						</a>
 					</li>
 				{/each}
 			</ul>
@@ -70,7 +105,15 @@
 			<ul class={linkListClass}>
 				{#each companyLinks as link (link.label)}
 					<li>
-						<a href={link.path} class={linkClass}>{link.label}</a>
+						<a
+							href={link.path}
+							class={linkClass}
+							data-ph-capture={CTA_CLICKED_EVENT}
+							data-ph-cta={link.cta}
+							data-ph-location="footer"
+						>
+							{link.label}
+						</a>
 					</li>
 				{/each}
 			</ul>
@@ -89,6 +132,10 @@
 					target="_blank"
 					rel="noopener noreferrer"
 					class="transition-transform duration-150 hover:scale-105"
+					data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
+					data-ph-destination={link.destination}
+					data-ph-location="footer"
+					data-ph-cta={`social_${link.destination}`}
 				>
 					<img loading="lazy" src={link.src} alt={link.label} class="h-7 w-7" />
 				</a>
