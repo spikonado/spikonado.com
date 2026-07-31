@@ -110,7 +110,10 @@ const jsonLdDocument = {
 
 		<script>
 			import { initBotId } from 'botid/client/core';
-			import { initPostHogAnalytics } from '@/lib/analytics/bootstrap';
+			import { initPostHogAnalytics, installAnalyticsCapture } from '@/lib/analytics/bootstrap';
+
+			// Capture server-rendered CTA clicks before idle PostHog init; queue until ready.
+			installAnalyticsCapture();
 
 			const bootClient = () => {
 				initBotId({

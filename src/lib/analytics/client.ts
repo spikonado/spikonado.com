@@ -1,13 +1,11 @@
 import posthog from 'posthog-js';
+import { captureAnalyticsEvent } from '@/lib/analytics/bootstrap';
 import type { AnalyticsProperties } from '@/lib/analytics/events';
 
 /** Fire-and-forget capture that never throws into product UI. */
 export function captureEvent(event: string, properties?: AnalyticsProperties): void {
 	try {
-		if (!import.meta.env.PUBLIC_POSTHOG_KEY) {
-			return;
-		}
-		posthog.capture(event, properties);
+		captureAnalyticsEvent(event, properties);
 	} catch {
 		// Analytics must not break UX.
 	}

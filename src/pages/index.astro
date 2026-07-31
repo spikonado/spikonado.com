@@ -82,38 +82,40 @@ const softwareLd = {
 				</div>
 
 				<div class="flex flex-col items-stretch gap-5 lg:items-end">
-					<GetStarted client:idle release={sprocketRelease} />
-					<div
-						class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground lg:justify-end"
-					>
-						<a
-							href="https://github.com/spikonado"
-							class={marketingTextLinkClass}
-							data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
-							data-ph-destination="github_org"
-							data-ph-location="home_hero"
-							data-ph-cta="open_source"
+					<div class="flex w-full max-w-md flex-col gap-5">
+						<GetStarted client:idle release={sprocketRelease} />
+						<div
+							class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground"
 						>
-							Open source
-						</a>
-						<a
-							href="/#build-log"
-							class={marketingTextLinkClass}
-							data-ph-capture={CTA_CLICKED_EVENT}
-							data-ph-cta="read_build_log"
-							data-ph-location="home_hero"
-						>
-							Read the build log
-						</a>
-						<a
-							href="/#platform"
-							class={marketingTextLinkClass}
-							data-ph-capture={CTA_CLICKED_EVENT}
-							data-ph-cta="see_platform"
-							data-ph-location="home_hero"
-						>
-							See the platform
-						</a>
+							<a
+								href="https://github.com/spikonado"
+								class={marketingTextLinkClass}
+								data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
+								data-ph-destination="github_org"
+								data-ph-location="home_hero"
+								data-ph-cta="open_source"
+							>
+								Open source
+							</a>
+							<a
+								href="/#build-log"
+								class={marketingTextLinkClass}
+								data-ph-capture={CTA_CLICKED_EVENT}
+								data-ph-cta="read_build_log"
+								data-ph-location="home_hero"
+							>
+								Read the build log
+							</a>
+							<a
+								href="/#platform"
+								class={marketingTextLinkClass}
+								data-ph-capture={CTA_CLICKED_EVENT}
+								data-ph-cta="see_platform"
+								data-ph-location="home_hero"
+							>
+								See the platform
+							</a>
+						</div>
 					</div>
 				</div>
 			</div>

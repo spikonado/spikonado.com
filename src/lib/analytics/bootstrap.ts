@@ -5,6 +5,15 @@ const PH_CAPTURE_ATTR = 'data-ph-capture';
 const PH_SECTION_ATTR = 'data-ph-section';
 const PH_PROP_PREFIX = 'data-ph-';
 
+type PendingCapture = {
+	event: string;
+	properties?: AnalyticsProperties;
+};
+
+let captureInstalled = false;
+let posthogInitialized = false;
+const pendingCaptures: PendingCapture[] = [];
+
 function propsFromElement(element: HTMLElement): AnalyticsProperties {
 	const props: AnalyticsProperties = {};
 
@@ -19,6 +28,30 @@ function propsFromElement(element: HTMLElement): AnalyticsProperties {
 	}
 
 	return props;
+}
+
+/** Capture now, or queue until `initPostHogAnalytics` finishes. */
+export function captureAnalyticsEvent(event: string, properties?: AnalyticsProperties): void {
+	if (!import.meta.env.PUBLIC_POSTHOG_KEY?.trim()) {
+		return;
+	}
+
+	if (posthogInitialized) {
+		posthog.capture(event, properties);
+		return;
+	}
+
+	pendingCaptures.push({ event, properties });
+}
+
+function flushPendingCaptures(): void {
+	while (pendingCaptures.length > 0) {
+		const next = pendingCaptures.shift();
+		if (!next) {
+			break;
+		}
+		posthog.capture(next.event, next.properties);
+	}
 }
 
 function wireDelegatedClicks(): void {
@@ -46,7 +79,7 @@ function wireDelegatedClicks(): void {
 				props.href = href;
 			}
 
-			posthog.capture(eventName, props);
+			captureAnalyticsEvent(eventName, props);
 		},
 		{ capture: true }
 	);
@@ -75,7 +108,7 @@ function wireSectionViews(): void {
 					continue;
 				}
 				seen.add(section);
-				posthog.capture(SECTION_VIEWED_EVENT, {
+				captureAnalyticsEvent(SECTION_VIEWED_EVENT, {
 					section,
 					path: window.location.pathname
 				});
@@ -90,12 +123,31 @@ function wireSectionViews(): void {
 	}
 }
 
-/** Initialize PostHog and wire marketing-site instrumentation. */
+/**
+ * Attach conversion click capture immediately (before idle PostHog init).
+ * Early clicks are queued until `initPostHogAnalytics` runs.
+ */
+export function installAnalyticsCapture(): void {
+	if (captureInstalled || typeof document === 'undefined') {
+		return;
+	}
+	if (!import.meta.env.PUBLIC_POSTHOG_KEY?.trim()) {
+		return;
+	}
+
+	captureInstalled = true;
+	wireDelegatedClicks();
+}
+
+/** Initialize PostHog, flush any queued early conversions, then wire section views. */
 export function initPostHogAnalytics(): void {
 	const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY?.trim();
 	if (!posthogKey) {
+		pendingCaptures.length = 0;
 		return;
 	}
+
+	installAnalyticsCapture();
 
 	posthog.init(posthogKey, {
 		api_host: 'https://kpg.spikonado.com',
@@ -114,7 +166,7 @@ export function initPostHogAnalytics(): void {
 		}
 	});
 
-	// Attach immediately so early clicks/sections still queue through the SDK.
-	wireDelegatedClicks();
+	posthogInitialized = true;
+	flushPendingCaptures();
 	wireSectionViews();
 }
