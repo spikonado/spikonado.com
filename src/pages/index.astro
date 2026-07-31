@@ -81,13 +81,17 @@ const softwareLd = {
 				</div>
 
 				<div class="flex flex-col items-stretch gap-5 lg:items-end">
-					<GetStarted client:idle release={sprocketRelease} />
-					<div
-						class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground lg:justify-end"
-					>
-						<a href="https://github.com/spikonado" class={marketingTextLinkClass}> Open source </a>
-						<a href="/#build-log" class={marketingTextLinkClass}> Read the build log </a>
-						<a href="/#platform" class={marketingTextLinkClass}> See the platform </a>
+					<div class="flex w-full max-w-md flex-col gap-5">
+						<GetStarted client:idle release={sprocketRelease} />
+						<div
+							class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground"
+						>
+							<a href="https://github.com/spikonado" class={marketingTextLinkClass}>
+								Open source
+							</a>
+							<a href="/#build-log" class={marketingTextLinkClass}> Read the build log </a>
+							<a href="/#platform" class={marketingTextLinkClass}> See the platform </a>
+						</div>
 					</div>
 				</div>
 			</div>
