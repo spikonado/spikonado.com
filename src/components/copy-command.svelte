@@ -6,7 +6,7 @@
 		class?: string;
 	}
 
-	let { command = 'npx @spikonado/sprocket --web', class: className = '' }: Props = $props();
+	let { command = 'npx @spikonado/sprocket', class: className = '' }: Props = $props();
 
 	let copied = $state(false);
 	let copyTimer: ReturnType<typeof setTimeout> | undefined;

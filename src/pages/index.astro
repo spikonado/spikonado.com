@@ -3,8 +3,10 @@ import Footer from '@/components/footer.svelte';
 import BuildLogForm from '@/components/build-log-form.svelte';
 import CopyCommand from '@/components/copy-command.svelte';
 import GetStarted from '@/components/get-started.svelte';
+import SprocketDownload from '@/components/sprocket-download.svelte';
 import SprocketScreenshot from '@/components/sprocket-screenshot.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
+import { fetchLatestSprocketRelease, SPROCKET_NPM_COMMAND } from '@/lib/sprocket-releases';
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_URL } from '@/lib/seo';
 import {
 	marketingButtonPrimaryClass,
@@ -15,6 +17,8 @@ import {
 	marketingTextLinkClass
 } from '@/styles/marketing';
 import { cn } from '@/utils';
+
+const sprocketRelease = await fetchLatestSprocketRelease();
 
 const solvedItems = [
 	{
@@ -77,7 +81,7 @@ const softwareLd = {
 				</div>
 
 				<div class="flex flex-col items-stretch gap-5 lg:items-end">
-					<GetStarted client:idle />
+					<GetStarted client:idle release={sprocketRelease} />
 					<div
 						class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground lg:justify-end"
 					>
@@ -109,14 +113,23 @@ const softwareLd = {
 						<span class="mark-verb">best-in-class context</span> from the{' '}
 						<span class="mark-verb">web and open-source projects</span>.
 					</p>
-					<div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+					<div class="mt-8 flex w-full max-w-md flex-col gap-3">
+						<div class="flex flex-col gap-3 sm:flex-row sm:items-start">
+							<SprocketDownload
+								client:visible
+								release={sprocketRelease}
+								showAlternates={false}
+								class="min-w-0 flex-1"
+							/>
+							<a href="/sprocket" class={cn(marketingButtonPrimaryClass, 'shrink-0')}>
+								Learn more →
+							</a>
+						</div>
 						<CopyCommand
 							client:visible
-							class={cn('w-full min-w-0 sm:max-w-md', marketingCopyCommandSurfaceClass)}
+							command={SPROCKET_NPM_COMMAND}
+							class={cn('w-full min-w-0', marketingCopyCommandSurfaceClass)}
 						/>
-						<a href="/sprocket" class={cn(marketingButtonPrimaryClass, 'shrink-0')}>
-							Learn more →
-						</a>
 					</div>
 				</div>
 
