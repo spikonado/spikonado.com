@@ -25,7 +25,16 @@ function propsFromElement(element: HTMLElement): AnalyticsProperties {
 }
 
 function isSameTabNavigationHref(href: string | null): boolean {
-	if (!href || href.startsWith('#') || href.startsWith('javascript:')) {
+	if (!href) {
+		return false;
+	}
+	const normalizedHref = href.trim().toLowerCase();
+	if (
+		normalizedHref.startsWith('#') ||
+		normalizedHref.startsWith('javascript:') ||
+		normalizedHref.startsWith('data:') ||
+		normalizedHref.startsWith('vbscript:')
+	) {
 		return false;
 	}
 	return true;
