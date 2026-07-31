@@ -110,29 +110,21 @@ const jsonLdDocument = {
 
 		<script>
 			import { initBotId } from 'botid/client/core';
-			import posthog from 'posthog-js';
+			import { initPostHogAnalytics } from '@/lib/analytics/bootstrap';
 
-			const bootClient = () => {
+			// Init PostHog eagerly so same-tab CTA navigations can beacon-flush captures.
+			initPostHogAnalytics();
+
+			const bootBotId = () => {
 				initBotId({
 					protect: [{ path: '/api/build-log/subscribe', method: 'POST' }]
 				});
-
-				const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
-
-				if (posthogKey) {
-					posthog.init(posthogKey, {
-						api_host: 'https://kpg.spikonado.com',
-						ui_host: 'https://eu.posthog.com',
-						defaults: '2026-01-30',
-						person_profiles: 'identified_only'
-					});
-				}
 			};
 
 			if (typeof requestIdleCallback === 'function') {
-				requestIdleCallback(bootClient, { timeout: 2000 });
+				requestIdleCallback(bootBotId, { timeout: 2000 });
 			} else {
-				setTimeout(bootClient, 1);
+				setTimeout(bootBotId, 1);
 			}
 		</script>
 	</head>

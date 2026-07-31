@@ -5,9 +5,9 @@ import {
 	NEWSLETTER_FORM,
 	NEWSLETTER_SUBSCRIBE_FAILED_EVENT,
 	NEWSLETTER_SUBSCRIBED_EVENT
-} from '@/lib/build-log/analytics';
+} from '@/lib/analytics/events';
 import { triggerBuildLogSubscription } from '@/lib/build-log/resend';
-import { flushPostHogServer, getPostHogServer } from '@/lib/posthog-server';
+import { captureServerException, flushPostHogServer, getPostHogServer } from '@/lib/posthog-server';
 
 export const prerender = false;
 
@@ -56,6 +56,7 @@ async function captureNewsletterEvent(options: {
 			properties: {
 				form: NEWSLETTER_FORM,
 				source: 'api',
+				location: 'home_build_log',
 				...(sessionId ? { $session_id: sessionId } : {}),
 				...(options.reason ? { reason: options.reason } : {})
 			}
@@ -95,7 +96,13 @@ export const POST: APIRoute = async ({ request }) => {
 		if (!verification.isHuman) {
 			return json(false, 403);
 		}
-	} catch {
+	} catch (error) {
+		const { distinctId } = posthogIds(request);
+		captureServerException(error, distinctId || 'anonymous', {
+			context: 'botid_check',
+			form: NEWSLETTER_FORM
+		});
+		await flushPostHogServer();
 		// Fail closed so a BotID outage or misconfiguration cannot consume Resend quota.
 		return json(false, 503);
 	}

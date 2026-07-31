@@ -1,5 +1,7 @@
 <script lang="ts">
 	import fallback from '@/assets/sprocket.webp';
+	import { captureEvent } from '@/lib/analytics/client';
+	import { PRODUCT_MEDIA_OPENED_EVENT } from '@/lib/analytics/events';
 	import { inertBackground, portal, trapFocus } from '@/lib/focus-trap';
 	import { SPROCKET_IMAGE_REMOTE_URL } from '@/lib/sprocket-image';
 
@@ -29,6 +31,11 @@
 
 	function openLightbox() {
 		open = true;
+		captureEvent(PRODUCT_MEDIA_OPENED_EVENT, {
+			media: 'sprocket_screenshot',
+			location: 'home_sprocket',
+			using_fallback: usingFallback
+		});
 	}
 
 	function closeLightbox() {

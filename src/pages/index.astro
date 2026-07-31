@@ -6,6 +6,7 @@ import GetStarted from '@/components/get-started.svelte';
 import SprocketDownload from '@/components/sprocket-download.svelte';
 import SprocketScreenshot from '@/components/sprocket-screenshot.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
+import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
 import { fetchLatestSprocketRelease, SPROCKET_NPM_COMMAND } from '@/lib/sprocket-releases';
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_URL } from '@/lib/seo';
 import {
@@ -86,11 +87,34 @@ const softwareLd = {
 						<div
 							class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground"
 						>
-							<a href="https://github.com/spikonado" class={marketingTextLinkClass}>
+							<a
+								href="https://github.com/spikonado"
+								class={marketingTextLinkClass}
+								data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
+								data-ph-destination="github_org"
+								data-ph-location="home_hero"
+								data-ph-cta="open_source"
+							>
 								Open source
 							</a>
-							<a href="/#build-log" class={marketingTextLinkClass}> Read the build log </a>
-							<a href="/#platform" class={marketingTextLinkClass}> See the platform </a>
+							<a
+								href="/#build-log"
+								class={marketingTextLinkClass}
+								data-ph-capture={CTA_CLICKED_EVENT}
+								data-ph-cta="read_build_log"
+								data-ph-location="home_hero"
+							>
+								Read the build log
+							</a>
+							<a
+								href="/#platform"
+								class={marketingTextLinkClass}
+								data-ph-capture={CTA_CLICKED_EVENT}
+								data-ph-cta="see_platform"
+								data-ph-location="home_hero"
+							>
+								See the platform
+							</a>
 						</div>
 					</div>
 				</div>
@@ -98,7 +122,11 @@ const softwareLd = {
 		</section>
 
 		<!-- Sprocket -->
-		<section id="sprocket" class="border-t border-border/50 bg-background">
+		<section
+			id="sprocket"
+			class="border-t border-border/50 bg-background"
+			data-ph-section="sprocket"
+		>
 			<div
 				class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28"
 			>
@@ -123,15 +151,23 @@ const softwareLd = {
 								client:visible
 								release={sprocketRelease}
 								showAlternates={false}
+								location="home_sprocket"
 								class="min-w-0 flex-1"
 							/>
-							<a href="/sprocket" class={cn(marketingButtonPrimaryClass, 'shrink-0')}>
+							<a
+								href="/sprocket"
+								class={cn(marketingButtonPrimaryClass, 'shrink-0')}
+								data-ph-capture={CTA_CLICKED_EVENT}
+								data-ph-cta="learn_more_sprocket"
+								data-ph-location="home_sprocket"
+							>
 								Learn more →
 							</a>
 						</div>
 						<CopyCommand
 							client:visible
 							command={SPROCKET_NPM_COMMAND}
+							location="home_sprocket"
 							class={cn('w-full min-w-0', marketingCopyCommandSurfaceClass)}
 						/>
 					</div>
@@ -153,7 +189,7 @@ const softwareLd = {
 		</section>
 
 		<!-- Platform / Solved -->
-		<section id="platform" class="border-t border-border/50 bg-surface">
+		<section id="platform" class="border-t border-border/50 bg-surface" data-ph-section="platform">
 			<div
 				class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-8 lg:py-28"
 			>
@@ -167,7 +203,13 @@ const softwareLd = {
 					<p class="mt-8 font-brand text-xl font-semibold text-foreground">
 						Spikonado is better than stitching it together yourself.
 					</p>
-					<a href="/#sprocket" class={cn(marketingButtonPrimaryClass, 'mt-8')}>
+					<a
+						href="/#sprocket"
+						class={cn(marketingButtonPrimaryClass, 'mt-8')}
+						data-ph-capture={CTA_CLICKED_EVENT}
+						data-ph-cta="heres_how_to_start"
+						data-ph-location="home_platform"
+					>
 						Here's how to start →
 					</a>
 				</div>
@@ -206,7 +248,7 @@ const softwareLd = {
 		</section>
 
 		<!-- Vario -->
-		<section id="vario" class="border-t border-border/50 bg-background">
+		<section id="vario" class="border-t border-border/50 bg-background" data-ph-section="vario">
 			<div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
 				<div class="max-w-3xl">
 					<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
@@ -217,7 +259,13 @@ const softwareLd = {
 						<span class="mark-verb">Modular</span> robotics hardware for{' '}
 						<span class="mark-verb">every use case</span>.
 					</p>
-					<a href="/#build-log" class={cn(marketingTextLinkClass, 'mt-8 inline-flex')}>
+					<a
+						href="/#build-log"
+						class={cn(marketingTextLinkClass, 'mt-8 inline-flex')}
+						data-ph-capture={CTA_CLICKED_EVENT}
+						data-ph-cta="vario_get_notified"
+						data-ph-location="home_vario"
+					>
 						Get notified when Vario ships →
 					</a>
 				</div>
@@ -225,7 +273,11 @@ const softwareLd = {
 		</section>
 
 		<!-- Build log -->
-		<section id="build-log" class="border-t border-border/50 bg-surface">
+		<section
+			id="build-log"
+			class="border-t border-border/50 bg-surface"
+			data-ph-section="build_log"
+		>
 			<div
 				class="mx-auto grid max-w-6xl items-start gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28"
 			>

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { captureEvent } from '@/lib/analytics/client';
+	import { SPROCKET_DOWNLOAD_CLICKED_EVENT, type AnalyticsLocation } from '@/lib/analytics/events';
 	import {
 		detectDesktopTargetAsync,
 		otherDesktopAssets,
@@ -15,9 +17,15 @@
 		class?: string;
 		/** Hide the alternate-platform link row (useful in tight layouts). */
 		showAlternates?: boolean;
+		location?: AnalyticsLocation;
 	}
 
-	let { release = null, class: className = '', showAlternates = true }: Props = $props();
+	let {
+		release = null,
+		class: className = '',
+		showAlternates = true,
+		location = 'home_hero'
+	}: Props = $props();
 
 	/** null until client detection finishes — keeps SSR and first paint stable. */
 	let detected = $state(false);
@@ -53,6 +61,28 @@
 	const downloadLabel = $derived(knownDesktop ? `Download for ${osLabel}` : 'Download desktop app');
 
 	const iconClass = 'h-4 w-4 shrink-0';
+
+	function trackDownload(options: {
+		href: string;
+		variant: 'primary' | 'alternate' | 'all_releases';
+		platform?: string;
+		filename?: string;
+	}) {
+		captureEvent(SPROCKET_DOWNLOAD_CLICKED_EVENT, {
+			location,
+			variant: options.variant,
+			// Don't invent a platform for non-platform links (e.g. all_releases).
+			platform:
+				options.platform ??
+				(options.variant === 'all_releases' ? 'unknown' : (osFamily ?? 'unknown')),
+			os_label: osLabel,
+			filename: options.filename,
+			href: options.href,
+			release_tag: release?.tagName,
+			detected: detected,
+			path: typeof window !== 'undefined' ? window.location.pathname : undefined
+		});
+	}
 </script>
 
 {#snippet osIcon(family: SprocketOsFamily)}
@@ -83,6 +113,13 @@
 		class={cn(marketingButtonSecondaryClass, 'w-full gap-3')}
 		data-detected={detected ? 'true' : 'false'}
 		{...knownDesktop && primaryAsset ? { download: primaryAsset.filename } : {}}
+		onclick={() =>
+			trackDownload({
+				href: downloadHref,
+				variant: 'primary',
+				platform: primaryAsset?.platform ?? osFamily ?? undefined,
+				filename: primaryAsset?.filename
+			})}
 	>
 		{#if knownDesktop && osFamily}
 			{@render osIcon(osFamily)}
@@ -107,6 +144,13 @@
 						href={asset.url}
 						class={cn(marketingTextLinkClass, 'text-xs')}
 						download={asset.filename}
+						onclick={() =>
+							trackDownload({
+								href: asset.url,
+								variant: 'alternate',
+								platform: asset.platform,
+								filename: asset.filename
+							})}
 					>
 						{asset.shortLabel}
 					</a>
@@ -114,7 +158,15 @@
 			</p>
 		{:else if !release}
 			<p class="mt-3 font-sans text-xs text-muted-foreground">
-				<a href={SPROCKET_RELEASES_LATEST_URL} class={cn(marketingTextLinkClass, 'text-xs')}>
+				<a
+					href={SPROCKET_RELEASES_LATEST_URL}
+					class={cn(marketingTextLinkClass, 'text-xs')}
+					onclick={() =>
+						trackDownload({
+							href: SPROCKET_RELEASES_LATEST_URL,
+							variant: 'all_releases'
+						})}
+				>
 					All desktop builds
 				</a>
 				on GitHub Releases
