@@ -1,6 +1,14 @@
 ---
 import CopyCommand from '@/components/copy-command.svelte';
+import SprocketDownload from '@/components/sprocket-download.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
+import {
+	fetchLatestSprocketRelease,
+	SPROCKET_GITHUB_URL,
+	SPROCKET_NPM_COMMAND,
+	SPROCKET_NPM_URL,
+	SPROCKET_RELEASES_LATEST_URL
+} from '@/lib/sprocket-releases';
 import { SITE_URL, titleWithBrand } from '@/lib/seo';
 import {
 	marketingButtonPrimaryClass,
@@ -11,9 +19,11 @@ import {
 } from '@/styles/marketing';
 import { cn } from '@/utils';
 
-const title = titleWithBrand('Sprocket engineering agent');
+const release = await fetchLatestSprocketRelease();
+
+const title = titleWithBrand('Sprocket - The Engineering Agent');
 const description =
-	"Sprocket is Spikonado's engineering agent for hardware and software. It writes high-quality code and retrieves best-in-class context from the web and open-source projects. Start with npx @spikonado/sprocket --web.";
+	"Sprocket is Spikonado's engineering agent for hardware and software. It writes high-quality code and retrieves best-in-class context from the web and open-source projects. Start with npx @spikonado/sprocket, or download the desktop app.";
 
 const softwareLd = {
 	'@type': 'SoftwareApplication',
@@ -22,8 +32,8 @@ const softwareLd = {
 	operatingSystem: 'Windows, macOS, Linux',
 	url: `${SITE_URL}/sprocket`,
 	description,
-	downloadUrl: 'https://www.npmjs.com/package/@spikonado/sprocket',
-	installUrl: 'https://www.npmjs.com/package/@spikonado/sprocket',
+	downloadUrl: release?.htmlUrl ?? SPROCKET_RELEASES_LATEST_URL,
+	installUrl: SPROCKET_NPM_URL,
 	offers: {
 		'@type': 'Offer',
 		price: '0',
@@ -45,18 +55,33 @@ const softwareLd = {
 				<span class="mark-verb">best-in-class context</span> from the{' '}
 				<span class="mark-verb">web and open-source projects</span>.
 			</p>
-			<p class={cn(marketingSectionBodyClass, 'mt-4')}>
-				More of this page is coming soon. In the meantime, launch Sprocket in your browser:
-			</p>
+			<p class={cn(marketingSectionBodyClass, 'mt-4')}>More of this page is coming soon.</p>
 
-			<CopyCommand
-				client:idle
-				class={cn('mt-8 w-full max-w-md', marketingCopyCommandSurfaceClass)}
-			/>
+			<section class="mt-10" aria-labelledby="sprocket-install-heading">
+				<h2 id="sprocket-install-heading" class="font-brand text-xl font-semibold text-foreground">
+					Install
+				</h2>
 
-			<div class="mt-8 flex flex-wrap items-center gap-4">
+				<div class="mt-6 max-w-md space-y-5">
+					<SprocketDownload client:idle release={release} />
+
+					<div class="relative flex items-center gap-3" aria-hidden="true">
+						<div class="h-px flex-1 bg-border/80"></div>
+						<span class="font-sans text-xs tracking-wide text-muted-foreground uppercase">or</span>
+						<div class="h-px flex-1 bg-border/80"></div>
+					</div>
+
+					<CopyCommand
+						client:idle
+						command={SPROCKET_NPM_COMMAND}
+						class={cn('w-full', marketingCopyCommandSurfaceClass)}
+					/>
+				</div>
+			</section>
+
+			<div class="mt-10 flex flex-wrap items-center gap-4">
 				<a
-					href="https://github.com/spikonado/sprocket"
+					href={SPROCKET_GITHUB_URL}
 					class={marketingButtonPrimaryClass}
 					target="_blank"
 					rel="noopener noreferrer"

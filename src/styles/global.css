@@ -14,6 +14,10 @@
 	--accent-strong: oklch(0.52 0.16 250);
 	--accent-soft: oklch(0.92 0.04 230);
 
+	/* Lighter blue-green fill for install controls */
+	--action-soft: oklch(0.955 0.03 185);
+	--action-soft-hover: oklch(0.93 0.035 185);
+
 	/* Highlighter mark for verbs / phrases */
 	--mark: oklch(0.93 0.08 95);
 
@@ -34,6 +38,8 @@
 	--color-accent: var(--accent);
 	--color-accent-strong: var(--accent-strong);
 	--color-accent-soft: var(--accent-soft);
+	--color-action-soft: var(--action-soft);
+	--color-action-soft-hover: var(--action-soft-hover);
 	--color-mark: var(--mark);
 	--color-ink: var(--ink);
 }
