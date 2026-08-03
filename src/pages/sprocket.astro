@@ -24,7 +24,7 @@ const release = await fetchLatestSprocketRelease();
 
 const title = titleWithBrand('Sprocket - The Engineering Agent');
 const description =
-	"Sprocket is Spikonado's engineering agent for hardware and software. It writes high-quality code and retrieves best-in-class context from the web and open-source projects. Start with npx @spikonado/sprocket, or download the desktop app.";
+	'Sprocket is the best and only AI agent for developing both hardware and software.';
 
 const softwareLd = {
 	'@type': 'SoftwareApplication',
@@ -42,6 +42,10 @@ const softwareLd = {
 	},
 	publisher: { '@id': `${SITE_URL}/#organization` }
 };
+
+const featureIconClass =
+	'mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-strong';
+const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:text-lg';
 ---
 
 <BaseLayout title={title} description={description} jsonLd={softwareLd}>
@@ -52,11 +56,61 @@ const softwareLd = {
 			</p>
 			<h1 class={cn(marketingProductHeadingClass, 'mt-3')}>Sprocket</h1>
 			<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-				Sprocket writes <span class="mark-verb">high-quality code</span>, and retrieves{' '}
-				<span class="mark-verb">best-in-class context</span> from the{' '}
-				<span class="mark-verb">web and open-source projects</span>.
+				The best and only AI agent for developing both{' '}
+				<span class="mark-verb">hardware</span> and{' '}
+				<span class="mark-verb">software</span>.
 			</p>
-			<p class={cn(marketingSectionBodyClass, 'mt-4')}>More of this page is coming soon.</p>
+			<ul class="mt-6 divide-y divide-border/60 border-y border-border/60">
+				<li class="flex gap-4 py-5">
+					<span class={featureIconClass} aria-hidden="true">
+						<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none">
+							<path
+								d="M3.5 8.5 6.5 11.5 12.5 4.5"
+								stroke="currentColor"
+								stroke-width="1.8"
+								stroke-linecap="round"
+								stroke-linejoin="round"></path>
+						</svg>
+					</span>
+					<p class={featureTextClass}>
+						Retrieves best-in-class <span class="mark-verb">context from the web</span> for everything
+						it does, so it stays <span class="mark-verb">incredibly reliable</span>.
+					</p>
+				</li>
+				<li class="flex gap-4 py-5">
+					<span class={featureIconClass} aria-hidden="true">
+						<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none">
+							<path
+								d="M3.5 8.5 6.5 11.5 12.5 4.5"
+								stroke="currentColor"
+								stroke-width="1.8"
+								stroke-linecap="round"
+								stroke-linejoin="round"></path>
+						</svg>
+					</span>
+					<p class={featureTextClass}>
+						<span class="mark-verb">Buys anything from any website</span> when you ask, from hardware
+						parts to SaaS subscriptions.
+					</p>
+				</li>
+				<li class="flex gap-4 py-5">
+					<span class={featureIconClass} aria-hidden="true">
+						<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none">
+							<path
+								d="M3.5 8.5 6.5 11.5 12.5 4.5"
+								stroke="currentColor"
+								stroke-width="1.8"
+								stroke-linecap="round"
+								stroke-linejoin="round"></path>
+						</svg>
+					</span>
+					<p class={featureTextClass}>
+						Makes <span class="mark-verb">beautifully detailed schematics</span>, creates your{' '}
+						<span class="mark-verb">BOM</span>, and writes{' '}
+						<span class="mark-verb">assembly instructions</span>.
+					</p>
+				</li>
+			</ul>
 
 			<section
 				class="mt-10"
