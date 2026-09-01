@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getSecret } from 'astro:env/server';
+import { RESEND_API_KEY } from 'astro:env/server';
 import { checkBotId } from 'botid/server';
 import {
 	NEWSLETTER_FORM,
@@ -107,7 +107,7 @@ export const POST: APIRoute = async ({ request }) => {
 		return json(false, 503);
 	}
 
-	const resendApiKey = getSecret('RESEND_API_KEY')?.trim();
+	const resendApiKey = RESEND_API_KEY?.trim();
 	if (!resendApiKey) {
 		return json(false, 503);
 	}
