@@ -90,7 +90,7 @@
 {#if open}
 	<div
 		bind:this={dialog}
-		use:portal
+		{@attach portal}
 		class="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-8"
 		role="dialog"
 		aria-modal="true"
