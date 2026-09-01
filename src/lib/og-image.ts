@@ -26,7 +26,7 @@ async function loadLogoDataUrl(): Promise<string> {
 	return `data:image/png;base64,${buffer.toString('base64')}`;
 }
 
-export async function renderOgImagePng(): Promise<Buffer> {
+export async function renderOgImagePng(): Promise<Uint8Array> {
 	const [regular, semibold, logo] = await Promise.all([
 		loadFont('@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff'),
 		loadFont('@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff'),
@@ -66,7 +66,10 @@ export async function renderOgImagePng(): Promise<Buffer> {
 										src: logo,
 										width: 56,
 										height: 56,
-										style: { borderRadius: '12px' }
+										style: {
+											borderRadius: '16px',
+											cornerShape: 'squircle'
+										}
 									}
 								},
 								{
@@ -119,7 +122,8 @@ export async function renderOgImagePng(): Promise<Buffer> {
 														color: colors.accentStrong,
 														backgroundColor: colors.accentSoft,
 														padding: '0 12px 6px',
-														borderRadius: '10px',
+														borderRadius: '14px',
+														cornerShape: 'squircle',
 														display: 'flex'
 													},
 													children: 'any kind of technology'
@@ -189,5 +193,6 @@ export async function renderOgImagePng(): Promise<Buffer> {
 		}
 	);
 
-	return sharp(Buffer.from(svg)).png().toBuffer();
+	const { data } = await sharp(Buffer.from(svg)).png().toUint8Array();
+	return data instanceof Uint8Array ? data : new Uint8Array(data);
 }
