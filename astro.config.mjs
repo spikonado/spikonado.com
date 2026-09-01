@@ -1,6 +1,6 @@
 // @ts-check
 
-import { defineConfig } from 'astro/config';
+import { defineConfig, fontProviders } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import svelte from '@astrojs/svelte';
 import posthog from '@posthog/rollup-plugin';
@@ -34,6 +34,33 @@ export default defineConfig({
 		svelte()
 	],
 	adapter: vercel(),
+	fonts: [
+		{
+			provider: fontProviders.fontsource(),
+			name: 'DM Sans',
+			cssVariable: '--font-dm-sans',
+			weights: ['100 1000'],
+			styles: ['normal'],
+			subsets: ['latin']
+		},
+		{
+			provider: fontProviders.fontsource(),
+			name: 'IBM Plex Sans',
+			cssVariable: '--font-ibm-plex-sans',
+			weights: ['100 700'],
+			styles: ['normal'],
+			subsets: ['latin']
+		},
+		{
+			provider: fontProviders.fontsource(),
+			name: 'IBM Plex Mono',
+			cssVariable: '--font-ibm-plex-mono',
+			weights: [400, 500],
+			styles: ['normal'],
+			subsets: ['latin'],
+			fallbacks: ['monospace']
+		}
+	],
 
 	vite: {
 		plugins: [tailwindcss(), ...posthogSourceMaps]
