@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getSecret } from 'astro:env/server';
+import { RESEND_API_KEY } from 'astro:env/server';
 import { checkBotId } from 'botid/server';
 import { captureServerException, trackServerEvent } from '@/lib/analytics/server';
 import { triggerBuildLogSubscription } from '@/lib/build-log/resend';
@@ -38,7 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
 		return json(false, 503);
 	}
 
-	const resendApiKey = getSecret('RESEND_API_KEY')?.trim();
+	const resendApiKey = RESEND_API_KEY?.trim();
 	if (!resendApiKey) {
 		trackServerEvent(request, 'newsletter_subscribe_failed', {
 			reason: 'resend_not_configured',
