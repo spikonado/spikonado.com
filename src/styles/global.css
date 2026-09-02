@@ -69,54 +69,47 @@
 	}
 }
 
-@layer utilities {
-	/* Marker sits in the mid-line so line boxes don't clip neighboring descenders. */
-	.mark-accent {
-		color: var(--accent-strong);
-		padding-inline: 0.2em;
-		border-radius: 0.25rem;
-		background-image: linear-gradient(var(--accent-soft), var(--accent-soft));
-		background-repeat: no-repeat;
-		background-size: 100% 0.72em;
-		background-position: 0 0.78em;
-		box-decoration-break: clone;
-		-webkit-box-decoration-break: clone;
-	}
+/* Marker sits in the mid-line so line boxes don't clip neighboring descenders. */
+@utility mark-accent {
+	color: var(--accent-strong);
+	padding-inline: 0.2em;
+	border-radius: 0.25rem;
+	background-image: linear-gradient(var(--accent-soft), var(--accent-soft));
+	background-repeat: no-repeat;
+	background-size: 100% 0.72em;
+	background-position: 0 0.78em;
+	box-decoration-break: clone;
+	-webkit-box-decoration-break: clone;
+}
 
-	.mark-verb {
-		background-color: var(--mark);
-		border-radius: 0.15rem;
-		padding-inline: 0.15em;
-		box-decoration-break: clone;
-		-webkit-box-decoration-break: clone;
-	}
+@utility mark-verb {
+	background-color: var(--mark);
+	border-radius: 0.15rem;
+	padding-inline: 0.15em;
+	box-decoration-break: clone;
+	-webkit-box-decoration-break: clone;
+}
 
-	.atmosphere {
-		background-color: var(--background);
-		background-image:
-			radial-gradient(ellipse 70% 55% at 85% 15%, oklch(0.72 0.1 230 / 0.14), transparent 58%),
-			radial-gradient(ellipse 50% 45% at 10% 85%, oklch(0.72 0.1 230 / 0.08), transparent 55%),
-			linear-gradient(
-				180deg,
-				oklch(0.97 0.01 130) 0%,
-				var(--background) 42%,
-				var(--background) 100%
-			);
-	}
+@utility atmosphere {
+	background-color: var(--background);
+	background-image:
+		radial-gradient(ellipse 70% 55% at 85% 15%, oklch(0.72 0.1 230 / 0.14), transparent 58%),
+		radial-gradient(ellipse 50% 45% at 10% 85%, oklch(0.72 0.1 230 / 0.08), transparent 55%),
+		linear-gradient(180deg, oklch(0.97 0.01 130) 0%, var(--background) 42%, var(--background) 100%);
+}
 
-	/* Soft construction grid - Spikonado atmosphere without the rainbow sweep. */
-	.hero-mesh {
-		background-image:
-			linear-gradient(to right, oklch(0.18 0.02 260 / 0.045) 1px, transparent 1px),
-			linear-gradient(to bottom, oklch(0.18 0.02 260 / 0.045) 1px, transparent 1px);
-		background-size: 56px 56px;
-		mask-image: radial-gradient(ellipse 75% 70% at 72% 58%, black 20%, transparent 72%);
-	}
+/* Soft construction grid - Spikonado atmosphere without the rainbow sweep. */
+@utility hero-mesh {
+	background-image:
+		linear-gradient(to right, oklch(0.18 0.02 260 / 0.045) 1px, transparent 1px),
+		linear-gradient(to bottom, oklch(0.18 0.02 260 / 0.045) 1px, transparent 1px);
+	background-size: 56px 56px;
+	mask-image: radial-gradient(ellipse 75% 70% at 72% 58%, black 20%, transparent 72%);
+}
 
-	.hero-orb {
-		background:
-			radial-gradient(circle at 50% 50%, oklch(0.72 0.1 230 / 0.22), transparent 68%),
-			radial-gradient(circle at 30% 70%, oklch(0.85 0.05 230 / 0.12), transparent 55%);
-		filter: blur(8px);
-	}
+@utility hero-orb {
+	background:
+		radial-gradient(circle at 50% 50%, oklch(0.72 0.1 230 / 0.22), transparent 68%),
+		radial-gradient(circle at 30% 70%, oklch(0.85 0.05 230 / 0.12), transparent 55%);
+	filter: blur(8px);
 }
