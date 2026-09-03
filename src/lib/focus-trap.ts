@@ -112,3 +112,27 @@ export function portal(node: HTMLElement) {
 		}
 	};
 }
+
+/** Lock document scrolling while a modal or overlay is open. */
+export function lockBodyScroll(): () => void {
+	const previousOverflow = document.body.style.overflow;
+	document.body.style.overflow = 'hidden';
+	return () => {
+		document.body.style.overflow = previousOverflow;
+	};
+}
+
+/** Close on Escape. Pass the closer; the returned function is the attachment. */
+export function closeOnEscape(onClose: () => void): () => () => void {
+	return () => {
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') {
+				onClose();
+			}
+		};
+		window.addEventListener('keydown', onKeyDown);
+		return () => {
+			window.removeEventListener('keydown', onKeyDown);
+		};
+	};
+}
