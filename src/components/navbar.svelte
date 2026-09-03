@@ -2,7 +2,7 @@
 	import logo from '@/assets/logo.png';
 	import github from '@/assets/github_logo.svg';
 	import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
-	import { inertBackground, trapFocus } from '@/lib/focus-trap';
+	import { closeOnEscape, inertBackground, lockBodyScroll, trapFocus } from '@/lib/focus-trap';
 	import { marketingBrandClass, marketingButtonPrimaryClass } from '@/styles/marketing';
 	import { cn } from '@/utils';
 
@@ -22,39 +22,13 @@
 	function toggleMenu() {
 		menuOpen = !menuOpen;
 	}
-
-	let headerEl: HTMLElement | undefined = $state();
-
-	$effect(() => {
-		if (!menuOpen || !headerEl) {
-			return;
-		}
-
-		const previousOverflow = document.body.style.overflow;
-		document.body.style.overflow = 'hidden';
-
-		// Keep the header (menu + toggle) available; inert the rest for SR browse mode.
-		const releaseBackground = inertBackground(headerEl);
-		const releaseFocus = trapFocus(headerEl);
-
-		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.key === 'Escape') {
-				closeMenu();
-			}
-		};
-		window.addEventListener('keydown', onKeyDown);
-
-		return () => {
-			document.body.style.overflow = previousOverflow;
-			releaseBackground();
-			releaseFocus();
-			window.removeEventListener('keydown', onKeyDown);
-		};
-	});
 </script>
 
 <header
-	bind:this={headerEl}
+	{@attach menuOpen && trapFocus}
+	{@attach menuOpen && inertBackground}
+	{@attach menuOpen && lockBodyScroll}
+	{@attach menuOpen && closeOnEscape(closeMenu)}
 	class="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95"
 >
 	<div
