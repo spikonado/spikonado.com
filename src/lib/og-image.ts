@@ -21,7 +21,7 @@ const colors = {
 async function loadOgFont(weight: 400 | 600): Promise<ArrayBuffer> {
 	const path = pickOgFontUrl(fontData[OG_FONT_CSS_VARIABLE], weight);
 	// /og.png is prerendered; the request URL is only required for on-demand routes.
-	const url = await experimental_getFontFileURL(path);
+	const url = experimental_getFontFileURL(path);
 	const response = await fetch(url);
 	if (!response.ok) {
 		throw new Error(`Failed to load OG font ${weight} from ${url}: ${response.status}`);
