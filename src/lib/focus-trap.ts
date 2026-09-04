@@ -73,7 +73,7 @@ export const trapFocus: Attachment<HTMLElement> = (container) => {
 		document.removeEventListener('keydown', onKeyDown, true);
 		previouslyFocused?.focus({ preventScroll: true });
 	};
-}
+};
 
 /**
  * Hide page chrome from assistive tech / interaction while a modal is open.
@@ -103,7 +103,7 @@ export const inertBackground: Attachment<HTMLElement> = (keep) => {
 			element.inert = false;
 		}
 	};
-}
+};
 
 /** Render a node as a direct child of document.body. */
 export function portal(node: HTMLElement) {
