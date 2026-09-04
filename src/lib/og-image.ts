@@ -189,6 +189,6 @@ export async function renderOgImagePng(): Promise<Uint8Array> {
 		}
 	);
 
-	const { data } = await sharp(Buffer.from(svg)).png().toUint8Array();
-	return data instanceof Uint8Array ? data : new Uint8Array(data);
+	const { data } = await sharp(new TextEncoder().encode(svg)).png().toUint8Array();
+	return data;
 }
