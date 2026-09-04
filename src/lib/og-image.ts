@@ -18,9 +18,10 @@ const colors = {
 	muted: '#575e69'
 } as const;
 
-async function loadOgFont(weight: 400 | 600, requestUrl: URL): Promise<ArrayBuffer> {
+async function loadOgFont(weight: 400 | 600): Promise<ArrayBuffer> {
 	const path = pickOgFontUrl(fontData[OG_FONT_CSS_VARIABLE], weight);
-	const url = experimental_getFontFileURL(path, requestUrl);
+	// /og.png is prerendered; the request URL is only required for on-demand routes.
+	const url = await experimental_getFontFileURL(path);
 	const response = await fetch(url);
 	if (!response.ok) {
 		throw new Error(`Failed to load OG font ${weight} from ${url}: ${response.status}`);
@@ -33,10 +34,10 @@ async function loadLogoDataUrl(): Promise<string> {
 	return `data:image/png;base64,${buffer.toString('base64')}`;
 }
 
-export async function renderOgImagePng(requestUrl: URL): Promise<Buffer> {
+export async function renderOgImagePng(): Promise<Buffer> {
 	const [regular, semibold, logo] = await Promise.all([
-		loadOgFont(400, requestUrl),
-		loadOgFont(600, requestUrl),
+		loadOgFont(400),
+		loadOgFont(600),
 		loadLogoDataUrl()
 	]);
 
