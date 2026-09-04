@@ -1,7 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { experimental_getFontFileURL, fontData } from 'astro:assets';
 import satori from 'satori';
 import sharp from 'sharp';
+import { OG_FONT_CSS_VARIABLE, pickOgFontUrl } from '@/lib/og-font';
 import { SITE_NAME } from '@/lib/seo';
 
 export const OG_IMAGE_WIDTH = 1200;
@@ -16,9 +18,15 @@ const colors = {
 	muted: '#575e69'
 } as const;
 
-async function loadFont(relativePath: string): Promise<ArrayBuffer> {
-	const buffer = await readFile(join(process.cwd(), 'node_modules', relativePath));
-	return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+async function loadOgFont(weight: 400 | 600): Promise<ArrayBuffer> {
+	const path = pickOgFontUrl(fontData[OG_FONT_CSS_VARIABLE], weight);
+	// /og.png is prerendered; the request URL is only required for on-demand routes.
+	const url = experimental_getFontFileURL(path);
+	const response = await fetch(url);
+	if (!response.ok) {
+		throw new Error(`Failed to load OG font ${weight} from ${url}: ${response.status}`);
+	}
+	return response.arrayBuffer();
 }
 
 async function loadLogoDataUrl(): Promise<string> {
@@ -28,8 +36,8 @@ async function loadLogoDataUrl(): Promise<string> {
 
 export async function renderOgImagePng(): Promise<Buffer> {
 	const [regular, semibold, logo] = await Promise.all([
-		loadFont('@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff'),
-		loadFont('@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff'),
+		loadOgFont(400),
+		loadOgFont(600),
 		loadLogoDataUrl()
 	]);
 
