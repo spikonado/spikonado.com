@@ -1,3 +1,5 @@
+import type { Attachment } from 'svelte/attachments';
+
 const FOCUSABLE_SELECTOR = [
 	'a[href]',
 	'button:not([disabled])',
@@ -17,7 +19,7 @@ function getFocusable(container: HTMLElement): HTMLElement[] {
 }
 
 /** Trap focus inside a modal container and restore it when disposed. */
-export function trapFocus(container: HTMLElement): () => void {
+export const trapFocus: Attachment<HTMLElement> = (container) => {
 	const previouslyFocused =
 		document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
@@ -75,9 +77,9 @@ export function trapFocus(container: HTMLElement): () => void {
 
 /**
  * Hide page chrome from assistive tech / interaction while a modal is open.
- * Pass `keep` for the subtree that must stay available (dialog or mobile nav header).
+ * The attached node is the subtree that must stay available (dialog or mobile nav header).
  */
-export function inertBackground(keep?: HTMLElement | null): () => void {
+export const inertBackground: Attachment<HTMLElement> = (keep) => {
 	const targets = [
 		document.querySelector('header'),
 		document.getElementById('main'),
@@ -114,16 +116,16 @@ export function portal(node: HTMLElement) {
 }
 
 /** Lock document scrolling while a modal or overlay is open. */
-export function lockBodyScroll(): () => void {
+export const lockBodyScroll: Attachment = () => {
 	const previousOverflow = document.body.style.overflow;
 	document.body.style.overflow = 'hidden';
 	return () => {
 		document.body.style.overflow = previousOverflow;
 	};
-}
+};
 
 /** Close on Escape. Pass the closer; the returned function is the attachment. */
-export function closeOnEscape(onClose: () => void): () => () => void {
+export function closeOnEscape(onClose: () => void): Attachment {
 	return () => {
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (event.key === 'Escape') {
