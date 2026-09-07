@@ -18,13 +18,20 @@
       {
         formatter = pkgs.nixfmt-tree;
 
-        devShells.default = pkgs.mkShell.override { stdenv = pkgs.clangStdenv; } {
-          name = "spikonado.com-shell";
-          packages = with pkgs; [
-            bun
-            prek
-          ];
-        };
+        devShells.default = pkgs.mkShell.override { stdenv = pkgs.clangStdenv; } (
+          {
+            name = "spikonado.com-shell";
+            packages = with pkgs; [
+              bun
+              prek
+            ];
+          }
+          // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+            # Sharp's prebuilt linux-x64 .node links GNU libstdc++. clangStdenv
+            # only puts libc++ on the loader path, so dlopen fails without this.
+            LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.gcc.cc.lib ];
+          }
+        );
       }
     );
   nixConfig = {

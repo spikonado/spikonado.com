@@ -6,7 +6,6 @@
 import { mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import sharp from 'sharp';
 import { SPROCKET_IMAGE_REMOTE_URL } from '../src/lib/sprocket-image';
 
 const DEST = new URL('../src/assets/sprocket.webp', import.meta.url);
@@ -40,6 +39,7 @@ async function fetchRemoteImage(): Promise<Uint8Array> {
 
 /** Scale to a 1280px-wide WebP, matching the old ffmpeg `-vf scale=1280:-1 -quality 80`. */
 export async function compressToWebp(sourcePng: Uint8Array): Promise<Uint8Array> {
+	const { default: sharp } = await import('sharp');
 	const { data } = await sharp(sourcePng)
 		.resize({ width: FALLBACK_WIDTH })
 		.webp({ quality: WEBP_QUALITY })
