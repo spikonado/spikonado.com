@@ -3,16 +3,18 @@
  * Compresses to WebP so the repo stays under the large-file limit.
  * On failure, keep the existing local fallback so builds still succeed.
  */
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
+import { mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { SPROCKET_IMAGE_REMOTE_URL } from '../src/lib/sprocket-image';
 
 const DEST = new URL('../src/assets/sprocket.webp', import.meta.url);
 const MIN_BYTES = 1_000;
 const TIMEOUT_MS = 15_000;
+const FALLBACK_WIDTH = 1280;
+const WEBP_QUALITY = 80;
 
-async function fetchRemoteImage(): Promise<Buffer> {
+async function fetchRemoteImage(): Promise<Uint8Array> {
 	const response = await fetch(SPROCKET_IMAGE_REMOTE_URL, {
 		headers: { Accept: 'image/png,image/*;q=0.9,*/*;q=0.8' },
 		signal: AbortSignal.timeout(TIMEOUT_MS)
@@ -22,7 +24,7 @@ async function fetchRemoteImage(): Promise<Buffer> {
 		throw new Error(`HTTP ${response.status} ${response.statusText}`);
 	}
 
-	const bytes = Buffer.from(await response.arrayBuffer());
+	const bytes = new Uint8Array(await response.arrayBuffer());
 	if (bytes.byteLength < MIN_BYTES) {
 		throw new Error(`Response too small (${bytes.byteLength} bytes)`);
 	}
@@ -35,41 +37,32 @@ async function fetchRemoteImage(): Promise<Buffer> {
 	return bytes;
 }
 
-async function compressToWebp(sourcePng: Buffer): Promise<Buffer> {
-	const dir = await mkdtemp(path.join(tmpdir(), 'sprocket-image-'));
-	const inputPath = path.join(dir, 'source.png');
-	const outputPath = path.join(dir, 'fallback.webp');
-
-	try {
-		await writeFile(inputPath, sourcePng);
-		const proc = Bun.spawn(
-			['ffmpeg', '-y', '-i', inputPath, '-vf', 'scale=1280:-1', '-quality', '80', outputPath],
-			{ stdout: 'ignore', stderr: 'pipe' }
-		);
-		const exitCode = await proc.exited;
-		if (exitCode !== 0) {
-			const stderr = await new Response(proc.stderr).text();
-			throw new Error(`ffmpeg failed (${exitCode}): ${stderr.slice(0, 300)}`);
-		}
-		return Buffer.from(await Bun.file(outputPath).arrayBuffer());
-	} finally {
-		await rm(dir, { recursive: true, force: true });
-	}
+/** Scale to a 1280px-wide WebP, matching the old ffmpeg `-vf scale=1280:-1 -quality 80`. */
+export async function compressToWebp(sourcePng: Uint8Array): Promise<Uint8Array> {
+	const { default: sharp } = await import('sharp');
+	const { data } = await sharp(sourcePng)
+		.resize({ width: FALLBACK_WIDTH })
+		.webp({ quality: WEBP_QUALITY })
+		.toUint8Array();
+	return data;
 }
 
 async function sync() {
 	const remote = await fetchRemoteImage();
 	const webp = await compressToWebp(remote);
-	await mkdir(path.dirname(DEST.pathname), { recursive: true });
+	const destPath = fileURLToPath(DEST);
+	await mkdir(dirname(destPath), { recursive: true });
 	await Bun.write(DEST, webp);
 	console.log(
-		`Synced Sprocket fallback (${remote.byteLength} bytes -> ${webp.byteLength} bytes webp) -> ${DEST.pathname}`
+		`Synced Sprocket fallback (${remote.byteLength} bytes -> ${webp.byteLength} bytes webp) -> ${destPath}`
 	);
 }
 
-try {
-	await sync();
-} catch (error) {
-	const message = error instanceof Error ? error.message : String(error);
-	console.warn(`Keeping bundled Sprocket image fallback (GitHub sync failed: ${message})`);
+if (import.meta.main) {
+	try {
+		await sync();
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		console.warn(`Keeping bundled Sprocket image fallback (GitHub sync failed: ${message})`);
+	}
 }
