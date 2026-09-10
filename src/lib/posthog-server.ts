@@ -1,4 +1,5 @@
 import { PostHog } from 'posthog-node';
+import { PUBLIC_POSTHOG_KEY } from 'astro:env/client';
 
 /** Matches the EU project used by the browser SDK (`ui_host: https://eu.posthog.com`). */
 const POSTHOG_HOST = 'https://eu.i.posthog.com';
@@ -6,7 +7,7 @@ const POSTHOG_HOST = 'https://eu.i.posthog.com';
 let posthogClient: PostHog | null = null;
 
 export function getPostHogServer(): PostHog | null {
-	const apiKey = import.meta.env.PUBLIC_POSTHOG_KEY?.trim();
+	const apiKey = PUBLIC_POSTHOG_KEY?.trim();
 	if (!apiKey) {
 		return null;
 	}
