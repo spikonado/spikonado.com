@@ -106,8 +106,7 @@ const jsonLdDocument = {
 		<meta name="twitter:image" content={imageURL} />
 		<meta name="twitter:image:alt" content={title} />
 
-		<script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLdDocument)} />
-
+		<script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLdDocument)}></script>
 		<script>
 			import { initBotId } from 'botid/client/core';
 			import { initPostHogAnalytics } from '@/lib/analytics/bootstrap';
