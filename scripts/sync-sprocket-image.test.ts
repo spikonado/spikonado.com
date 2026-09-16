@@ -1,16 +1,16 @@
 import { describe, expect, test } from 'bun:test';
 import { compressToWebp } from './sync-sprocket-image.ts';
 
-const ONE_PIXEL_PNG = Buffer.from(
-	'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+const TWO_BY_ONE_PNG = Buffer.from(
+	'iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAIAAAB7QOjdAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAD0lEQVQImWMQkdMQkdMAAAJVALUH2hhGAAAAAElFTkSuQmCC',
 	'base64'
 );
 
 describe('compressToWebp', () => {
 	test('scales the source to a 1280px-wide WebP', async () => {
-		const webp = await compressToWebp(ONE_PIXEL_PNG);
+		const webp = await compressToWebp(TWO_BY_ONE_PNG);
 		const metadata = await new Bun.Image(webp).metadata();
 
-		expect(metadata).toEqual({ format: 'webp', width: 1280, height: 1280 });
+		expect(metadata).toEqual({ format: 'webp', width: 1280, height: 640 });
 	});
 });
