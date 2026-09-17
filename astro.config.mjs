@@ -27,6 +27,13 @@ export default defineConfig({
 	site: 'https://spikonado.com',
 	// No Astro.session usage on this site, so leave the session runtime out of the SSR bundle.
 	session: false,
+	security: {
+		csp: {
+			scriptDirective: {
+				resources: ["'self'", 'https://kpg.spikonado.com']
+			}
+		}
+	},
 	integrations: [
 		sitemap({
 			filter: (page) => !page.includes('/api/')
