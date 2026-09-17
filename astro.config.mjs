@@ -9,6 +9,13 @@ import vercel from '@astrojs/vercel';
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://spikonado.com',
+	security: {
+		csp: {
+			scriptDirective: {
+				resources: ["'self'", 'https://kpg.spikonado.com']
+			}
+		}
+	},
 	integrations: [
 		sitemap({
 			filter: (page) => !page.includes('/api/')
