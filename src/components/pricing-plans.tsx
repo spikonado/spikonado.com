@@ -137,6 +137,8 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 	}, []);
 
 	const waitForProActivation = useCallback(async (showPendingState = true) => {
+		const client = showPendingState ? null : await initializePricingBilling();
+		let sessionReconciled = showPendingState;
 		if (showPendingState) {
 			setState((current) =>
 				withBusyStatus(current, 'activating', 'Confirming your Pro subscription...')
@@ -148,8 +150,31 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 				const subscription = await fetchMySubscription();
 				if (subscription.tier === 'pro' && subscription.billingManaged) {
 					captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activated', location });
-					setState((current) => withActivatedPro(current));
+					setState((current) =>
+						withActivatedPro(
+							client
+								? withReadySession(current, {
+										authenticated: Boolean(client.user),
+										tier: subscription.tier,
+										billingManaged: subscription.billingManaged,
+										userLabel: client.user?.email ?? client.user?.firstName ?? null
+									})
+								: current
+						)
+					);
 					return;
+				}
+				if (client && !sessionReconciled) {
+					setState((current) =>
+						withReadySession(current, {
+							authenticated: Boolean(client.user),
+							tier: subscription.tier,
+							billingManaged: subscription.billingManaged,
+							userLabel: client.user?.email ?? client.user?.firstName ?? null,
+							message: current.message
+						})
+					);
+					sessionReconciled = true;
 				}
 			} catch {
 				// The webhook may still be in flight.
@@ -186,7 +211,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			if (progress.status === 'checkout_closed') {
 				setState((current) => withReadyStatus(current, progress.message));
 				captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'overlay_closed', location });
-				void waitForProActivation(false);
+				void waitForProActivation(false).catch(() => {});
 				return;
 			}
 			const status =
