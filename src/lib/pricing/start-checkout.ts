@@ -9,7 +9,8 @@ import { clearPendingPricingAction, storePendingPricingAction } from '@/lib/pric
 
 export const PRICING_CHECKOUT_PROGRESS_EVENT = 'spikonado:pricing-checkout-progress';
 
-export type CheckoutProgressStatus = 'starting' | 'signing_in' | 'checkout_open' | 'error';
+export type CheckoutProgressStatus =
+	'starting' | 'signing_in' | 'checkout_open' | 'checkout_closed' | 'error';
 
 export type CheckoutProgress = {
 	status: CheckoutProgressStatus;
@@ -18,19 +19,11 @@ export type CheckoutProgress = {
 };
 
 const INIT_TIMEOUT_MS = 12_000;
-const BOOT_STATUS_ID = 'pricing-checkout-boot-status';
 
 let inFlight: Promise<void> | null = null;
-let clickHandlerInstalled = false;
 
 function emit(detail: CheckoutProgress): void {
 	if (typeof document === 'undefined') return;
-	const status = document.getElementById(BOOT_STATUS_ID);
-	if (status) {
-		status.classList.remove('hidden');
-		status.textContent = detail.message;
-		status.setAttribute('role', detail.status === 'error' ? 'alert' : 'status');
-	}
 	document.dispatchEvent(
 		new CustomEvent<CheckoutProgress>(PRICING_CHECKOUT_PROGRESS_EVENT, { detail })
 	);
@@ -60,14 +53,6 @@ export function checkoutIntervalFromSearch(
 	if (params.get('checkout') !== 'start') return null;
 	const requested = params.get('interval');
 	return isBillingInterval(requested) ? requested : 'monthly';
-}
-
-export function intervalFromCheckoutHref(href: string): BillingInterval {
-	try {
-		return checkoutIntervalFromSearch(new URL(href, 'https://spikonado.local').search) ?? 'monthly';
-	} catch {
-		return 'monthly';
-	}
 }
 
 export function runProCheckout(interval: BillingInterval): Promise<void> {
@@ -103,7 +88,20 @@ export function runProCheckout(interval: BillingInterval): Promise<void> {
 				message: 'Complete checkout in the overlay…',
 				interval
 			});
-			await openCheckoutUrl(checkoutUrl);
+			let checkoutFailed = false;
+			await openCheckoutUrl(checkoutUrl, (event) => {
+				if (event.event_type === 'checkout.closed') {
+					if (checkoutFailed) return;
+					emit({
+						status: 'checkout_closed',
+						message: 'Checkout closed. You can try again anytime.',
+						interval
+					});
+				} else if (event.event_type === 'checkout.error') {
+					checkoutFailed = true;
+					emit({ status: 'error', message: 'Checkout could not be completed.', interval });
+				}
+			});
 		} catch (error) {
 			emit({
 				status: 'error',
@@ -118,44 +116,11 @@ export function runProCheckout(interval: BillingInterval): Promise<void> {
 	return inFlight;
 }
 
-/** Always-on boot for `/pricing?checkout=start` — does not wait for the Svelte island. */
+/** Start a checkout encoded in the pricing page URL. */
 export function bootCheckoutFromUrl(
 	search: string = typeof window === 'undefined' ? '' : window.location.search
 ): Promise<void> | null {
 	const interval = checkoutIntervalFromSearch(search);
 	if (!interval) return null;
 	return runProCheckout(interval);
-}
-
-function isModifiedClick(event: MouseEvent): boolean {
-	return event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
-}
-
-function onGetProClick(event: Event): void {
-	if (!(event instanceof MouseEvent) || event.defaultPrevented || isModifiedClick(event)) return;
-	const target = event.target;
-	if (!(target instanceof Element)) return;
-	const link = target.closest('a[data-pricing-checkout]');
-	if (!(link instanceof HTMLAnchorElement)) return;
-	if (link.getAttribute('aria-disabled') === 'true') {
-		event.preventDefault();
-		return;
-	}
-	event.preventDefault();
-	void runProCheckout(intervalFromCheckoutHref(link.href));
-}
-
-/** Intercept Get Pro clicks and resume `/pricing?checkout=start` without waiting on the island. */
-export function installPricingCheckout(): void {
-	if (typeof document === 'undefined') return;
-	if (!clickHandlerInstalled) {
-		clickHandlerInstalled = true;
-		document.addEventListener('click', onGetProClick, true);
-	}
-	void bootCheckoutFromUrl();
-}
-
-export function resetCheckoutRunnerForTests(): void {
-	inFlight = null;
-	clickHandlerInstalled = false;
 }
