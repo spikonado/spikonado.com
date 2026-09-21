@@ -1,0 +1,143 @@
+---
+import Footer from '@/components/footer.svelte';
+import PricingPlans from '@/components/pricing-plans.svelte';
+import BaseLayout from '@/layouts/base-layout.astro';
+import type { PublicPricingCatalog } from '@/lib/convex/api';
+import { fetchPublicPricingCatalog } from '@/lib/pricing/billing-client';
+import { pricingFaqs, proPriceLabel } from '@/lib/pricing/catalog';
+import { SITE_URL, titleWithBrand } from '@/lib/seo';
+
+const title = titleWithBrand('Pricing');
+const description =
+	'Sprocket pricing for Free, Pro, and Enterprise. Start free, upgrade to Pro for higher limits and full model access, or contact sales for Enterprise.';
+
+const convexUrl = import.meta.env.PUBLIC_CONVEX_URL?.trim();
+let initialCatalog: PublicPricingCatalog | null = null;
+if (convexUrl) {
+	try {
+		initialCatalog = await fetchPublicPricingCatalog(convexUrl);
+	} catch {
+		initialCatalog = null;
+	}
+}
+
+const monthlyPrice = proPriceLabel('monthly', initialCatalog?.proPrices ?? null);
+const annualPrice = proPriceLabel('annual', initialCatalog?.proPrices ?? null);
+
+const offers = [
+	{
+		'@type': 'Offer',
+		name: 'Sprocket Free',
+		price: '0',
+		priceCurrency: 'USD',
+		description: 'Start building with Sprocket at no cost.'
+	},
+	...(monthlyPrice
+		? [
+				{
+					'@type': 'Offer',
+					name: 'Sprocket Pro Monthly',
+					price: String(monthlyPrice.periodMajor),
+					priceCurrency: monthlyPrice.currency,
+					billingDuration: 'P1M',
+					description: 'Higher limits and full model access for serious engineering work.'
+				}
+			]
+		: []),
+	...(annualPrice
+		? [
+				{
+					'@type': 'Offer',
+					name: 'Sprocket Pro Annual',
+					price: String(annualPrice.periodMajor),
+					priceCurrency: annualPrice.currency,
+					billingDuration: 'P1Y',
+					description: `Annual Pro billed at ${annualPrice.periodLabel}/year.`
+				}
+			]
+		: [])
+];
+
+const productLd = {
+	'@type': 'Product',
+	name: 'Sprocket',
+	description,
+	brand: { '@type': 'Brand', name: 'Spikonado' },
+	url: `${SITE_URL}/pricing`,
+	offers
+};
+
+const faqLd = {
+	'@type': 'FAQPage',
+	mainEntity: pricingFaqs.map((faq) => ({
+		'@type': 'Question',
+		name: faq.question,
+		acceptedAnswer: {
+			'@type': 'Answer',
+			text: faq.answer
+		}
+	}))
+};
+---
+
+<BaseLayout title={title} description={description} jsonLd={[productLd, faqLd]}>
+	<main id="main" class="atmosphere min-h-svh px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8">
+		<article class="mx-auto max-w-6xl">
+			<p
+				id="pricing-checkout-boot-status"
+				class="mx-auto mb-6 hidden max-w-2xl rounded-xl border border-accent/25 bg-accent-soft px-4 py-3 font-sans text-sm text-foreground"
+				role="status"
+				aria-live="polite"
+			>
+				Starting checkout…
+			</p>
+			<PricingPlans client:load initialCatalog={initialCatalog} />
+			<script is:inline>
+				(() => {
+					const params = new URLSearchParams(window.location.search);
+					if (params.get('checkout') !== 'start') return;
+					const status = document.getElementById('pricing-checkout-boot-status');
+					if (status) status.classList.remove('hidden');
+					if (params.get('interval') === 'annual') {
+						const annual = document.querySelector(
+							'input[data-pricing-billing-interval][value="annual"]'
+						);
+						if (annual instanceof HTMLInputElement) annual.checked = true;
+					}
+				})();
+
+				const pricingCheckoutUrl = (interval) =>
+					`/pricing?checkout=start&interval=${encodeURIComponent(interval)}`;
+
+				document.addEventListener(
+					'change',
+					(event) => {
+						const input = event.target;
+						if (
+							!(input instanceof HTMLInputElement) ||
+							!input.matches('input[data-pricing-billing-interval]') ||
+							(input.value !== 'monthly' && input.value !== 'annual')
+						) {
+							return;
+						}
+						input
+							.closest('astro-island')
+							?.setAttribute('data-pricing-billing-interval', input.value);
+						const checkoutLink = input
+							.closest('astro-island')
+							?.querySelector('a[data-pricing-checkout]');
+						if (checkoutLink instanceof HTMLAnchorElement) {
+							checkoutLink.href = pricingCheckoutUrl(input.value);
+						}
+					},
+					{ capture: true }
+				);
+			</script>
+			<script>
+				import { installPricingCheckout } from '@/lib/pricing/start-checkout';
+				installPricingCheckout();
+			</script>
+		</article>
+	</main>
+	<Footer />
+</BaseLayout>
