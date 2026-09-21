@@ -38,8 +38,8 @@ import {
 	type PricingUiState
 } from '@/lib/pricing/checkout-state';
 import {
-	bootCheckoutFromUrl,
 	checkoutIntervalFromSearch,
+	pricingUrlWithoutCheckoutCommand,
 	PRICING_CHECKOUT_PROGRESS_EVENT,
 	runProCheckout,
 	type CheckoutProgress
@@ -161,7 +161,15 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 	useEffect(() => {
 		let active = true;
 		const checkoutFromUrl = checkoutIntervalFromSearch();
-		if (checkoutFromUrl) setInterval(checkoutFromUrl);
+		if (checkoutFromUrl) {
+			setInterval(checkoutFromUrl);
+			window.history.replaceState(
+				window.history.state,
+				'',
+				pricingUrlWithoutCheckoutCommand(window.location.href)
+			);
+		}
+		const checkout = new URLSearchParams(window.location.search).get('checkout');
 
 		const onCheckoutProgress = (event: Event) => {
 			if (!(event instanceof CustomEvent)) return;
@@ -175,6 +183,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			if (progress.status === 'checkout_closed') {
 				setState((current) => withReadyStatus(current, progress.message));
 				captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'overlay_closed', location });
+				void refreshSession().catch(() => {});
 				return;
 			}
 			const status =
@@ -192,7 +201,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 
 		void (async () => {
 			try {
-				if (initialCatalog) {
+				if (initialCatalog || checkoutFromUrl) {
 					void fetchPublicPricingCatalog()
 						.then((next) => active && setCatalog(next))
 						.catch(() => {});
@@ -200,13 +209,11 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 					const next = await fetchPublicPricingCatalog();
 					if (active) setCatalog(next);
 				}
-				await refreshSession();
-				if (!active) return;
-				const checkout = new URLSearchParams(window.location.search).get('checkout');
-				if (checkout === 'start') {
-					await bootCheckoutFromUrl();
+				if (checkoutFromUrl) {
+					if (active) await runProCheckout(checkoutFromUrl);
 					return;
 				}
+				await refreshSession();
 				if (checkout === 'cancel') {
 					setState((current) =>
 						withReadyStatus(current, 'Checkout was cancelled. You can try again anytime.')
