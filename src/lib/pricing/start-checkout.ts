@@ -122,19 +122,3 @@ export function runProCheckout(interval: BillingInterval): Promise<void> {
 
 	return inFlight;
 }
-
-/** Start a checkout encoded in the pricing page URL. */
-export function bootCheckoutFromUrl(search?: string): Promise<void> | null {
-	const interval = checkoutIntervalFromSearch(
-		search ?? (typeof window === 'undefined' ? '' : window.location.search)
-	);
-	if (!interval) return null;
-	if (search === undefined && typeof window !== 'undefined') {
-		window.history.replaceState(
-			window.history.state,
-			'',
-			pricingUrlWithoutCheckoutCommand(window.location.href)
-		);
-	}
-	return runProCheckout(interval);
-}
