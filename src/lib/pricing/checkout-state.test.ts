@@ -40,16 +40,7 @@ describe('pricing checkout state', () => {
 		expect(state.tier).toBe('pro');
 		expect(state.busy).toBe(false);
 		expect(canStartCheckout(state)).toBe(false);
-		expect(showsManageBilling(state)).toBe(false);
-
-		const authenticatedPro = withReadySession(state, {
-			authenticated: true,
-			tier: 'pro',
-			billingManaged: true,
-			userLabel: 'dev@example.com'
-		});
-		expect(showsManageBilling(authenticatedPro)).toBe(true);
-		expect(canStartCheckout(authenticatedPro)).toBe(false);
+		expect(showsManageBilling(state)).toBe(true);
 	});
 
 	test('does not offer Dodo actions for operator-managed tiers', () => {

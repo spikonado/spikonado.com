@@ -92,6 +92,7 @@ export function withActivatedPro(state: PricingUiState): PricingUiState {
 	return {
 		...state,
 		status: 'idle',
+		authenticated: true,
 		tier: 'pro',
 		billingManaged: true,
 		message: 'Pro is active. You can manage billing anytime from this page.',
