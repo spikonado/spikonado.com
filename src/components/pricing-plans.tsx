@@ -189,7 +189,6 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			}
 		};
 		document.addEventListener(PRICING_CHECKOUT_PROGRESS_EVENT, onCheckoutProgress);
-		void bootCheckoutFromUrl();
 
 		void (async () => {
 			try {
@@ -201,14 +200,18 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 					const next = await fetchPublicPricingCatalog();
 					if (active) setCatalog(next);
 				}
+				await refreshSession();
+				if (!active) return;
 				const checkout = new URLSearchParams(window.location.search).get('checkout');
 				if (checkout === 'start') {
-					await refreshSession();
+					await bootCheckoutFromUrl();
 					return;
 				}
-				await refreshSession(
-					checkout === 'cancel' ? 'Checkout was cancelled. You can try again anytime.' : null
-				);
+				if (checkout === 'cancel') {
+					setState((current) =>
+						withReadyStatus(current, 'Checkout was cancelled. You can try again anytime.')
+					);
+				}
 				if (checkout === 'return') await waitForProActivation();
 				if (checkout === 'return' || checkout === 'cancel')
 					window.history.replaceState({}, '', '/pricing');
