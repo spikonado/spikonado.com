@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { checkoutIntervalFromSearch } from './start-checkout.ts';
+import { checkoutIntervalFromSearch, pricingUrlWithoutCheckoutCommand } from './start-checkout.ts';
 
 describe('checkoutIntervalFromSearch', () => {
 	test('reads monthly and annual Get Pro deep links', () => {
@@ -13,5 +13,15 @@ describe('checkoutIntervalFromSearch', () => {
 		expect(checkoutIntervalFromSearch('?checkout=start&interval=weekly')).toBe('monthly');
 		expect(checkoutIntervalFromSearch('?checkout=return')).toBeNull();
 		expect(checkoutIntervalFromSearch('')).toBeNull();
+	});
+});
+
+describe('pricingUrlWithoutCheckoutCommand', () => {
+	test('consumes checkout parameters without removing unrelated state', () => {
+		expect(
+			pricingUrlWithoutCheckoutCommand(
+				'https://spikonado.com/pricing?campaign=launch&checkout=start&interval=annual#plans'
+			)
+		).toBe('/pricing?campaign=launch#plans');
 	});
 });
