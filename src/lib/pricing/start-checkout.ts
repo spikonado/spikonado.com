@@ -55,6 +55,13 @@ export function checkoutIntervalFromSearch(
 	return isBillingInterval(requested) ? requested : 'monthly';
 }
 
+export function pricingUrlWithoutCheckoutCommand(url: string): string {
+	const parsed = new URL(url, 'https://spikonado.com');
+	parsed.searchParams.delete('checkout');
+	parsed.searchParams.delete('interval');
+	return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+}
+
 export function runProCheckout(interval: BillingInterval): Promise<void> {
 	if (inFlight) return inFlight;
 
@@ -117,10 +124,17 @@ export function runProCheckout(interval: BillingInterval): Promise<void> {
 }
 
 /** Start a checkout encoded in the pricing page URL. */
-export function bootCheckoutFromUrl(
-	search: string = typeof window === 'undefined' ? '' : window.location.search
-): Promise<void> | null {
-	const interval = checkoutIntervalFromSearch(search);
+export function bootCheckoutFromUrl(search?: string): Promise<void> | null {
+	const interval = checkoutIntervalFromSearch(
+		search ?? (typeof window === 'undefined' ? '' : window.location.search)
+	);
 	if (!interval) return null;
+	if (search === undefined && typeof window !== 'undefined') {
+		window.history.replaceState(
+			window.history.state,
+			'',
+			pricingUrlWithoutCheckoutCommand(window.location.href)
+		);
+	}
 	return runProCheckout(interval);
 }
