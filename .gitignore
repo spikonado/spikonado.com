@@ -16,6 +16,12 @@ bun-debug.log*
 # Nix
 .direnv
 
+# Local git worktrees
+.worktrees
+
+# Full Convex API dump from `bun run sync:convex-api`
+src/lib/convex/api.full.generated.ts
+
 # Output
 .astro/
 .output
