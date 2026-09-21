@@ -136,10 +136,12 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		);
 	}, []);
 
-	const waitForProActivation = useCallback(async () => {
-		setState((current) =>
-			withBusyStatus(current, 'activating', 'Confirming your Pro subscription...')
-		);
+	const waitForProActivation = useCallback(async (showPendingState = true) => {
+		if (showPendingState) {
+			setState((current) =>
+				withBusyStatus(current, 'activating', 'Confirming your Pro subscription...')
+			);
+		}
 		const started = Date.now();
 		while (Date.now() - started < ACTIVATION_TIMEOUT_MS) {
 			try {
@@ -154,6 +156,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			}
 			await new Promise((resolve) => window.setTimeout(resolve, ACTIVATION_POLL_MS));
 		}
+		if (!showPendingState) return;
 		captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activation_pending', location });
 		setState((current) => withActivationTimeout(current));
 	}, []);
@@ -183,7 +186,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			if (progress.status === 'checkout_closed') {
 				setState((current) => withReadyStatus(current, progress.message));
 				captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'overlay_closed', location });
-				void refreshSession().catch(() => {});
+				void waitForProActivation(false);
 				return;
 			}
 			const status =
