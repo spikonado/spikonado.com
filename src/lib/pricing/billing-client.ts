@@ -11,6 +11,11 @@ type AuthClient = Awaited<ReturnType<typeof createClient>>;
 
 export type { BillingInterval, PublicPricingCatalog, SubscriptionTier };
 
+export type MySubscription = {
+	tier: SubscriptionTier;
+	billingManaged: boolean;
+};
+
 export type PricingBillingClient = {
 	convex: ConvexClient;
 	auth: AuthClient | null;
@@ -116,11 +121,6 @@ export async function signInForPricing(): Promise<void> {
 	await requireAuth(client).signIn();
 }
 
-export async function signUpForPricing(): Promise<void> {
-	const client = await initializePricingBilling();
-	await requireAuth(client).signUp();
-}
-
 export async function signOutOfPricing(): Promise<void> {
 	const client = await initializePricingBilling();
 	if (!client.auth) return;
@@ -128,19 +128,15 @@ export async function signOutOfPricing(): Promise<void> {
 		navigate: false,
 		returnTo: `${window.location.origin}/pricing`
 	});
+	client.convex.close();
+	clientPromise = null;
 }
 
-export async function fetchMySubscription(): Promise<SubscriptionTier> {
+export async function fetchMySubscription(): Promise<MySubscription> {
 	const client = await initializePricingBilling();
-	if (!client.user) return 'free';
+	if (!client.user) return { tier: 'free', billingManaged: false };
 	const result = await client.convex.query(api.billing.getMySubscription, {});
-	return result.tier;
-}
-
-export async function ensureFreeSubscription(): Promise<void> {
-	const client = await initializePricingBilling();
-	if (!client.user) throw new Error('Sign in to start the Free plan.');
-	await client.convex.mutation(api.billing.ensureMySubscription, {});
+	return { tier: result.tier, billingManaged: result.billingManaged };
 }
 
 export async function createProCheckout(interval: BillingInterval): Promise<string> {
