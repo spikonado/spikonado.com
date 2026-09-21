@@ -25,3 +25,25 @@ nix develop
 bun install
 bun dev
 ```
+
+## Pricing checkout
+
+`/pricing` uses the Sprocket Convex deployment and WorkOS AuthKit for authenticated Dodo overlay checkout.
+
+Plan limits and model access are read live from Sprocket via `pricing:getPublicCatalog`. The checked-in typed API lives at `src/lib/convex/api.ts` ([Convex multiple repos](https://docs.convex.dev/production/multiple-repos)).
+
+Refresh a full deployment dump (gitignored) after Sprocket Convex deploys, then update the curated `api.ts` surface if signatures changed:
+
+```bash
+bun run sync:convex-api
+# or: bun run sync:convex-api -- --prod
+```
+
+Release checklist (Sprocket Convex + WorkOS + Dodo):
+
+1. Create monthly and annual Pro products in Dodo (the marketing site reads display prices from those products).
+2. Set Convex env: `DODO_PAYMENTS_API_KEY`, `DODO_PAYMENTS_ENVIRONMENT`, `DODO_PAYMENTS_WEBHOOK_SECRET`, `DODO_PAYMENTS_PRO_MONTHLY_PRODUCT_ID`, `DODO_PAYMENTS_PRO_ANNUAL_PRODUCT_ID`, `SPROCKET_MARKETING_ORIGIN=https://spikonado.com`, `WORKOS_CLIENT_ID`.
+3. Point the Dodo webhook at `https://<deployment>.convex.site/dodopayments-webhook`.
+4. In WorkOS AuthKit, allow CORS origin `https://spikonado.com` and redirect URI `https://spikonado.com/pricing/callback` (keep localhost + desktop loopback entries).
+5. Deploy marketing with the production Sprocket `PUBLIC_CONVEX_URL` and matching `PUBLIC_DODO_CHECKOUT_MODE` (`test` or `live`).
+6. Run `bun run sync:convex-api` and commit the updated `src/lib/convex/api.ts` when public Convex function signatures change.

@@ -7,6 +7,7 @@
 	"scripts": {
 		"dev": "astro dev",
 		"sync:sprocket-image": "bun scripts/sync-sprocket-image.ts",
+		"sync:convex-api": "bun scripts/sync-convex-api.ts",
 		"prebuild": "bun run sync:sprocket-image",
 		"build": "astro build",
 		"preview": "astro preview"
@@ -21,9 +22,12 @@
 		"@fontsource/ibm-plex-mono": "^5.3.0",
 		"@fontsource/ibm-plex-sans": "^5.3.0",
 		"@tailwindcss/vite": "^4.2.1",
+		"@workos-inc/authkit-js": "^0.20.2",
 		"astro": "7.1.0",
 		"botid": "^1.5.11",
 		"clsx": "^2.1.1",
+		"convex": "^1.43.0",
+		"dodopayments-checkout": "^1.9.5",
 		"posthog-js": "^1.360.0",
 		"posthog-node": "^5.41.0",
 		"resend": "^6.17.2",
@@ -38,6 +42,7 @@
 		"@astrojs/check": "0.9.10",
 		"@eslint/js": "^10.0.0",
 		"@types/bun": "^1.3.14",
+		"convex-helpers": "^0.1.114",
 		"eslint": "^10.0.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-astro": "^3.0.0",
