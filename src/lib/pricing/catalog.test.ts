@@ -12,28 +12,12 @@ const sampleCatalog: PublicPricingCatalog = {
 		{
 			id: 'free',
 			label: 'Free',
-			limits: {
-				modelUsage: 15_000
-			},
-			models: [
-				{ id: 'stealth/ox-alpha', label: 'Ox Alpha' },
-				{ id: 'deepseek-v4-pro-0813', label: 'DeepSeek V4 Pro' },
-				{ id: 'deepseek-v4-flash-0731', label: 'DeepSeek V4 Flash' }
-			],
-			serviceTiers: ['standard']
+			monthlyUsageDollars: 15
 		},
 		{
 			id: 'pro',
 			label: 'Pro',
-			limits: {
-				modelUsage: 75_000
-			},
-			models: [
-				{ id: 'gpt-5.6-sol', label: 'GPT-5.6 Sol' },
-				{ id: 'claude-opus-5', label: 'Claude Opus 5' },
-				{ id: 'deepseek-v4-pro-0813', label: 'DeepSeek V4 Pro' }
-			],
-			serviceTiers: ['standard', 'fast']
+			monthlyUsageDollars: 75
 		}
 	],
 	proPrices: {
@@ -90,33 +74,13 @@ describe('pricing catalog', () => {
 		expect(plans.find((plan) => plan.id === 'pro')?.highlighted).toBe(true);
 		expect(plans[0]?.features).toEqual([
 			'No credit card required',
-			'15,000 monthly AI usage credits',
+			'$15 of AI usage each month',
 			'No extra charge for any feature',
 			'Unlimited use of everything except AI',
 			'Access to selected models'
 		]);
 		expect(plans[1]?.features).toEqual([
-			'75,000 monthly AI usage credits',
-			'Access to our complete AI model catalog',
-			'Access AI models at faster service tiers'
-		]);
-	});
-
-	test('omits the credit line when Dodo did not return an amount', () => {
-		const plans = buildPricingPlans({
-			...sampleCatalog,
-			plans: sampleCatalog.plans.map((plan) => ({
-				...plan,
-				limits: { modelUsage: null }
-			}))
-		});
-		expect(plans[0]?.features).toEqual([
-			'No credit card required',
-			'No extra charge for any feature',
-			'Unlimited use of everything except AI',
-			'Access to selected models'
-		]);
-		expect(plans[1]?.features).toEqual([
+			'$75 of AI usage each month',
 			'Access to our complete AI model catalog',
 			'Access AI models at faster service tiers'
 		]);

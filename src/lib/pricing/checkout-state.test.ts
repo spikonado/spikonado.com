@@ -7,7 +7,8 @@ import {
 	withActivationTimeout,
 	withBusyStatus,
 	withError,
-	withReadySession
+	withReadySession,
+	withReadyStatus
 } from './checkout-state.ts';
 
 describe('pricing checkout state', () => {
@@ -25,6 +26,7 @@ describe('pricing checkout state', () => {
 		const state = withReadySession(createInitialPricingState(), {
 			authenticated: true,
 			tier: 'free',
+			billingManaged: false,
 			userLabel: 'dev@example.com'
 		});
 		expect(canStartCheckout(state)).toBe(true);
@@ -43,10 +45,22 @@ describe('pricing checkout state', () => {
 		const authenticatedPro = withReadySession(state, {
 			authenticated: true,
 			tier: 'pro',
+			billingManaged: true,
 			userLabel: 'dev@example.com'
 		});
 		expect(showsManageBilling(authenticatedPro)).toBe(true);
 		expect(canStartCheckout(authenticatedPro)).toBe(false);
+	});
+
+	test('does not offer Dodo actions for operator-managed tiers', () => {
+		const state = withReadySession(createInitialPricingState(), {
+			authenticated: true,
+			tier: 'max',
+			billingManaged: false,
+			userLabel: 'dev@example.com'
+		});
+		expect(canStartCheckout(state)).toBe(false);
+		expect(showsManageBilling(state)).toBe(false);
 	});
 
 	test('tracks errors and activation timeout messages', () => {
@@ -56,5 +70,11 @@ describe('pricing checkout state', () => {
 		const pending = withActivationTimeout(errored);
 		expect(pending.status).toBe('idle');
 		expect(pending.message).toContain('activation is still confirming');
+
+		expect(withReadyStatus(errored, 'Checkout closed')).toMatchObject({
+			status: 'idle',
+			message: 'Checkout closed',
+			busy: false
+		});
 	});
 });

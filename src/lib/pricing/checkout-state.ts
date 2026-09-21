@@ -13,6 +13,7 @@ export type PricingUiStatus =
 export type PricingUiState = {
 	status: PricingUiStatus;
 	tier: SubscriptionTier;
+	billingManaged: boolean;
 	authenticated: boolean;
 	userLabel: string | null;
 	message: string | null;
@@ -23,6 +24,7 @@ export function createInitialPricingState(): PricingUiState {
 	return {
 		status: 'loading',
 		tier: 'free',
+		billingManaged: false,
 		authenticated: false,
 		userLabel: null,
 		message: null,
@@ -35,6 +37,7 @@ export function withReadySession(
 	input: {
 		authenticated: boolean;
 		tier: SubscriptionTier;
+		billingManaged: boolean;
 		userLabel: string | null;
 		message?: string | null;
 	}
@@ -44,6 +47,7 @@ export function withReadySession(
 		status: 'idle',
 		authenticated: input.authenticated,
 		tier: input.tier,
+		billingManaged: input.billingManaged,
 		userLabel: input.userLabel,
 		message: input.message ?? null,
 		busy: false
@@ -72,11 +76,24 @@ export function withError(state: PricingUiState, message: string): PricingUiStat
 	};
 }
 
+export function withReadyStatus(
+	state: PricingUiState,
+	message: string | null = null
+): PricingUiState {
+	return {
+		...state,
+		status: 'idle',
+		message,
+		busy: false
+	};
+}
+
 export function withActivatedPro(state: PricingUiState): PricingUiState {
 	return {
 		...state,
 		status: 'idle',
 		tier: 'pro',
+		billingManaged: true,
 		message: 'Pro is active. You can manage billing anytime from this page.',
 		busy: false
 	};
@@ -93,9 +110,9 @@ export function withActivationTimeout(state: PricingUiState): PricingUiState {
 }
 
 export function canStartCheckout(state: PricingUiState): boolean {
-	return !state.busy && state.tier !== 'pro' && state.tier !== 'admin';
+	return !state.busy && state.tier === 'free';
 }
 
 export function showsManageBilling(state: PricingUiState): boolean {
-	return state.authenticated && (state.tier === 'pro' || state.tier === 'admin');
+	return state.authenticated && state.billingManaged;
 }

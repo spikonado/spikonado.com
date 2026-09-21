@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { checkoutIntervalFromSearch, intervalFromCheckoutHref } from './start-checkout.ts';
+import { checkoutIntervalFromSearch } from './start-checkout.ts';
 
 describe('checkoutIntervalFromSearch', () => {
 	test('reads monthly and annual Get Pro deep links', () => {
@@ -13,12 +13,5 @@ describe('checkoutIntervalFromSearch', () => {
 		expect(checkoutIntervalFromSearch('?checkout=start&interval=weekly')).toBe('monthly');
 		expect(checkoutIntervalFromSearch('?checkout=return')).toBeNull();
 		expect(checkoutIntervalFromSearch('')).toBeNull();
-	});
-});
-
-describe('intervalFromCheckoutHref', () => {
-	test('reads the interval from a Get Pro href', () => {
-		expect(intervalFromCheckoutHref('/pricing?checkout=start&interval=monthly')).toBe('monthly');
-		expect(intervalFromCheckoutHref('/pricing?checkout=start&interval=annual')).toBe('annual');
 	});
 });

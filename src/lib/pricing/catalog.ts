@@ -39,13 +39,8 @@ export type ProPriceDisplay = {
 	compareAt: string | null;
 };
 
-function formatCount(value: number): string {
-	return value.toLocaleString('en-US');
-}
-
-function creditFeature(amount: number | null): string | null {
-	if (amount === null) return null;
-	return `${formatCount(amount)} monthly AI usage credits`;
+function usageFeature(amount: number): string {
+	return `${formatMoney(amount, 'USD')} of AI usage each month`;
 }
 
 function majorFromMinor(amountMinor: number): number {
@@ -124,9 +119,6 @@ export function buildPricingPlans(catalog: PublicPricingCatalog): PricingPlan[] 
 		throw new Error('Pricing catalog is missing free or pro plans.');
 	}
 
-	const freeCredits = creditFeature(free.limits.modelUsage);
-	const proCredits = creditFeature(pro.limits.modelUsage);
-
 	return [
 		{
 			id: 'free',
@@ -134,7 +126,7 @@ export function buildPricingPlans(catalog: PublicPricingCatalog): PricingPlan[] 
 			includesLabel: 'Includes:',
 			features: [
 				'No credit card required',
-				...(freeCredits ? [freeCredits] : []),
+				usageFeature(free.monthlyUsageDollars),
 				'No extra charge for any feature',
 				'Unlimited use of everything except AI',
 				'Access to selected models'
@@ -146,7 +138,7 @@ export function buildPricingPlans(catalog: PublicPricingCatalog): PricingPlan[] 
 			includesLabel: 'Everything in Free, plus:',
 			highlighted: true,
 			features: [
-				...(proCredits ? [proCredits] : []),
+				usageFeature(pro.monthlyUsageDollars),
 				'Access to our complete AI model catalog',
 				'Access AI models at faster service tiers'
 			]

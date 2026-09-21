@@ -8,10 +8,8 @@ import { type FunctionReference, anyApi } from 'convex/server';
 export const api: PublicApiType = anyApi as unknown as PublicApiType;
 
 export type BillingInterval = 'monthly' | 'annual';
-export type SubscriptionTier = 'free' | 'pro' | 'admin';
+export type SubscriptionTier = string;
 export type PublicPlanId = 'free' | 'pro';
-export type ServiceTier = 'standard' | 'fast';
-
 export type DodoPublicPrice = {
 	productId: string;
 	name: string | null;
@@ -24,11 +22,7 @@ export type DodoPublicPrice = {
 export type PublicPricingPlan = {
 	id: PublicPlanId;
 	label: string;
-	limits: {
-		modelUsage: number | null;
-	};
-	models: Array<{ id: string; label: string }>;
-	serviceTiers: ServiceTier[];
+	monthlyUsageDollars: number;
 };
 
 export type PublicPricingCatalog = {
@@ -54,7 +48,7 @@ export type PublicApiType = {
 			'query',
 			'public',
 			Record<string, never>,
-			{ tier: SubscriptionTier }
+			{ tier: SubscriptionTier; tierLabel: string; billingManaged: boolean }
 		>;
 		ensureMySubscription: FunctionReference<'mutation', 'public', Record<string, never>, null>;
 		checkout: FunctionReference<
