@@ -13,15 +13,10 @@ describe('checkoutRequestFromSearch', () => {
 		});
 	});
 
-	test('defaults legacy or invalid requests to Pro monthly', () => {
-		expect(checkoutRequestFromSearch('?checkout=start')).toEqual({
-			tierId: 'pro',
-			interval: 'monthly'
-		});
-		expect(checkoutRequestFromSearch('?checkout=start&tier=&interval=weekly')).toEqual({
-			tierId: 'pro',
-			interval: 'monthly'
-		});
+	test('rejects malformed checkout links and unrelated commands', () => {
+		expect(checkoutRequestFromSearch('?checkout=start')).toBeNull();
+		expect(checkoutRequestFromSearch('?checkout=start&tier=&interval=monthly')).toBeNull();
+		expect(checkoutRequestFromSearch('?checkout=start&tier=team&interval=weekly')).toBeNull();
 		expect(checkoutRequestFromSearch('?checkout=return')).toBeNull();
 		expect(checkoutRequestFromSearch('')).toBeNull();
 	});

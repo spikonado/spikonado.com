@@ -28,19 +28,9 @@ export function readPendingPricingAction(): PendingPricingAction | null {
 			tierId?: unknown;
 			interval?: unknown;
 		};
-		// Legacy start_free pending actions are ignored; Free CTA now links to /sprocket.
-		if (parsed?.type === 'start_free') {
-			clearPendingPricingAction();
-			return null;
-		}
 		const interval = typeof parsed.interval === 'string' ? parsed.interval : null;
 		if (parsed?.type === 'checkout' && isBillingInterval(interval)) {
-			const tierId =
-				parsed.tierId === undefined
-					? 'pro'
-					: typeof parsed.tierId === 'string'
-						? parsed.tierId.trim()
-						: '';
+			const tierId = typeof parsed.tierId === 'string' ? parsed.tierId.trim() : '';
 			if (tierId) return { type: 'checkout', tierId, interval };
 		}
 	} catch {

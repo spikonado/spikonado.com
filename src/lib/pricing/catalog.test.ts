@@ -4,8 +4,7 @@ import {
 	buildPricingPlans,
 	isBillingInterval,
 	monthlyEquivalentMajor,
-	priceLabel,
-	pricesForPlan
+	priceLabel
 } from './catalog.ts';
 
 const monthlyPrice: DodoPublicPrice = {
@@ -50,8 +49,7 @@ const sampleCatalog: PublicPricingCatalog = {
 			highlighted: true,
 			prices: { monthly: monthlyPrice, annual: annualPrice }
 		}
-	],
-	proPrices: null
+	]
 };
 
 describe('pricing catalog', () => {
@@ -100,14 +98,6 @@ describe('pricing catalog', () => {
 			highlighted: true,
 			features: ['$25 of AI usage each week', '$75 of AI usage each month', 'Shared projects']
 		});
-	});
-
-	test('reads the legacy Pro prices during a rolling deployment', () => {
-		const catalog = {
-			plans: [{ id: 'pro', label: 'Pro', monthlyUsageDollars: 75 }],
-			proPrices: { monthly: monthlyPrice, annual: annualPrice }
-		} as PublicPricingCatalog;
-		expect(pricesForPlan(catalog.plans[0]!, catalog)).toEqual(catalog.proPrices!);
 	});
 
 	test('validates billing intervals', () => {

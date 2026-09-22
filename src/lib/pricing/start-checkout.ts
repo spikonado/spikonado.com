@@ -57,10 +57,11 @@ export function checkoutRequestFromSearch(
 	const params = new URLSearchParams(search);
 	if (params.get('checkout') !== 'start') return null;
 	const requested = params.get('interval');
-	const tierId = params.get('tier')?.trim() || 'pro';
+	const tierId = params.get('tier')?.trim();
+	if (!tierId || !isBillingInterval(requested)) return null;
 	return {
 		tierId,
-		interval: isBillingInterval(requested) ? requested : 'monthly'
+		interval: requested
 	};
 }
 

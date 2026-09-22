@@ -76,10 +76,8 @@ export function monthlyEquivalentMajor(price: DodoPublicPrice): number {
 
 type TierPrices = PublicPricingPlan['prices'];
 
-export function pricesForPlan(plan: PublicPricingPlan, catalog: PublicPricingCatalog): TierPrices {
-	if (plan.prices) return plan.prices;
-	if (plan.id === 'pro' && catalog.proPrices) return catalog.proPrices;
-	return { monthly: null, annual: null };
+export function pricesForPlan(plan: PublicPricingPlan): TierPrices {
+	return plan.prices;
 }
 
 export function priceLabel(interval: BillingInterval, prices: TierPrices): PriceDisplay | null {
