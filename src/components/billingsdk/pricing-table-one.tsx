@@ -83,7 +83,7 @@ export function PricingTableOne({
 				{headerFooter}
 			</div>
 
-			<div className="mt-12 grid gap-6 md:grid-cols-3">
+			<div className="mt-12 grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-6">
 				{plans.map((plan) => {
 					const price = interval === 'annual' ? plan.yearlyPrice : plan.monthlyPrice;
 					const numericPrice = Number.parseFloat(price);

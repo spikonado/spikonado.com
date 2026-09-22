@@ -1,50 +1,65 @@
 import { describe, expect, test } from 'bun:test';
-import type { PublicPricingCatalog } from '@/lib/convex/api';
+import type { DodoPublicPrice, PublicPricingCatalog } from '@/lib/convex/api';
 import {
 	buildPricingPlans,
 	isBillingInterval,
 	monthlyEquivalentMajor,
-	proPriceLabel
+	priceLabel,
+	pricesForPlan
 } from './catalog.ts';
+
+const monthlyPrice: DodoPublicPrice = {
+	productId: 'prod_team_monthly',
+	name: 'Team Monthly',
+	amountMinor: 2_000,
+	currency: 'USD',
+	paymentFrequencyCount: 1,
+	paymentFrequencyInterval: 'Month'
+};
+
+const annualPrice: DodoPublicPrice = {
+	productId: 'prod_team_annual',
+	name: 'Team Annual',
+	amountMinor: 21_600,
+	currency: 'USD',
+	paymentFrequencyCount: 1,
+	paymentFrequencyInterval: 'Year'
+};
 
 const sampleCatalog: PublicPricingCatalog = {
 	plans: [
 		{
 			id: 'free',
 			label: 'Free',
-			monthlyUsageDollars: 15
+			weeklyUsageDollars: 5,
+			monthlyUsageDollars: 15,
+			description: null,
+			features: ['Community support'],
+			displayOrder: 0,
+			highlighted: false,
+			prices: { monthly: null, annual: null }
 		},
 		{
-			id: 'pro',
-			label: 'Pro',
-			monthlyUsageDollars: 75
+			id: 'team',
+			label: 'Team',
+			weeklyUsageDollars: 25,
+			monthlyUsageDollars: 75,
+			description: 'For engineering teams.',
+			features: ['Shared projects'],
+			displayOrder: 10,
+			highlighted: true,
+			prices: { monthly: monthlyPrice, annual: annualPrice }
 		}
 	],
-	proPrices: {
-		monthly: {
-			productId: 'prod_monthly',
-			name: 'Pro Monthly',
-			amountMinor: 2_000,
-			currency: 'USD',
-			paymentFrequencyCount: 1,
-			paymentFrequencyInterval: 'Month'
-		},
-		annual: {
-			productId: 'prod_annual',
-			name: 'Pro Annual',
-			amountMinor: 21_600,
-			currency: 'USD',
-			paymentFrequencyCount: 1,
-			paymentFrequencyInterval: 'Year'
-		}
-	}
+	proPrices: null
 };
 
 describe('pricing catalog', () => {
-	test('derives Pro display amounts from Dodo product prices', () => {
-		expect(monthlyEquivalentMajor(sampleCatalog.proPrices!.monthly)).toBe(20);
-		expect(monthlyEquivalentMajor(sampleCatalog.proPrices!.annual)).toBe(18);
-		expect(proPriceLabel('monthly', sampleCatalog.proPrices)).toEqual({
+	test('derives display amounts from each tier Dodo price', () => {
+		const prices = sampleCatalog.plans[1]!.prices;
+		expect(monthlyEquivalentMajor(monthlyPrice)).toBe(20);
+		expect(monthlyEquivalentMajor(annualPrice)).toBe(18);
+		expect(priceLabel('monthly', prices)).toEqual({
 			cardPrice: '$20/mo.',
 			perMonthLabel: '$20',
 			billed: 'Billed monthly',
@@ -53,7 +68,7 @@ describe('pricing catalog', () => {
 			periodLabel: '$20',
 			compareAt: null
 		});
-		expect(proPriceLabel('annual', sampleCatalog.proPrices)).toEqual({
+		expect(priceLabel('annual', prices)).toEqual({
 			cardPrice: '$216/yr.',
 			perMonthLabel: '$18',
 			billed: 'Billed annually',
@@ -62,28 +77,37 @@ describe('pricing catalog', () => {
 			periodLabel: '$216',
 			compareAt: '$240'
 		});
-		expect(proPriceLabel('monthly', null)).toBeNull();
+		expect(priceLabel('monthly', { monthly: null, annual: null })).toBeNull();
 	});
 
-	test('builds cumulative free/pro/enterprise plans from live catalog data', () => {
+	test('builds every plan from live card and allowance data', () => {
 		const plans = buildPricingPlans(sampleCatalog);
-		expect(plans.map((plan) => plan.id)).toEqual(['free', 'pro', 'enterprise']);
-		expect(plans[0]?.includesLabel).toBe('Includes:');
-		expect(plans[1]?.includesLabel).toBe('Everything in Free, plus:');
-		expect(plans[2]?.includesLabel).toBe('Everything in Pro, plus:');
-		expect(plans.find((plan) => plan.id === 'pro')?.highlighted).toBe(true);
+		expect(plans.map((plan) => plan.id)).toEqual(['free', 'team']);
+		expect(plans[0]).toMatchObject({
+			name: 'Free',
+			description: 'For trying Sprocket and building without a card.',
+			highlighted: false
+		});
 		expect(plans[0]?.features).toEqual([
 			'No credit card required',
+			'$5 of AI usage each week',
 			'$15 of AI usage each month',
-			'No extra charge for any feature',
-			'Unlimited use of everything except AI',
-			'Access to selected models'
+			'Community support'
 		]);
-		expect(plans[1]?.features).toEqual([
-			'$75 of AI usage each month',
-			'Access to our complete AI model catalog',
-			'Access AI models at faster service tiers'
-		]);
+		expect(plans[1]).toMatchObject({
+			name: 'Team',
+			description: 'For engineering teams.',
+			highlighted: true,
+			features: ['$25 of AI usage each week', '$75 of AI usage each month', 'Shared projects']
+		});
+	});
+
+	test('reads the legacy Pro prices during a rolling deployment', () => {
+		const catalog = {
+			plans: [{ id: 'pro', label: 'Pro', monthlyUsageDollars: 75 }],
+			proPrices: { monthly: monthlyPrice, annual: annualPrice }
+		} as PublicPricingCatalog;
+		expect(pricesForPlan(catalog.plans[0]!, catalog)).toEqual(catalog.proPrices!);
 	});
 
 	test('validates billing intervals', () => {

@@ -13,6 +13,7 @@ export type { BillingInterval, PublicPricingCatalog, SubscriptionTier };
 
 export type MySubscription = {
 	tier: SubscriptionTier;
+	tierLabel: string;
 	billingManaged: boolean;
 };
 
@@ -134,16 +135,20 @@ export async function signOutOfPricing(): Promise<void> {
 
 export async function fetchMySubscription(): Promise<MySubscription> {
 	const client = await initializePricingBilling();
-	if (!client.user) return { tier: 'free', billingManaged: false };
+	if (!client.user) return { tier: 'free', tierLabel: 'Free', billingManaged: false };
 	const result = await client.convex.query(api.billing.getMySubscription, {});
-	return { tier: result.tier, billingManaged: result.billingManaged };
+	return {
+		tier: result.tier,
+		tierLabel: result.tierLabel,
+		billingManaged: result.billingManaged
+	};
 }
 
-export async function createProCheckout(interval: BillingInterval): Promise<string> {
+export async function createCheckout(tierId: string, interval: BillingInterval): Promise<string> {
 	const client = await initializePricingBilling();
-	if (!client.user) throw new Error('Sign in to upgrade to Pro.');
+	if (!client.user) throw new Error('Sign in to choose a paid plan.');
 	const result = await client.convex.action(api.billing.checkout, {
-		tier: 'pro',
+		tier: tierId,
 		interval
 	});
 	if (!result.checkout_url) throw new Error('Checkout session was not created.');

@@ -28,9 +28,22 @@ describe('pending pricing actions', () => {
 		clearPendingPricingAction();
 	});
 
-	test('stores and reads checkout interval', () => {
-		storePendingPricingAction({ type: 'checkout', interval: 'annual' });
-		expect(readPendingPricingAction()).toEqual({ type: 'checkout', interval: 'annual' });
+	test('stores and reads the checkout tier and interval', () => {
+		storePendingPricingAction({ type: 'checkout', tierId: 'team', interval: 'annual' });
+		expect(readPendingPricingAction()).toEqual({
+			type: 'checkout',
+			tierId: 'team',
+			interval: 'annual'
+		});
+	});
+
+	test('defaults checkout state from older clients to Pro', () => {
+		sessionStorage.setItem('spikonado_pricing_pending', '{"type":"checkout","interval":"monthly"}');
+		expect(readPendingPricingAction()).toEqual({
+			type: 'checkout',
+			tierId: 'pro',
+			interval: 'monthly'
+		});
 	});
 
 	test('clears legacy free-start pending actions and corrupt payloads', () => {
