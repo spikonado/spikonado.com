@@ -1,5 +1,5 @@
 import {
-	createProCheckout,
+	createCheckout,
 	initializePricingBilling,
 	signInForPricing
 } from '@/lib/pricing/billing-client';
@@ -15,6 +15,12 @@ export type CheckoutProgressStatus =
 export type CheckoutProgress = {
 	status: CheckoutProgressStatus;
 	message: string;
+	tierId: string;
+	interval: BillingInterval;
+};
+
+export type CheckoutRequest = {
+	tierId: string;
 	interval: BillingInterval;
 };
 
@@ -45,29 +51,33 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
 	});
 }
 
-/** Read a Get Pro deep link like `/pricing?checkout=start&interval=monthly`. */
-export function checkoutIntervalFromSearch(
+export function checkoutRequestFromSearch(
 	search: string = typeof window === 'undefined' ? '' : window.location.search
-): BillingInterval | null {
+): CheckoutRequest | null {
 	const params = new URLSearchParams(search);
 	if (params.get('checkout') !== 'start') return null;
 	const requested = params.get('interval');
-	return isBillingInterval(requested) ? requested : 'monthly';
+	const tierId = params.get('tier')?.trim() || 'pro';
+	return {
+		tierId,
+		interval: isBillingInterval(requested) ? requested : 'monthly'
+	};
 }
 
 export function pricingUrlWithoutCheckoutCommand(url: string): string {
 	const parsed = new URL(url, 'https://spikonado.com');
 	parsed.searchParams.delete('checkout');
 	parsed.searchParams.delete('interval');
+	parsed.searchParams.delete('tier');
 	return `${parsed.pathname}${parsed.search}${parsed.hash}`;
 }
 
-export function runProCheckout(interval: BillingInterval): Promise<void> {
+export function runCheckout(tierId: string, interval: BillingInterval): Promise<void> {
 	if (inFlight) return inFlight;
 
 	inFlight = (async () => {
-		storePendingPricingAction({ type: 'checkout', interval });
-		emit({ status: 'starting', message: 'Preparing secure checkout…', interval });
+		storePendingPricingAction({ type: 'checkout', tierId, interval });
+		emit({ status: 'starting', message: 'Preparing secure checkout…', tierId, interval });
 		try {
 			const client = await withTimeout(
 				initializePricingBilling(),
@@ -78,21 +88,23 @@ export function runProCheckout(interval: BillingInterval): Promise<void> {
 				emit({
 					status: 'error',
 					message: client.error ?? 'Checkout is not configured yet.',
+					tierId,
 					interval
 				});
 				return;
 			}
 			if (!client.user) {
-				emit({ status: 'signing_in', message: 'Redirecting to sign in…', interval });
+				emit({ status: 'signing_in', message: 'Redirecting to sign in…', tierId, interval });
 				await signInForPricing();
 				return;
 			}
 			clearPendingPricingAction();
-			emit({ status: 'starting', message: 'Opening secure checkout…', interval });
-			const checkoutUrl = await createProCheckout(interval);
+			emit({ status: 'starting', message: 'Opening secure checkout…', tierId, interval });
+			const checkoutUrl = await createCheckout(tierId, interval);
 			emit({
 				status: 'checkout_open',
 				message: 'Complete checkout in the overlay…',
+				tierId,
 				interval
 			});
 			let checkoutFailed = false;
@@ -102,17 +114,24 @@ export function runProCheckout(interval: BillingInterval): Promise<void> {
 					emit({
 						status: 'checkout_closed',
 						message: 'Checkout closed. You can try again anytime.',
+						tierId,
 						interval
 					});
 				} else if (event.event_type === 'checkout.error') {
 					checkoutFailed = true;
-					emit({ status: 'error', message: 'Checkout could not be completed.', interval });
+					emit({
+						status: 'error',
+						message: 'Checkout could not be completed.',
+						tierId,
+						interval
+					});
 				}
 			});
 		} catch (error) {
 			emit({
 				status: 'error',
 				message: error instanceof Error ? error.message : 'Could not start checkout.',
+				tierId,
 				interval
 			});
 		} finally {

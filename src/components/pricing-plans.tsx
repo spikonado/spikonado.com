@@ -20,16 +20,16 @@ import {
 } from '@/lib/pricing/billing-client';
 import {
 	buildPricingPlans,
-	ENTERPRISE_MAILTO,
+	priceLabel,
 	pricingFaqs,
-	proPriceLabel,
+	pricesForPlan,
 	type BillingInterval
 } from '@/lib/pricing/catalog';
 import {
 	createInitialPricingState,
 	canStartCheckout,
 	showsManageBilling,
-	withActivatedPro,
+	withActivatedTier,
 	withActivationTimeout,
 	withBusyStatus,
 	withError,
@@ -38,10 +38,10 @@ import {
 	type PricingUiState
 } from '@/lib/pricing/checkout-state';
 import {
-	checkoutIntervalFromSearch,
+	checkoutRequestFromSearch,
 	pricingUrlWithoutCheckoutCommand,
 	PRICING_CHECKOUT_PROGRESS_EVENT,
-	runProCheckout,
+	runCheckout,
 	type CheckoutProgress
 } from '@/lib/pricing/start-checkout';
 import { cn } from '@/utils';
@@ -71,38 +71,43 @@ function currencySymbol(currency: string): string {
 	}
 }
 
-function planPrice(planId: string, proPrice: number | undefined): string {
+function planPrice(planId: string, price: number | undefined): string {
 	if (planId === 'free') return '0';
-	if (planId === 'enterprise') return 'Custom';
-	return proPrice === undefined ? 'Unavailable' : String(proPrice);
+	return price === undefined ? 'Unavailable' : String(price);
 }
 
 function billingPlans(catalog: PublicPricingCatalog): BillingPlan[] {
 	const plans = buildPricingPlans(catalog);
-	const monthly = proPriceLabel('monthly', catalog.proPrices);
-	const annual = proPriceLabel('annual', catalog.proPrices);
 
 	return plans.map((plan) => {
-		const isPro = plan.id === 'pro';
+		const source = catalog.plans.find((candidate) => candidate.id === plan.id);
+		if (!source) throw new Error(`Pricing plan "${plan.id}" is missing from the catalog.`);
+		const prices = pricesForPlan(source, catalog);
+		const monthly = priceLabel('monthly', prices);
+		const annual = priceLabel('annual', prices);
 		return {
 			id: plan.id,
 			title: plan.name,
-			description:
-				plan.id === 'free'
-					? 'For trying Sprocket and building without a card.'
-					: plan.id === 'pro'
-						? 'For regular AI-assisted engineering work.'
-						: 'For teams with custom rollout and purchasing needs.',
+			description: plan.description,
 			highlight: plan.highlighted,
 			badge: plan.highlighted ? 'Most popular' : undefined,
-			currency: isPro && monthly ? currencySymbol(monthly.currency) : '',
+			currency: currencySymbol(monthly?.currency ?? annual?.currency ?? 'USD'),
 			monthlyPrice: planPrice(plan.id, monthly?.periodMajor),
 			yearlyPrice: planPrice(plan.id, annual?.periodMajor),
-			buttonText:
-				plan.id === 'free' ? 'Start free' : plan.id === 'pro' ? 'Get Pro' : 'Contact sales',
+			buttonText: plan.id === 'free' ? 'Start free' : `Get ${plan.name}`,
 			features: plan.features.map((feature) => ({ name: feature, icon: 'check' }))
 		};
 	});
+}
+
+function planIsAvailable(
+	catalog: PublicPricingCatalog | null,
+	planId: string,
+	interval: BillingInterval
+): boolean {
+	if (!catalog) return false;
+	const plan = catalog.plans.find((candidate) => candidate.id === planId);
+	return Boolean(plan && pricesForPlan(plan, catalog)[interval]);
 }
 
 function isPaidTier(tier: SubscriptionTier): boolean {
@@ -113,22 +118,26 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 	const [state, setState] = useState<PricingUiState>(() => createInitialPricingState());
 	const [interval, setInterval] = useState<BillingInterval>('monthly');
 	const [catalog, setCatalog] = useState<PublicPricingCatalog | null>(initialCatalog);
+	const [checkoutTierId, setCheckoutTierId] = useState<string | null>(null);
 	const plans = useMemo(() => (catalog ? billingPlans(catalog) : []), [catalog]);
 	const checkoutInFlight = state.busy;
 
 	const refreshSession = useCallback(async (message: string | null = null) => {
 		const client = await initializePricingBilling();
 		let tier: SubscriptionTier = 'free';
+		let tierLabel = 'Free';
 		let billingManaged = false;
 		if (client.user) {
 			const subscription = await fetchMySubscription();
 			tier = subscription.tier;
+			tierLabel = subscription.tierLabel;
 			billingManaged = subscription.billingManaged;
 		}
 		setState((current) =>
 			withReadySession(current, {
 				authenticated: Boolean(client.user),
 				tier,
+				tierLabel,
 				billingManaged,
 				userLabel: client.user?.email ?? client.user?.firstName ?? null,
 				message
@@ -136,61 +145,69 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		);
 	}, []);
 
-	const waitForProActivation = useCallback(async (showPendingState = true) => {
-		const client = showPendingState ? null : await initializePricingBilling();
-		let sessionReconciled = showPendingState;
-		if (showPendingState) {
-			setState((current) =>
-				withBusyStatus(current, 'activating', 'Confirming your Pro subscription...')
-			);
-		}
-		const started = Date.now();
-		while (Date.now() - started < ACTIVATION_TIMEOUT_MS) {
-			try {
-				const subscription = await fetchMySubscription();
-				if (subscription.tier === 'pro' && subscription.billingManaged) {
-					captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activated', location });
-					setState((current) =>
-						withActivatedPro(
-							client
-								? withReadySession(current, {
-										authenticated: Boolean(client.user),
-										tier: subscription.tier,
-										billingManaged: subscription.billingManaged,
-										userLabel: client.user?.email ?? client.user?.firstName ?? null
-									})
-								: current
-						)
-					);
-					return;
-				}
-				if (client && !sessionReconciled) {
-					setState((current) =>
-						withReadySession(current, {
-							authenticated: Boolean(client.user),
-							tier: subscription.tier,
-							billingManaged: subscription.billingManaged,
-							userLabel: client.user?.email ?? client.user?.firstName ?? null,
-							message: current.message
-						})
-					);
-					sessionReconciled = true;
-				}
-			} catch {
-				// The webhook may still be in flight.
+	const waitForTierActivation = useCallback(
+		async (tierId: string, tierLabel: string, showPendingState = true) => {
+			const client = showPendingState ? null : await initializePricingBilling();
+			let sessionReconciled = showPendingState;
+			if (showPendingState) {
+				setState((current) =>
+					withBusyStatus(current, 'activating', `Confirming your ${tierLabel} subscription...`)
+				);
 			}
-			await new Promise((resolve) => window.setTimeout(resolve, ACTIVATION_POLL_MS));
-		}
-		if (!showPendingState) return;
-		captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activation_pending', location });
-		setState((current) => withActivationTimeout(current));
-	}, []);
+			const started = Date.now();
+			while (Date.now() - started < ACTIVATION_TIMEOUT_MS) {
+				try {
+					const subscription = await fetchMySubscription();
+					if (subscription.tier === tierId && subscription.billingManaged) {
+						captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activated', location });
+						setState((current) =>
+							withActivatedTier(
+								client
+									? withReadySession(current, {
+											authenticated: Boolean(client.user),
+											tier: subscription.tier,
+											tierLabel: subscription.tierLabel,
+											billingManaged: subscription.billingManaged,
+											userLabel: client.user?.email ?? client.user?.firstName ?? null
+										})
+									: current,
+								subscription.tier,
+								subscription.tierLabel
+							)
+						);
+						return;
+					}
+					if (client && !sessionReconciled) {
+						setState((current) =>
+							withReadySession(current, {
+								authenticated: Boolean(client.user),
+								tier: subscription.tier,
+								tierLabel: subscription.tierLabel,
+								billingManaged: subscription.billingManaged,
+								userLabel: client.user?.email ?? client.user?.firstName ?? null,
+								message: current.message
+							})
+						);
+						sessionReconciled = true;
+					}
+				} catch {
+					// The webhook may still be in flight.
+				}
+				await new Promise((resolve) => window.setTimeout(resolve, ACTIVATION_POLL_MS));
+			}
+			if (!showPendingState) return;
+			captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activation_pending', location });
+			setState((current) => withActivationTimeout(current, tierLabel));
+		},
+		[]
+	);
 
 	useEffect(() => {
 		let active = true;
-		const checkoutFromUrl = checkoutIntervalFromSearch();
+		const checkoutFromUrl = checkoutRequestFromSearch();
 		if (checkoutFromUrl) {
-			setInterval(checkoutFromUrl);
+			setInterval(checkoutFromUrl.interval);
+			setCheckoutTierId(checkoutFromUrl.tierId);
 			window.history.replaceState(
 				window.history.state,
 				'',
@@ -198,11 +215,13 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			);
 		}
 		const checkout = new URLSearchParams(window.location.search).get('checkout');
+		const returnTierId = new URLSearchParams(window.location.search).get('tier')?.trim() || 'pro';
 
 		const onCheckoutProgress = (event: Event) => {
 			if (!(event instanceof CustomEvent)) return;
 			const progress = event.detail as CheckoutProgress;
 			setInterval(progress.interval);
+			setCheckoutTierId(progress.tierId);
 			if (progress.status === 'error') {
 				setState((current) => withError(current, progress.message));
 				captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'error', location });
@@ -211,7 +230,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			if (progress.status === 'checkout_closed') {
 				setState((current) => withReadyStatus(current, progress.message));
 				captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'overlay_closed', location });
-				void waitForProActivation(false).catch(() => {});
+				void waitForTierActivation(progress.tierId, progress.tierId, false).catch(() => {});
 				return;
 			}
 			const status =
@@ -238,7 +257,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 					if (active) setCatalog(next);
 				}
 				if (checkoutFromUrl) {
-					if (active) await runProCheckout(checkoutFromUrl);
+					if (active) await runCheckout(checkoutFromUrl.tierId, checkoutFromUrl.interval);
 					return;
 				}
 				await refreshSession();
@@ -247,7 +266,11 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 						withReadyStatus(current, 'Checkout was cancelled. You can try again anytime.')
 					);
 				}
-				if (checkout === 'return') await waitForProActivation();
+				if (checkout === 'return') {
+					const tierLabel =
+						initialCatalog?.plans.find((plan) => plan.id === returnTierId)?.label ?? returnTierId;
+					await waitForTierActivation(returnTierId, tierLabel);
+				}
 				if (checkout === 'return' || checkout === 'cancel')
 					window.history.replaceState({}, '', '/pricing');
 			} catch (error) {
@@ -266,7 +289,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			active = false;
 			document.removeEventListener(PRICING_CHECKOUT_PROGRESS_EVENT, onCheckoutProgress);
 		};
-	}, [initialCatalog, refreshSession, waitForProActivation]);
+	}, [initialCatalog, refreshSession, waitForTierActivation]);
 
 	function selectInterval(next: BillingInterval) {
 		setInterval(next);
@@ -279,16 +302,17 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			window.location.assign('/#sprocket');
 			return;
 		}
-		if (planId === 'enterprise') {
-			window.location.assign(ENTERPRISE_MAILTO);
-			return;
-		}
 		if (!canStartCheckout(state)) {
 			setState((current) => withError(current, 'A paid plan is already active on this account.'));
 			return;
 		}
-		captureAnalyticsEvent(CHECKOUT_STARTED_EVENT, { interval, location, plan: 'pro' });
-		await runProCheckout(interval);
+		if (!planIsAvailable(catalog, planId, interval)) {
+			setState((current) => withError(current, 'This billing interval is not available.'));
+			return;
+		}
+		setCheckoutTierId(planId);
+		captureAnalyticsEvent(CHECKOUT_STARTED_EVENT, { interval, location, plan: planId });
+		await runCheckout(planId, interval);
 	}
 
 	async function manageBilling() {
@@ -315,6 +339,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			withReadySession(current, {
 				authenticated: false,
 				tier: 'free',
+				tierLabel: 'Free',
 				billingManaged: false,
 				userLabel: null
 			})
@@ -322,14 +347,18 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 	}
 
 	function planButtonLabel(plan: BillingPlan): string {
-		if (plan.id !== 'pro') return plan.buttonText;
-		if (state.status === 'managing_billing') return 'Opening billing portal...';
-		if (state.status === 'signing_in') return 'Redirecting to sign in...';
-		if (state.status === 'starting_checkout') return 'Starting checkout...';
-		if (state.status === 'checkout_open') return 'Checkout opened';
-		if (state.status === 'activating') return 'Confirming Pro...';
-		if (showsManageBilling(state)) return 'Manage billing';
-		if (isPaidTier(state.tier)) return 'Current plan active';
+		if (plan.id === 'free') return plan.buttonText;
+		const isCurrentTier = state.tier === plan.id;
+		if (state.status === 'managing_billing' && isCurrentTier) return 'Opening billing portal...';
+		if (checkoutTierId === plan.id) {
+			if (state.status === 'signing_in') return 'Redirecting to sign in...';
+			if (state.status === 'starting_checkout') return 'Starting checkout...';
+			if (state.status === 'checkout_open') return 'Checkout opened';
+			if (state.status === 'activating') return `Confirming ${plan.title}...`;
+		}
+		if (isCurrentTier && showsManageBilling(state)) return 'Manage billing';
+		if (isPaidTier(state.tier)) return isCurrentTier ? 'Current plan' : 'Paid plan already active';
+		if (!planIsAvailable(catalog, plan.id, interval)) return 'Unavailable';
 		return plan.buttonText;
 	}
 
@@ -355,7 +384,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 						Signed in as <span className="text-foreground">{state.userLabel}</span>
 						{isPaidTier(state.tier) ? (
 							<>
-								. Current plan: <span className="text-foreground capitalize">{state.tier}</span>
+								. Current plan: <span className="text-foreground">{state.tierLabel}</span>
 							</>
 						) : null}
 					</p>
@@ -379,17 +408,19 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 					interval={interval}
 					onIntervalChange={selectInterval}
 					onPlanSelect={(planId) =>
-						planId === 'pro' && showsManageBilling(state)
+						planId === state.tier && showsManageBilling(state)
 							? void manageBilling()
 							: void selectPlan(planId)
 					}
 					buttonLabel={planButtonLabel}
-					buttonDisabled={(plan) =>
-						plan.id === 'pro' &&
-						(checkoutInFlight ||
-							!catalog?.proPrices ||
-							(!showsManageBilling(state) && isPaidTier(state.tier)))
-					}
+					buttonDisabled={(plan) => {
+						if (checkoutInFlight) return true;
+						if (plan.id === 'free') return false;
+						if (isPaidTier(state.tier)) {
+							return plan.id !== state.tier || !showsManageBilling(state);
+						}
+						return !planIsAvailable(catalog, plan.id, interval);
+					}}
 					headerFooter={account}
 				/>
 			) : (

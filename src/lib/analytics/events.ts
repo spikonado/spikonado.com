@@ -30,7 +30,7 @@ export const NEWSLETTER_SUBSCRIBE_FAILED_EVENT = 'newsletter_subscribe_failed';
 /** User selected monthly vs annual on the pricing page. */
 export const INTERVAL_SELECTED_EVENT = 'pricing_interval_selected';
 
-/** Authenticated Pro checkout session creation started. */
+/** Authenticated paid-plan checkout session creation started. */
 export const CHECKOUT_STARTED_EVENT = 'pricing_checkout_started';
 
 /** Checkout lifecycle update (overlay, redirect, activation, error). No PII. */

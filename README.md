@@ -41,8 +41,8 @@ bun run sync:convex-api
 
 Release checklist (Sprocket Convex + WorkOS + Dodo):
 
-1. Create monthly and annual Pro products in Dodo. The marketing site reads display prices from those products.
-2. Set Convex env: `DODO_PAYMENTS_API_KEY`, `DODO_PAYMENTS_ENVIRONMENT`, `DODO_PAYMENTS_WEBHOOK_SECRET`, `DODO_PAYMENTS_PRO_MONTHLY_PRODUCT_ID`, `DODO_PAYMENTS_PRO_ANNUAL_PRODUCT_ID`, `SPROCKET_MARKETING_ORIGIN=https://spikonado.com`, `WORKOS_CLIENT_ID`.
+1. Create the recurring products in Dodo. Set each product ID on its Convex `tiers` row as `monthlyProductId` or `annualProductId`. Every tier row becomes a pricing card, and an omitted product makes that interval unavailable.
+2. Set Convex env: `DODO_PAYMENTS_API_KEY`, `DODO_PAYMENTS_ENVIRONMENT`, `DODO_PAYMENTS_WEBHOOK_SECRET`, `SPROCKET_MARKETING_ORIGIN=https://spikonado.com`, `WORKOS_CLIENT_ID`.
 3. Point the Dodo webhook at `https://<deployment>.convex.site/dodopayments-webhook`.
 4. In WorkOS AuthKit, allow CORS origin `https://spikonado.com` and redirect URI `https://spikonado.com/pricing/callback` (keep localhost + desktop loopback entries).
 5. Deploy marketing with the production Sprocket `PUBLIC_CONVEX_URL` and matching `PUBLIC_DODO_CHECKOUT_MODE` (`test` or `live`).

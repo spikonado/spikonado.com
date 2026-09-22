@@ -13,6 +13,7 @@ export type PricingUiStatus =
 export type PricingUiState = {
 	status: PricingUiStatus;
 	tier: SubscriptionTier;
+	tierLabel: string;
 	billingManaged: boolean;
 	authenticated: boolean;
 	userLabel: string | null;
@@ -24,6 +25,7 @@ export function createInitialPricingState(): PricingUiState {
 	return {
 		status: 'loading',
 		tier: 'free',
+		tierLabel: 'Free',
 		billingManaged: false,
 		authenticated: false,
 		userLabel: null,
@@ -37,6 +39,7 @@ export function withReadySession(
 	input: {
 		authenticated: boolean;
 		tier: SubscriptionTier;
+		tierLabel: string;
 		billingManaged: boolean;
 		userLabel: string | null;
 		message?: string | null;
@@ -47,6 +50,7 @@ export function withReadySession(
 		status: 'idle',
 		authenticated: input.authenticated,
 		tier: input.tier,
+		tierLabel: input.tierLabel,
 		billingManaged: input.billingManaged,
 		userLabel: input.userLabel,
 		message: input.message ?? null,
@@ -88,24 +92,28 @@ export function withReadyStatus(
 	};
 }
 
-export function withActivatedPro(state: PricingUiState): PricingUiState {
+export function withActivatedTier(
+	state: PricingUiState,
+	tier: SubscriptionTier,
+	tierLabel: string
+): PricingUiState {
 	return {
 		...state,
 		status: 'idle',
 		authenticated: true,
-		tier: 'pro',
+		tier,
+		tierLabel,
 		billingManaged: true,
-		message: 'Pro is active. You can manage billing anytime from this page.',
+		message: `${tierLabel} is active. You can manage billing anytime from this page.`,
 		busy: false
 	};
 }
 
-export function withActivationTimeout(state: PricingUiState): PricingUiState {
+export function withActivationTimeout(state: PricingUiState, tierLabel: string): PricingUiState {
 	return {
 		...state,
 		status: 'idle',
-		message:
-			'Payment received. Pro activation is still confirming—refresh in a moment if it has not updated yet.',
+		message: `Payment received. ${tierLabel} activation is still confirming. Refresh in a moment if it has not updated yet.`,
 		busy: false
 	};
 }

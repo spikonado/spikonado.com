@@ -1,21 +1,14 @@
-import type { DodoPublicPrice, PublicPricingCatalog } from '@/lib/convex/api';
+import type { DodoPublicPrice, PublicPricingCatalog, PublicPricingPlan } from '@/lib/convex/api';
 
 /** Marketing catalog for Sprocket plans. Entitlement copy is built from live Convex data. */
 
 export const billingIntervalIds = ['monthly', 'annual'] as const;
 export type BillingInterval = (typeof billingIntervalIds)[number];
 
-export const publicPlanIds = ['free', 'pro', 'enterprise'] as const;
-export type PublicPlanId = (typeof publicPlanIds)[number];
-
-export const ENTERPRISE_SALES_EMAIL = 'aarav@spikonado.com';
-export const ENTERPRISE_MAILTO = `mailto:${ENTERPRISE_SALES_EMAIL}`;
-
 export type PricingPlan = {
-	id: PublicPlanId;
+	id: string;
 	name: string;
-	/** Intro line above the feature list, e.g. "Includes:" */
-	includesLabel: string;
+	description: string;
 	highlighted?: boolean;
 	features: string[];
 };
@@ -25,7 +18,7 @@ export type PricingFaq = {
 	answer: string;
 };
 
-export type ProPriceDisplay = {
+export type PriceDisplay = {
 	/** Compact card price like "$20/mo." or "$216/yr." */
 	cardPrice: string;
 	perMonthLabel: string;
@@ -41,6 +34,10 @@ export type ProPriceDisplay = {
 
 function usageFeature(amount: number): string {
 	return `${formatMoney(amount, 'USD')} of AI usage each month`;
+}
+
+function weeklyUsageFeature(amount: number): string {
+	return `${formatMoney(amount, 'USD')} of AI usage each week`;
 }
 
 function majorFromMinor(amountMinor: number): number {
@@ -77,20 +74,27 @@ export function monthlyEquivalentMajor(price: DodoPublicPrice): number {
 	}
 }
 
-export function proPriceLabel(
-	interval: BillingInterval,
-	proPrices: PublicPricingCatalog['proPrices']
-): ProPriceDisplay | null {
-	if (!proPrices) return null;
-	const price = proPrices[interval];
+type TierPrices = PublicPricingPlan['prices'];
+
+export function pricesForPlan(plan: PublicPricingPlan, catalog: PublicPricingCatalog): TierPrices {
+	if (plan.prices) return plan.prices;
+	if (plan.id === 'pro' && catalog.proPrices) return catalog.proPrices;
+	return { monthly: null, annual: null };
+}
+
+export function priceLabel(interval: BillingInterval, prices: TierPrices): PriceDisplay | null {
+	const price = prices[interval];
+	if (!price) return null;
 	const perMonth = monthlyEquivalentMajor(price);
 	const periodMajor = majorFromMinor(price.amountMinor);
 	const money = formatMoney(perMonth, price.currency);
 	const periodLabel = formatMoney(periodMajor, price.currency);
 	if (interval === 'annual') {
-		const monthlyTimes12 = monthlyEquivalentMajor(proPrices.monthly) * 12;
+		const monthlyTimes12 = prices.monthly ? monthlyEquivalentMajor(prices.monthly) * 12 : null;
 		const compareAt =
-			monthlyTimes12 > periodMajor ? formatMoney(monthlyTimes12, price.currency) : null;
+			monthlyTimes12 !== null && monthlyTimes12 > periodMajor
+				? formatMoney(monthlyTimes12, price.currency)
+				: null;
 		return {
 			cardPrice: `${periodLabel}/yr.`,
 			perMonthLabel: money,
@@ -113,47 +117,31 @@ export function proPriceLabel(
 }
 
 export function buildPricingPlans(catalog: PublicPricingCatalog): PricingPlan[] {
-	const free = catalog.plans.find((plan) => plan.id === 'free');
-	const pro = catalog.plans.find((plan) => plan.id === 'pro');
-	if (!free || !pro) {
-		throw new Error('Pricing catalog is missing free or pro plans.');
-	}
-
-	return [
-		{
-			id: 'free',
-			name: free.label,
-			includesLabel: 'Includes:',
-			features: [
-				'No credit card required',
-				usageFeature(free.monthlyUsageDollars),
-				'No extra charge for any feature',
-				'Unlimited use of everything except AI',
-				'Access to selected models'
-			]
-		},
-		{
-			id: 'pro',
-			name: pro.label,
-			includesLabel: 'Everything in Free, plus:',
-			highlighted: true,
-			features: [
-				usageFeature(pro.monthlyUsageDollars),
-				'Access to our complete AI model catalog',
-				'Access AI models at faster service tiers'
-			]
-		},
-		{
-			id: 'enterprise',
-			name: 'Enterprise',
-			includesLabel: 'Everything in Pro, plus:',
-			features: [
-				'Custom usage and model access',
-				'Volume pricing and procurement support',
-				'Direct sales contact for rollout planning'
-			]
-		}
-	];
+	return catalog.plans.map((plan) => {
+		const weeklyUsage =
+			typeof plan.weeklyUsageDollars === 'number' ? plan.weeklyUsageDollars : null;
+		const configuredFeatures = Array.isArray(plan.features)
+			? plan.features.map((feature) => feature.trim()).filter(Boolean)
+			: [];
+		const configuredDescription = plan.description?.trim();
+		const features = [
+			...(plan.id === 'free' ? ['No credit card required'] : []),
+			...(weeklyUsage === null ? [] : [weeklyUsageFeature(weeklyUsage)]),
+			usageFeature(plan.monthlyUsageDollars),
+			...configuredFeatures
+		];
+		return {
+			id: plan.id,
+			name: plan.label,
+			description:
+				configuredDescription ||
+				(plan.id === 'free'
+					? 'For trying Sprocket and building without a card.'
+					: `For projects that need the ${plan.label} usage limits.`),
+			highlighted: plan.highlighted ?? false,
+			features: [...new Set(features)]
+		};
+	});
 }
 
 export const pricingFaqs: PricingFaq[] = [
@@ -165,7 +153,7 @@ export const pricingFaqs: PricingFaq[] = [
 	{
 		question: 'What happens when I use up my AI credits?',
 		answer:
-			'Metered models pause on Free until your usage window resets. Unlimited models stay available. Pro keeps standard models. The run that hits the limit stops, and the model picker switches to those models.'
+			'Metered models pause until your usage window resets. Unlimited models stay available. The run that hits the limit stops, and the model picker switches to models available on your plan.'
 	}
 ];
 
