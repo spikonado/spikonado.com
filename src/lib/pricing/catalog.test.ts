@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { DodoPublicPrice, PublicPricingCatalog } from '@/lib/convex/api';
+import type { PricingModelCatalog } from '@/lib/pricing/model-catalog';
 import {
 	buildPricingPlans,
 	isBillingInterval,
@@ -52,6 +53,15 @@ const sampleCatalog: PublicPricingCatalog = {
 	]
 };
 
+const modelCatalog: PricingModelCatalog = {
+	models: [
+		{ id: 'gpt-5.6-sol', label: 'GPT-5.6 Sol' },
+		{ id: 'grok-4.6', label: 'Grok 4.6' },
+		{ id: 'gpt-5.6-luna', label: 'GPT-5.6 Luna' }
+	],
+	tierAllowedModels: { free: ['grok-4.6', 'gpt-5.6-luna'] }
+};
+
 describe('pricing catalog', () => {
 	test('derives display amounts from each tier Dodo price', () => {
 		const prices = sampleCatalog.plans[1]!.prices;
@@ -79,7 +89,7 @@ describe('pricing catalog', () => {
 	});
 
 	test('builds every plan from live card and allowance data', () => {
-		const plans = buildPricingPlans(sampleCatalog);
+		const plans = buildPricingPlans(sampleCatalog, modelCatalog);
 		expect(plans.map((plan) => plan.id)).toEqual(['free', 'team']);
 		expect(plans[0]).toMatchObject({
 			name: 'Free',
@@ -88,15 +98,19 @@ describe('pricing catalog', () => {
 		});
 		expect(plans[0]?.features).toEqual([
 			'No credit card required',
-			'$5 of AI usage each week',
 			'$15 of AI usage each month',
+			'Use Grok 4.6 and GPT-5.6 Luna',
 			'Community support'
 		]);
 		expect(plans[1]).toMatchObject({
 			name: 'Team',
 			description: 'For engineering teams.',
 			highlighted: true,
-			features: ['$25 of AI usage each week', '$75 of AI usage each month', 'Shared projects']
+			features: [
+				'$75 of AI usage each month',
+				'Use GPT-5.6 Sol, Grok 4.6, and GPT-5.6 Luna',
+				'Shared projects'
+			]
 		});
 	});
 
