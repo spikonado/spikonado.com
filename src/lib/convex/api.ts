@@ -36,11 +36,6 @@ export type PublicPricingPlan = {
 
 export type PublicPricingCatalog = {
 	plans: PublicPricingPlan[];
-	/** Compatibility field for clients deployed before per-tier prices. */
-	proPrices: {
-		monthly: DodoPublicPrice;
-		annual: DodoPublicPrice;
-	} | null;
 };
 
 export type PublicApiType = {

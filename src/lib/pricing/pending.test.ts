@@ -37,21 +37,16 @@ describe('pending pricing actions', () => {
 		});
 	});
 
-	test('defaults checkout state from older clients to Pro', () => {
+	test('clears malformed checkout state', () => {
 		sessionStorage.setItem('spikonado_pricing_pending', '{"type":"checkout","interval":"monthly"}');
-		expect(readPendingPricingAction()).toEqual({
-			type: 'checkout',
-			tierId: 'pro',
-			interval: 'monthly'
-		});
-	});
-
-	test('clears legacy free-start pending actions and corrupt payloads', () => {
-		sessionStorage.setItem('spikonado_pricing_pending', '{"type":"start_free"}');
 		expect(readPendingPricingAction()).toBeNull();
 		expect(sessionStorage.getItem('spikonado_pricing_pending')).toBeNull();
 
 		sessionStorage.setItem('spikonado_pricing_pending', '{"type":"checkout","interval":"weekly"}');
+		expect(readPendingPricingAction()).toBeNull();
+		expect(sessionStorage.getItem('spikonado_pricing_pending')).toBeNull();
+
+		sessionStorage.setItem('spikonado_pricing_pending', '{not json');
 		expect(readPendingPricingAction()).toBeNull();
 		expect(sessionStorage.getItem('spikonado_pricing_pending')).toBeNull();
 	});
