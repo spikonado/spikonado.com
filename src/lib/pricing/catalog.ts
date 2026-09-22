@@ -1,4 +1,5 @@
 import type { DodoPublicPrice, PublicPricingCatalog, PublicPricingPlan } from '@/lib/convex/api';
+import { modelLabelsForTier, type PricingModelCatalog } from '@/lib/pricing/model-catalog';
 
 /** Marketing catalog for Sprocket plans. Entitlement copy is built from live Convex data. */
 
@@ -36,8 +37,11 @@ function usageFeature(amount: number): string {
 	return `${formatMoney(amount, 'USD')} of AI usage each month`;
 }
 
-function weeklyUsageFeature(amount: number): string {
-	return `${formatMoney(amount, 'USD')} of AI usage each week`;
+function modelFeature(catalog: PricingModelCatalog, tierId: string): string | null {
+	const labels = modelLabelsForTier(catalog, tierId);
+	return labels.length > 0
+		? `Use ${new Intl.ListFormat('en-US', { style: 'long', type: 'conjunction' }).format(labels)}`
+		: null;
 }
 
 function majorFromMinor(amountMinor: number): number {
@@ -114,18 +118,20 @@ export function priceLabel(interval: BillingInterval, prices: TierPrices): Price
 	};
 }
 
-export function buildPricingPlans(catalog: PublicPricingCatalog): PricingPlan[] {
+export function buildPricingPlans(
+	catalog: PublicPricingCatalog,
+	modelCatalog: PricingModelCatalog | null = null
+): PricingPlan[] {
 	return catalog.plans.map((plan) => {
-		const weeklyUsage =
-			typeof plan.weeklyUsageDollars === 'number' ? plan.weeklyUsageDollars : null;
 		const configuredFeatures = Array.isArray(plan.features)
 			? plan.features.map((feature) => feature.trim()).filter(Boolean)
 			: [];
 		const configuredDescription = plan.description?.trim();
+		const availableModels = modelCatalog ? modelFeature(modelCatalog, plan.id) : null;
 		const features = [
 			...(plan.id === 'free' ? ['No credit card required'] : []),
-			...(weeklyUsage === null ? [] : [weeklyUsageFeature(weeklyUsage)]),
 			usageFeature(plan.monthlyUsageDollars),
+			...(availableModels ? [availableModels] : []),
 			...configuredFeatures
 		];
 		return {

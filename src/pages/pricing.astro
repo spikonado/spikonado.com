@@ -5,6 +5,7 @@ import BaseLayout from '@/layouts/base-layout.astro';
 import type { PublicPricingCatalog } from '@/lib/convex/api';
 import { fetchPublicPricingCatalog } from '@/lib/pricing/billing-client';
 import { priceLabel, pricesForPlan, pricingFaqs } from '@/lib/pricing/catalog';
+import { fetchPricingModelCatalog, type PricingModelCatalog } from '@/lib/pricing/model-catalog';
 import { SITE_URL, titleWithBrand } from '@/lib/seo';
 
 const title = titleWithBrand('Pricing');
@@ -20,6 +21,15 @@ if (convexUrl) {
 		initialCatalog = null;
 	}
 }
+
+async function loadModelCatalog(): Promise<PricingModelCatalog | null> {
+	try {
+		return await fetchPricingModelCatalog();
+	} catch {
+		return null;
+	}
+}
+const initialModelCatalog = await loadModelCatalog();
 
 const offers = initialCatalog
 	? initialCatalog.plans.flatMap((plan) => {
@@ -85,7 +95,11 @@ const faqLd = {
 <BaseLayout title={title} description={description} jsonLd={[productLd, faqLd]}>
 	<main id="main" class="atmosphere min-h-svh px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8">
 		<article class="mx-auto max-w-6xl">
-			<PricingPlans client:load initialCatalog={initialCatalog} />
+			<PricingPlans
+				client:load
+				initialCatalog={initialCatalog}
+				initialModelCatalog={initialModelCatalog}
+			/>
 		</article>
 	</main>
 	<Footer />

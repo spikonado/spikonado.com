@@ -25,6 +25,7 @@ import {
 	pricesForPlan,
 	type BillingInterval
 } from '@/lib/pricing/catalog';
+import { fetchPricingModelCatalog, type PricingModelCatalog } from '@/lib/pricing/model-catalog';
 import {
 	createInitialPricingState,
 	canStartCheckout,
@@ -48,6 +49,7 @@ import { cn } from '@/utils';
 
 interface PricingPlansProps {
 	initialCatalog?: PublicPricingCatalog | null;
+	initialModelCatalog?: PricingModelCatalog | null;
 }
 
 const location: AnalyticsLocation = 'pricing_page';
@@ -76,8 +78,11 @@ function planPrice(planId: string, price: number | undefined): string {
 	return price === undefined ? 'Unavailable' : String(price);
 }
 
-function billingPlans(catalog: PublicPricingCatalog): BillingPlan[] {
-	const plans = buildPricingPlans(catalog);
+function billingPlans(
+	catalog: PublicPricingCatalog,
+	modelCatalog: PricingModelCatalog | null
+): BillingPlan[] {
+	const plans = buildPricingPlans(catalog, modelCatalog);
 
 	return plans.map((plan) => {
 		const source = catalog.plans.find((candidate) => candidate.id === plan.id);
@@ -114,12 +119,19 @@ function isPaidTier(tier: SubscriptionTier): boolean {
 	return tier !== 'free';
 }
 
-export default function PricingPlans({ initialCatalog = null }: PricingPlansProps) {
+export default function PricingPlans({
+	initialCatalog = null,
+	initialModelCatalog = null
+}: PricingPlansProps) {
 	const [state, setState] = useState<PricingUiState>(() => createInitialPricingState());
 	const [interval, setInterval] = useState<BillingInterval>('monthly');
 	const [catalog, setCatalog] = useState<PublicPricingCatalog | null>(initialCatalog);
+	const [modelCatalog, setModelCatalog] = useState<PricingModelCatalog | null>(initialModelCatalog);
 	const [checkoutTierId, setCheckoutTierId] = useState<string | null>(null);
-	const plans = useMemo(() => (catalog ? billingPlans(catalog) : []), [catalog]);
+	const plans = useMemo(
+		() => (catalog ? billingPlans(catalog, modelCatalog) : []),
+		[catalog, modelCatalog]
+	);
 	const checkoutInFlight = state.busy;
 
 	const refreshSession = useCallback(async (message: string | null = null) => {
@@ -204,6 +216,9 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 
 	useEffect(() => {
 		let active = true;
+		void fetchPricingModelCatalog()
+			.then((next) => active && setModelCatalog(next))
+			.catch(() => {});
 		const checkoutFromUrl = checkoutRequestFromSearch();
 		if (checkoutFromUrl) {
 			setInterval(checkoutFromUrl.interval);
