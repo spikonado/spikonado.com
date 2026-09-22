@@ -82,7 +82,7 @@ function billingPlans(catalog: PublicPricingCatalog): BillingPlan[] {
 	return plans.map((plan) => {
 		const source = catalog.plans.find((candidate) => candidate.id === plan.id);
 		if (!source) throw new Error(`Pricing plan "${plan.id}" is missing from the catalog.`);
-		const prices = pricesForPlan(source, catalog);
+		const prices = pricesForPlan(source);
 		const monthly = priceLabel('monthly', prices);
 		const annual = priceLabel('annual', prices);
 		return {
@@ -107,7 +107,7 @@ function planIsAvailable(
 ): boolean {
 	if (!catalog) return false;
 	const plan = catalog.plans.find((candidate) => candidate.id === planId);
-	return Boolean(plan && pricesForPlan(plan, catalog)[interval]);
+	return Boolean(plan && pricesForPlan(plan)[interval]);
 }
 
 function isPaidTier(tier: SubscriptionTier): boolean {
@@ -214,8 +214,9 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 				pricingUrlWithoutCheckoutCommand(window.location.href)
 			);
 		}
-		const checkout = new URLSearchParams(window.location.search).get('checkout');
-		const returnTierId = new URLSearchParams(window.location.search).get('tier')?.trim() || 'pro';
+		const searchParams = new URLSearchParams(window.location.search);
+		const checkout = searchParams.get('checkout');
+		const returnTierId = searchParams.get('tier')?.trim() || null;
 
 		const onCheckoutProgress = (event: Event) => {
 			if (!(event instanceof CustomEvent)) return;
@@ -260,13 +261,17 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 					if (active) await runCheckout(checkoutFromUrl.tierId, checkoutFromUrl.interval);
 					return;
 				}
-				await refreshSession();
+				await refreshSession(
+					checkout === 'return' && !returnTierId
+						? 'Checkout returned without a plan selection. Your current account status is shown below.'
+						: null
+				);
 				if (checkout === 'cancel') {
 					setState((current) =>
 						withReadyStatus(current, 'Checkout was cancelled. You can try again anytime.')
 					);
 				}
-				if (checkout === 'return') {
+				if (checkout === 'return' && returnTierId) {
 					const tierLabel =
 						initialCatalog?.plans.find((plan) => plan.id === returnTierId)?.label ?? returnTierId;
 					await waitForTierActivation(returnTierId, tierLabel);

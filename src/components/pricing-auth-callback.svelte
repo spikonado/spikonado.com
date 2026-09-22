@@ -17,9 +17,15 @@
 				});
 				if (client.user) {
 					const pending = readPendingPricingAction();
-					const interval = pending?.interval ?? 'monthly';
-					const tierId = pending?.tierId ?? 'pro';
-					const query = new URLSearchParams({ checkout: 'start', tier: tierId, interval });
+					if (!pending) {
+						window.location.replace('/pricing');
+						return;
+					}
+					const query = new URLSearchParams({
+						checkout: 'start',
+						tier: pending.tierId,
+						interval: pending.interval
+					});
 					window.location.replace(`/pricing?${query}`);
 					return;
 				}

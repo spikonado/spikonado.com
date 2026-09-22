@@ -34,7 +34,7 @@ const offers = initialCatalog
 					}
 				];
 			}
-			const prices = pricesForPlan(plan, initialCatalog);
+			const prices = pricesForPlan(plan);
 			return (['monthly', 'annual'] as const).flatMap((interval) => {
 				const price = priceLabel(interval, prices);
 				if (!price) return [];
