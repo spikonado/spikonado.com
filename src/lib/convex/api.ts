@@ -9,7 +9,7 @@ export const api: PublicApiType = anyApi as unknown as PublicApiType;
 
 export type BillingInterval = 'monthly' | 'annual';
 export type SubscriptionTier = string;
-export type PublicPlanId = 'free' | 'pro';
+export type PublicPlanId = string;
 export type DodoPublicPrice = {
 	productId: string;
 	name: string | null;
@@ -22,12 +22,21 @@ export type DodoPublicPrice = {
 export type PublicPricingPlan = {
 	id: PublicPlanId;
 	label: string;
+	weeklyUsageDollars: number;
 	monthlyUsageDollars: number;
+	description: string | null;
+	features: string[];
+	displayOrder: number;
+	highlighted: boolean;
+	prices: {
+		monthly: DodoPublicPrice | null;
+		annual: DodoPublicPrice | null;
+	};
 };
 
 export type PublicPricingCatalog = {
 	plans: PublicPricingPlan[];
-	/** Pro prices from Dodo; null when payments are not configured. */
+	/** Compatibility field for clients deployed before per-tier prices. */
 	proPrices: {
 		monthly: DodoPublicPrice;
 		annual: DodoPublicPrice;
@@ -54,7 +63,7 @@ export type PublicApiType = {
 		checkout: FunctionReference<
 			'action',
 			'public',
-			{ tier: 'pro'; interval: BillingInterval },
+			{ tier: string; interval: BillingInterval },
 			{ checkout_url: string }
 		>;
 		customerPortal: FunctionReference<

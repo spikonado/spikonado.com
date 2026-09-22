@@ -3,7 +3,7 @@ import {
 	canStartCheckout,
 	createInitialPricingState,
 	showsManageBilling,
-	withActivatedPro,
+	withActivatedTier,
 	withActivationTimeout,
 	withBusyStatus,
 	withError,
@@ -26,6 +26,7 @@ describe('pricing checkout state', () => {
 		const state = withReadySession(createInitialPricingState(), {
 			authenticated: true,
 			tier: 'free',
+			tierLabel: 'Free',
 			billingManaged: false,
 			userLabel: 'dev@example.com'
 		});
@@ -33,11 +34,13 @@ describe('pricing checkout state', () => {
 		expect(showsManageBilling(state)).toBe(false);
 	});
 
-	test('shows manage billing for pro and blocks duplicate checkout', () => {
-		const state = withActivatedPro(
-			withBusyStatus(createInitialPricingState(), 'activating', 'Confirming…')
+	test('shows manage billing for an active paid tier and blocks duplicate checkout', () => {
+		const state = withActivatedTier(
+			withBusyStatus(createInitialPricingState(), 'activating', 'Confirming...'),
+			'team',
+			'Team'
 		);
-		expect(state.tier).toBe('pro');
+		expect(state).toMatchObject({ tier: 'team', tierLabel: 'Team' });
 		expect(state.busy).toBe(false);
 		expect(canStartCheckout(state)).toBe(false);
 		expect(showsManageBilling(state)).toBe(true);
@@ -47,6 +50,7 @@ describe('pricing checkout state', () => {
 		const state = withReadySession(createInitialPricingState(), {
 			authenticated: true,
 			tier: 'max',
+			tierLabel: 'Max',
 			billingManaged: false,
 			userLabel: 'dev@example.com'
 		});
@@ -58,9 +62,9 @@ describe('pricing checkout state', () => {
 		const errored = withError(createInitialPricingState(), 'Checkout failed');
 		expect(errored).toMatchObject({ status: 'error', message: 'Checkout failed', busy: false });
 
-		const pending = withActivationTimeout(errored);
+		const pending = withActivationTimeout(errored, 'Team');
 		expect(pending.status).toBe('idle');
-		expect(pending.message).toContain('activation is still confirming');
+		expect(pending.message).toContain('Team activation is still confirming');
 
 		expect(withReadyStatus(errored, 'Checkout closed')).toMatchObject({
 			status: 'idle',

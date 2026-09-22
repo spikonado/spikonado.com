@@ -4,12 +4,12 @@ import PricingPlans from '@/components/pricing-plans';
 import BaseLayout from '@/layouts/base-layout.astro';
 import type { PublicPricingCatalog } from '@/lib/convex/api';
 import { fetchPublicPricingCatalog } from '@/lib/pricing/billing-client';
-import { pricingFaqs, proPriceLabel } from '@/lib/pricing/catalog';
+import { priceLabel, pricesForPlan, pricingFaqs } from '@/lib/pricing/catalog';
 import { SITE_URL, titleWithBrand } from '@/lib/seo';
 
 const title = titleWithBrand('Pricing');
 const description =
-	'Sprocket pricing for Free, Pro, and Enterprise. Start free, upgrade to Pro for higher limits and full model access, or contact sales for Enterprise.';
+	'Compare Sprocket plans and choose the AI usage limits that fit your engineering work.';
 
 const convexUrl = import.meta.env.PUBLIC_CONVEX_URL?.trim();
 let initialCatalog: PublicPricingCatalog | null = null;
@@ -21,42 +21,44 @@ if (convexUrl) {
 	}
 }
 
-const monthlyPrice = proPriceLabel('monthly', initialCatalog?.proPrices ?? null);
-const annualPrice = proPriceLabel('annual', initialCatalog?.proPrices ?? null);
-
-const offers = [
-	{
-		'@type': 'Offer',
-		name: 'Sprocket Free',
-		price: '0',
-		priceCurrency: 'USD',
-		description: 'Start building with Sprocket at no cost.'
-	},
-	...(monthlyPrice
-		? [
-				{
-					'@type': 'Offer',
-					name: 'Sprocket Pro Monthly',
-					price: String(monthlyPrice.periodMajor),
-					priceCurrency: monthlyPrice.currency,
-					billingDuration: 'P1M',
-					description: 'Higher limits and full model access for serious engineering work.'
-				}
-			]
-		: []),
-	...(annualPrice
-		? [
-				{
-					'@type': 'Offer',
-					name: 'Sprocket Pro Annual',
-					price: String(annualPrice.periodMajor),
-					priceCurrency: annualPrice.currency,
-					billingDuration: 'P1Y',
-					description: `Annual Pro billed at ${annualPrice.periodLabel}/year.`
-				}
-			]
-		: [])
-];
+const offers = initialCatalog
+	? initialCatalog.plans.flatMap((plan) => {
+			if (plan.id === 'free') {
+				return [
+					{
+						'@type': 'Offer',
+						name: `Sprocket ${plan.label}`,
+						price: '0',
+						priceCurrency: 'USD',
+						description: plan.description ?? 'Start building with Sprocket at no cost.'
+					}
+				];
+			}
+			const prices = pricesForPlan(plan, initialCatalog);
+			return (['monthly', 'annual'] as const).flatMap((interval) => {
+				const price = priceLabel(interval, prices);
+				if (!price) return [];
+				return [
+					{
+						'@type': 'Offer',
+						name: `Sprocket ${plan.label} ${interval === 'annual' ? 'Annual' : 'Monthly'}`,
+						price: String(price.periodMajor),
+						priceCurrency: price.currency,
+						billingDuration: interval === 'annual' ? 'P1Y' : 'P1M',
+						description: plan.description ?? `${plan.label} Sprocket subscription.`
+					}
+				];
+			});
+		})
+	: [
+			{
+				'@type': 'Offer',
+				name: 'Sprocket Free',
+				price: '0',
+				priceCurrency: 'USD',
+				description: 'Start building with Sprocket at no cost.'
+			}
+		];
 
 const productLd = {
 	'@type': 'Product',

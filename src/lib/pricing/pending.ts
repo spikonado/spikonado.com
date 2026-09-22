@@ -2,7 +2,11 @@ import { isBillingInterval, type BillingInterval } from '@/lib/pricing/catalog';
 
 const PENDING_KEY = 'spikonado_pricing_pending';
 
-export type PendingPricingAction = { type: 'checkout'; interval: BillingInterval };
+export type PendingPricingAction = {
+	type: 'checkout';
+	tierId: string;
+	interval: BillingInterval;
+};
 
 export function storePendingPricingAction(action: PendingPricingAction): void {
 	if (typeof sessionStorage === 'undefined') return;
@@ -19,14 +23,25 @@ export function readPendingPricingAction(): PendingPricingAction | null {
 	const raw = sessionStorage.getItem(PENDING_KEY);
 	if (!raw) return null;
 	try {
-		const parsed = JSON.parse(raw) as PendingPricingAction | { type: 'start_free' };
+		const parsed = JSON.parse(raw) as {
+			type?: unknown;
+			tierId?: unknown;
+			interval?: unknown;
+		};
 		// Legacy start_free pending actions are ignored; Free CTA now links to /sprocket.
 		if (parsed?.type === 'start_free') {
 			clearPendingPricingAction();
 			return null;
 		}
-		if (parsed?.type === 'checkout' && isBillingInterval(parsed.interval)) {
-			return { type: 'checkout', interval: parsed.interval };
+		const interval = typeof parsed.interval === 'string' ? parsed.interval : null;
+		if (parsed?.type === 'checkout' && isBillingInterval(interval)) {
+			const tierId =
+				parsed.tierId === undefined
+					? 'pro'
+					: typeof parsed.tierId === 'string'
+						? parsed.tierId.trim()
+						: '';
+			if (tierId) return { type: 'checkout', tierId, interval };
 		}
 	} catch {
 		// Ignore corrupt session state.

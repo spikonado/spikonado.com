@@ -18,7 +18,9 @@
 				if (client.user) {
 					const pending = readPendingPricingAction();
 					const interval = pending?.interval ?? 'monthly';
-					window.location.replace(`/pricing?checkout=start&interval=${interval}`);
+					const tierId = pending?.tierId ?? 'pro';
+					const query = new URLSearchParams({ checkout: 'start', tier: tierId, interval });
+					window.location.replace(`/pricing?${query}`);
 					return;
 				}
 				message =
