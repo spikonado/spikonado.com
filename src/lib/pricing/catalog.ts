@@ -152,12 +152,27 @@ export const pricingFaqs: PricingFaq[] = [
 	{
 		question: 'Can I use Sprocket for free?',
 		answer:
-			'Yes. The Free plan includes selected models and a monthly AI usage quota. Every feature is included at no extra cost, and everything except AI usage is unlimited. Sign in to start—no card required.'
+			'Yes. The Free plan includes selected models and AI usage limits that reset Monday at 00:00 UTC and on the first of each month at 00:00 UTC. Sign in to start, no card required.'
 	},
 	{
-		question: 'What happens when I use up my AI credits?',
+		question: 'What happens when I reach an AI usage limit?',
 		answer:
-			'Metered models pause until your usage window resets. Unlimited models stay available. The run that hits the limit stops, and the model picker switches to models available on your plan.'
+			'Metered models pause until your weekly or monthly usage window resets. Unmetered models stay available. The run that hits the limit stops, and the model picker switches to models available on your plan.'
+	},
+	{
+		question: 'When does my paid monthly AI usage reset?',
+		answer:
+			'Monthly subscribers reset on their billing date. Annual subscribers reset each month at the UTC day and time their paid annual term began. If a month has fewer days, usage resets on its last day, then returns to the original day in later months. Weekly limits always reset Monday at 00:00 UTC.'
+	},
+	{
+		question: 'How do I change plans or cancel?',
+		answer:
+			'Open Manage billing on your current plan to change tiers or cancel. Upgrades start after successful payment, with credit for unused paid time and a fresh usage allowance. Downgrades and cancellations take effect at your next billing date. There is no mid-term refund.'
+	},
+	{
+		question: 'Can I switch between monthly and annual billing?',
+		answer:
+			'Not during an active subscription. Cancel your current subscription in Manage billing, keep your plan until the next billing date, then choose the other billing interval after that subscription ends. You will complete a new checkout.'
 	}
 ];
 
