@@ -1,0 +1,15 @@
+---
+import PricingAuthCallback from '@/components/pricing-auth-callback.svelte';
+import BaseLayout from '@/layouts/base-layout.astro';
+import { titleWithBrand } from '@/lib/seo';
+---
+
+<BaseLayout
+	title={titleWithBrand('Completing sign-in')}
+	description="Finishing Spikonado sign-in for Sprocket pricing checkout."
+	noindex={true}
+>
+	<main id="main" class="atmosphere min-h-svh">
+		<PricingAuthCallback client:load />
+	</main>
+</BaseLayout>

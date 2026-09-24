@@ -1,6 +1,7 @@
 // @ts-check
 
 import { defineConfig } from 'astro/config';
+import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import svelte from '@astrojs/svelte';
 import tailwindcss from '@tailwindcss/vite';
@@ -13,6 +14,7 @@ export default defineConfig({
 		sitemap({
 			filter: (page) => !page.includes('/api/')
 		}),
+		react(),
 		svelte()
 	],
 	adapter: vercel(),

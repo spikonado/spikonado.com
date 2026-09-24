@@ -19,6 +19,7 @@
 	] as const;
 
 	const companyLinks = [
+		{ label: 'Pricing', path: '/pricing', cta: 'footer_pricing' },
 		{ label: 'Build log', path: '/#build-log', cta: 'footer_build_log' },
 		{ label: 'Privacy Policy', path: '/privacy', cta: 'footer_privacy' }
 	] as const;
