@@ -49,7 +49,11 @@
 		className
 	)}
 >
-	<span class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap">{command}</span>
+	<span
+		class="min-w-0 flex-1 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent overflow-x-auto whitespace-nowrap"
+	>
+		{command}
+	</span>
 	<button
 		type="button"
 		class="inline-flex shrink-0 items-center justify-center rounded-lg border border-border bg-surface p-2 text-foreground transition-colors hover:bg-accent-soft focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
