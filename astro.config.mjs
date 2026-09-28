@@ -9,6 +9,8 @@ import vercel from '@astrojs/vercel';
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://spikonado.com',
+	// No Astro.session usage on this site, so leave the session runtime out of the SSR bundle.
+	session: false,
 	integrations: [
 		sitemap({
 			filter: (page) => !page.includes('/api/')
