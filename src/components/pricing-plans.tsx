@@ -263,11 +263,6 @@ export default function PricingPlans({
 		if (checkoutFromUrl) {
 			setInterval(checkoutFromUrl.interval);
 			setCheckoutTierId(checkoutFromUrl.tierId);
-			window.history.replaceState(
-				window.history.state,
-				'',
-				pricingUrlWithoutCheckoutCommand(window.location.href)
-			);
 		}
 
 		const onCheckoutProgress = (event: Event) => {
@@ -333,6 +328,11 @@ export default function PricingPlans({
 					const session = await refreshSession(null, generation);
 					if (!active || !session) return;
 					if (session.tier !== 'free') return;
+					window.history.replaceState(
+						window.history.state,
+						'',
+						pricingUrlWithoutCheckoutCommand(window.location.href)
+					);
 					await runCheckout(checkoutFromUrl.tierId, checkoutFromUrl.interval);
 					return;
 				}
