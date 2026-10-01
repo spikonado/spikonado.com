@@ -1,4 +1,5 @@
 export const MODEL_CATALOG_URL = 'https://ai-gateway.spikonado.com/api/v1/models';
+export const MODEL_CATALOG_TIMEOUT_MS = 5_000;
 
 export type PricingModel = {
 	id: string;
@@ -44,13 +45,21 @@ export function parsePricingModelCatalog(payload: unknown): PricingModelCatalog 
 }
 
 export async function fetchPricingModelCatalog(
-	fetcher: Fetcher = fetch
+	fetcher: Fetcher = fetch,
+	timeoutMs: number = MODEL_CATALOG_TIMEOUT_MS
 ): Promise<PricingModelCatalog> {
-	const response = await fetcher(MODEL_CATALOG_URL, {
-		headers: { accept: 'application/json' }
-	});
-	if (!response.ok) throw new Error(`The model gateway returned ${response.status}.`);
-	return parsePricingModelCatalog(await response.json());
+	const abort = new AbortController();
+	const timer = setTimeout(() => abort.abort(), timeoutMs);
+	try {
+		const response = await fetcher(MODEL_CATALOG_URL, {
+			headers: { accept: 'application/json' },
+			signal: abort.signal
+		});
+		if (!response.ok) throw new Error(`The model gateway returned ${response.status}.`);
+		return parsePricingModelCatalog(await response.json());
+	} finally {
+		clearTimeout(timer);
+	}
 }
 
 export function modelLabelsForTier(catalog: PricingModelCatalog, tierId: string): string[] {

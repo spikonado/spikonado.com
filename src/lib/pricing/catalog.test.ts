@@ -88,6 +88,15 @@ describe('pricing catalog', () => {
 		expect(priceLabel('monthly', { monthly: null, annual: null })).toBeNull();
 	});
 
+	test('omits the annual compare-at price when interval currencies differ', () => {
+		const prices = {
+			monthly: { ...monthlyPrice, currency: 'EUR' },
+			annual: annualPrice
+		};
+		expect(priceLabel('annual', prices)?.compareAt).toBeNull();
+		expect(priceLabel('annual', prices)?.cardPrice).toBe('$216/yr.');
+	});
+
 	test('builds every plan from live card and allowance data', () => {
 		const plans = buildPricingPlans(sampleCatalog, modelCatalog);
 		expect(plans.map((plan) => plan.id)).toEqual(['free', 'team']);

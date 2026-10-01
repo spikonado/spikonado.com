@@ -20,6 +20,8 @@ export interface PricingTableOneProps {
 }
 
 function yearlyDiscount(plan: BillingPlan): number {
+	if (plan.monthlyCurrency && plan.yearlyCurrency && plan.monthlyCurrency !== plan.yearlyCurrency)
+		return 0;
 	const monthly = Number.parseFloat(plan.monthlyPrice);
 	const yearly = Number.parseFloat(plan.yearlyPrice);
 	if (!Number.isFinite(monthly) || !Number.isFinite(yearly) || monthly <= 0) return 0;

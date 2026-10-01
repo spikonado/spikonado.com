@@ -50,4 +50,47 @@ describe('pricing model catalog', () => {
 			'The model gateway returned an invalid catalog.'
 		);
 	});
+
+	test('aborts gateway requests that never answer', async () => {
+		let requestError: unknown;
+		try {
+			await fetchPricingModelCatalog(
+				(_input, init) =>
+					new Promise<Response>((_resolve, reject) => {
+						init?.signal?.addEventListener('abort', () => {
+							reject(new DOMException('The operation was aborted.', 'AbortError'));
+						});
+					}),
+				5
+			);
+		} catch (error) {
+			requestError = error;
+		}
+		expect(requestError).toBeInstanceOf(DOMException);
+		expect((requestError as DOMException).name).toBe('AbortError');
+	});
+
+	test('aborts gateway responses whose body never arrives', async () => {
+		let requestError: unknown;
+		try {
+			await fetchPricingModelCatalog(async (_input, init) => {
+				const signal = init?.signal;
+				const body = new ReadableStream({
+					start(controller) {
+						controller.enqueue(new TextEncoder().encode('{"sprocket":{"models":[]'));
+						signal?.addEventListener('abort', () => {
+							controller.error(new DOMException('The operation was aborted.', 'AbortError'));
+						});
+					}
+				});
+				return new Response(body, {
+					status: 200,
+					headers: { 'content-type': 'application/json' }
+				});
+			}, 5);
+		} catch (error) {
+			requestError = error;
+		}
+		expect(requestError).toBeDefined();
+	});
 });
