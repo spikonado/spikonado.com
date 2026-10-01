@@ -25,7 +25,6 @@ import {
 	pricesForPlan,
 	type BillingInterval
 } from '@/lib/pricing/catalog';
-import { fetchPricingModelCatalog, type PricingModelCatalog } from '@/lib/pricing/model-catalog';
 import {
 	createInitialPricingState,
 	canStartCheckout,
@@ -50,7 +49,6 @@ import { cn } from '@/utils';
 
 interface PricingPlansProps {
 	initialCatalog?: PublicPricingCatalog | null;
-	initialModelCatalog?: PricingModelCatalog | null;
 }
 
 const location: AnalyticsLocation = 'pricing_page';
@@ -85,12 +83,8 @@ function planPrice(planId: string, price: number | undefined): string {
 	return price === undefined ? 'Unavailable' : String(price);
 }
 
-function billingPlans(
-	catalog: PublicPricingCatalog,
-	modelCatalog: PricingModelCatalog | null,
-	interval: BillingInterval
-): BillingPlan[] {
-	const plans = buildPricingPlans(catalog, modelCatalog);
+function billingPlans(catalog: PublicPricingCatalog, interval: BillingInterval): BillingPlan[] {
+	const plans = buildPricingPlans(catalog);
 
 	return plans.map((plan) => {
 		const source = catalog.plans.find((candidate) => candidate.id === plan.id);
@@ -137,19 +131,15 @@ function isPaidTier(tier: SubscriptionTier): boolean {
 	return tier !== 'free';
 }
 
-export default function PricingPlans({
-	initialCatalog = null,
-	initialModelCatalog = null
-}: PricingPlansProps) {
+export default function PricingPlans({ initialCatalog = null }: PricingPlansProps) {
 	const [state, setState] = useState<PricingUiState>(() => createInitialPricingState());
 	const [interval, setInterval] = useState<BillingInterval>('monthly');
 	const [catalog, setCatalog] = useState<PublicPricingCatalog | null>(initialCatalog);
-	const [modelCatalog, setModelCatalog] = useState<PricingModelCatalog | null>(initialModelCatalog);
 	const [checkoutTierId, setCheckoutTierId] = useState<string | null>(null);
 	const generationRef = useRef(0);
 	const plans = useMemo(
-		() => (catalog ? billingPlans(catalog, modelCatalog, interval) : []),
-		[catalog, modelCatalog, interval]
+		() => (catalog ? billingPlans(catalog, interval) : []),
+		[catalog, interval]
 	);
 	const checkoutInFlight = state.busy;
 
@@ -252,9 +242,6 @@ export default function PricingPlans({
 	useEffect(() => {
 		let active = true;
 		const generation = generationRef.current;
-		void fetchPricingModelCatalog()
-			.then((next) => active && setModelCatalog(next))
-			.catch(() => {});
 		const searchParams = new URLSearchParams(window.location.search);
 		const checkout = searchParams.get('checkout');
 		const returnTierId = searchParams.get('tier')?.trim() || null;
