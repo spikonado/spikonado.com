@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PricingTableOne } from '@/components/billingsdk/pricing-table-one';
 import { captureAnalyticsEvent } from '@/lib/analytics/bootstrap';
 import {
@@ -38,6 +38,7 @@ import {
 	withReadyStatus,
 	type PricingUiState
 } from '@/lib/pricing/checkout-state';
+import { clearPendingPricingAction } from '@/lib/pricing/pending';
 import {
 	checkoutRequestFromSearch,
 	pricingUrlWithoutCheckoutCommand,
@@ -55,6 +56,12 @@ interface PricingPlansProps {
 const location: AnalyticsLocation = 'pricing_page';
 const ACTIVATION_TIMEOUT_MS = 30_000;
 const ACTIVATION_POLL_MS = 2_000;
+const CHECKOUT_STARTED_STATUSES = new Set([
+	'starting_checkout',
+	'signing_in',
+	'checkout_open',
+	'activating'
+]);
 
 function currencySymbol(currency: string): string {
 	try {
@@ -80,7 +87,8 @@ function planPrice(planId: string, price: number | undefined): string {
 
 function billingPlans(
 	catalog: PublicPricingCatalog,
-	modelCatalog: PricingModelCatalog | null
+	modelCatalog: PricingModelCatalog | null,
+	interval: BillingInterval
 ): BillingPlan[] {
 	const plans = buildPricingPlans(catalog, modelCatalog);
 
@@ -90,15 +98,20 @@ function billingPlans(
 		const prices = pricesForPlan(source);
 		const monthly = priceLabel('monthly', prices);
 		const annual = priceLabel('annual', prices);
+		const selected = priceLabel(interval, prices);
 		return {
 			id: plan.id,
 			title: plan.name,
 			description: plan.description,
 			highlight: plan.highlighted,
 			badge: plan.highlighted ? 'Most popular' : undefined,
-			currency: currencySymbol(monthly?.currency ?? annual?.currency ?? 'USD'),
+			currency: currencySymbol(
+				selected?.currency ?? monthly?.currency ?? annual?.currency ?? 'USD'
+			),
 			monthlyPrice: planPrice(plan.id, monthly?.periodMajor),
+			monthlyCurrency: monthly?.currency,
 			yearlyPrice: planPrice(plan.id, annual?.periodMajor),
+			yearlyCurrency: annual?.currency,
 			buttonText: plan.id === 'free' ? 'Start free' : `Get ${plan.name}`,
 			features: plan.features.map((feature) => ({ name: feature, icon: 'check' }))
 		};
@@ -115,6 +128,11 @@ function planIsAvailable(
 	return Boolean(plan && pricesForPlan(plan)[interval]);
 }
 
+function planIsPaid(catalog: PublicPricingCatalog | null, planId: string): boolean {
+	const plan = catalog?.plans.find((candidate) => candidate.id === planId);
+	return Boolean(plan && (pricesForPlan(plan).monthly || pricesForPlan(plan).annual));
+}
+
 function isPaidTier(tier: SubscriptionTier): boolean {
 	return tier !== 'free';
 }
@@ -128,52 +146,68 @@ export default function PricingPlans({
 	const [catalog, setCatalog] = useState<PublicPricingCatalog | null>(initialCatalog);
 	const [modelCatalog, setModelCatalog] = useState<PricingModelCatalog | null>(initialModelCatalog);
 	const [checkoutTierId, setCheckoutTierId] = useState<string | null>(null);
+	const generationRef = useRef(0);
 	const plans = useMemo(
-		() => (catalog ? billingPlans(catalog, modelCatalog) : []),
-		[catalog, modelCatalog]
+		() => (catalog ? billingPlans(catalog, modelCatalog, interval) : []),
+		[catalog, modelCatalog, interval]
 	);
 	const checkoutInFlight = state.busy;
 
-	const refreshSession = useCallback(async (message: string | null = null) => {
-		const client = await initializePricingBilling();
-		let tier: SubscriptionTier = 'free';
-		let tierLabel = 'Free';
-		let billingManaged = false;
-		if (client.user) {
-			const subscription = await fetchMySubscription();
-			tier = subscription.tier;
-			tierLabel = subscription.tierLabel;
-			billingManaged = subscription.billingManaged;
-		}
-		setState((current) =>
-			withReadySession(current, {
-				authenticated: Boolean(client.user),
-				tier,
-				tierLabel,
-				billingManaged,
-				userLabel: client.user?.email ?? client.user?.firstName ?? null,
-				message
-			})
-		);
-	}, []);
+	const refreshSession = useCallback(
+		async (message: string | null = null, generation: number = generationRef.current) => {
+			const isCurrent = () => generationRef.current === generation;
+			const client = await initializePricingBilling();
+			if (!isCurrent()) return null;
+			let tier: SubscriptionTier = 'free';
+			let tierLabel = 'Free';
+			let billingManaged = false;
+			if (client.user && isCurrent()) {
+				const subscription = await fetchMySubscription();
+				if (!isCurrent()) return null;
+				tier = subscription.tier;
+				tierLabel = subscription.tierLabel;
+				billingManaged = subscription.billingManaged;
+			}
+			setState((current) => {
+				if (!isCurrent()) return current;
+				return withReadySession(current, {
+					authenticated: Boolean(client.user),
+					tier,
+					tierLabel,
+					billingManaged,
+					userLabel: client.user?.email ?? client.user?.firstName ?? null,
+					message
+				});
+			});
+			return isCurrent()
+				? { tier, tierLabel, billingManaged, authenticated: Boolean(client.user) }
+				: null;
+		},
+		[]
+	);
 
 	const waitForTierActivation = useCallback(
-		async (tierId: string, tierLabel: string, showPendingState = true) => {
+		async (tierId: string, tierLabel: string, generation: number, showPendingState = true) => {
+			const isCurrent = () => generationRef.current === generation;
 			const client = showPendingState ? null : await initializePricingBilling();
+			if (!isCurrent()) return;
 			let sessionReconciled = showPendingState;
-			if (showPendingState) {
+			if (showPendingState && isCurrent()) {
 				setState((current) =>
-					withBusyStatus(current, 'activating', `Confirming your ${tierLabel} subscription...`)
+					isCurrent()
+						? withBusyStatus(current, 'activating', `Confirming your ${tierLabel} subscription...`)
+						: current
 				);
 			}
 			const started = Date.now();
-			while (Date.now() - started < ACTIVATION_TIMEOUT_MS) {
+			while (isCurrent() && Date.now() - started < ACTIVATION_TIMEOUT_MS) {
 				try {
 					const subscription = await fetchMySubscription();
-					if (subscription.tier === tierId && subscription.billingManaged) {
+					if (isCurrent() && subscription.tier === tierId && subscription.billingManaged) {
 						captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activated', location });
-						setState((current) =>
-							withActivatedTier(
+						setState((current) => {
+							if (!isCurrent()) return current;
+							return withActivatedTier(
 								client
 									? withReadySession(current, {
 											authenticated: Boolean(client.user),
@@ -185,21 +219,22 @@ export default function PricingPlans({
 									: current,
 								subscription.tier,
 								subscription.tierLabel
-							)
-						);
+							);
+						});
 						return;
 					}
-					if (client && !sessionReconciled) {
-						setState((current) =>
-							withReadySession(current, {
+					if (client && !sessionReconciled && isCurrent()) {
+						setState((current) => {
+							if (!isCurrent()) return current;
+							return withReadySession(current, {
 								authenticated: Boolean(client.user),
 								tier: subscription.tier,
 								tierLabel: subscription.tierLabel,
 								billingManaged: subscription.billingManaged,
 								userLabel: client.user?.email ?? client.user?.firstName ?? null,
 								message: current.message
-							})
-						);
+							});
+						});
 						sessionReconciled = true;
 					}
 				} catch {
@@ -207,19 +242,24 @@ export default function PricingPlans({
 				}
 				await new Promise((resolve) => window.setTimeout(resolve, ACTIVATION_POLL_MS));
 			}
-			if (!showPendingState) return;
+			if (!showPendingState || !isCurrent()) return;
 			captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activation_pending', location });
-			setState((current) => withActivationTimeout(current, tierLabel));
+			setState((current) => (isCurrent() ? withActivationTimeout(current, tierLabel) : current));
 		},
 		[]
 	);
 
 	useEffect(() => {
 		let active = true;
+		const generation = generationRef.current;
 		void fetchPricingModelCatalog()
 			.then((next) => active && setModelCatalog(next))
 			.catch(() => {});
-		const checkoutFromUrl = checkoutRequestFromSearch();
+		const searchParams = new URLSearchParams(window.location.search);
+		const checkout = searchParams.get('checkout');
+		const returnTierId = searchParams.get('tier')?.trim() || null;
+		const checkoutFromUrl =
+			checkout === 'start' ? checkoutRequestFromSearch(window.location.search) : null;
 		if (checkoutFromUrl) {
 			setInterval(checkoutFromUrl.interval);
 			setCheckoutTierId(checkoutFromUrl.tierId);
@@ -229,33 +269,37 @@ export default function PricingPlans({
 				pricingUrlWithoutCheckoutCommand(window.location.href)
 			);
 		}
-		const searchParams = new URLSearchParams(window.location.search);
-		const checkout = searchParams.get('checkout');
-		const returnTierId = searchParams.get('tier')?.trim() || null;
 
 		const onCheckoutProgress = (event: Event) => {
 			if (!(event instanceof CustomEvent)) return;
 			const progress = event.detail as CheckoutProgress;
 			setInterval(progress.interval);
 			setCheckoutTierId(progress.tierId);
+			const generation = generationRef.current;
+			const isCurrent = () => generationRef.current === generation;
 			if (progress.status === 'error') {
-				setState((current) => withError(current, progress.message));
+				setState((current) => (isCurrent() ? withError(current, progress.message) : current));
 				captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'error', location });
 				return;
 			}
 			if (progress.status === 'checkout_closed') {
-				setState((current) => withReadyStatus(current, progress.message));
+				setState((current) => (isCurrent() ? withReadyStatus(current, progress.message) : current));
 				captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'overlay_closed', location });
-				void waitForTierActivation(progress.tierId, progress.tierId, false).catch(() => {});
+				void waitForTierActivation(progress.tierId, progress.tierId, generation, false).catch(
+					() => {}
+				);
 				return;
 			}
+			if (!isCurrent()) return;
 			const status =
 				progress.status === 'signing_in'
 					? 'signing_in'
 					: progress.status === 'checkout_open'
 						? 'checkout_open'
 						: 'starting_checkout';
-			setState((current) => withBusyStatus(current, status, progress.message));
+			setState((current) =>
+				isCurrent() ? withBusyStatus(current, status, progress.message) : current
+			);
 			if (progress.status === 'checkout_open') {
 				captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'overlay_opened', location });
 			}
@@ -264,23 +308,41 @@ export default function PricingPlans({
 
 		void (async () => {
 			try {
-				if (initialCatalog || checkoutFromUrl) {
+				let liveCatalog = initialCatalog;
+				if (initialCatalog && !checkoutFromUrl) {
 					void fetchPublicPricingCatalog()
 						.then((next) => active && setCatalog(next))
 						.catch(() => {});
 				} else {
-					const next = await fetchPublicPricingCatalog();
-					if (active) setCatalog(next);
+					liveCatalog = await fetchPublicPricingCatalog();
+					if (active) setCatalog(liveCatalog);
 				}
 				if (checkoutFromUrl) {
-					if (active) await runCheckout(checkoutFromUrl.tierId, checkoutFromUrl.interval);
+					if (!active) return;
+					if (!planIsPaid(liveCatalog, checkoutFromUrl.tierId)) {
+						await refreshSession(
+							'Checkout links only work for paid plans. Pick a paid plan below.',
+							generation
+						);
+						return;
+					}
+					if (!planIsAvailable(liveCatalog, checkoutFromUrl.tierId, checkoutFromUrl.interval)) {
+						await refreshSession('This billing interval is not available.', generation);
+						return;
+					}
+					const session = await refreshSession(null, generation);
+					if (!active || !session) return;
+					if (session.tier !== 'free') return;
+					await runCheckout(checkoutFromUrl.tierId, checkoutFromUrl.interval);
 					return;
 				}
-				await refreshSession(
+				const session = await refreshSession(
 					checkout === 'return' && !returnTierId
 						? 'Checkout returned without a plan selection. Your current account status is shown below.'
-						: null
+						: null,
+					generation
 				);
+				if (!active || !session) return;
 				if (checkout === 'cancel') {
 					setState((current) =>
 						withReadyStatus(current, 'Checkout was cancelled. You can try again anytime.')
@@ -289,17 +351,22 @@ export default function PricingPlans({
 				if (checkout === 'return' && returnTierId) {
 					const tierLabel =
 						initialCatalog?.plans.find((plan) => plan.id === returnTierId)?.label ?? returnTierId;
-					await waitForTierActivation(returnTierId, tierLabel);
+					if (!active) return;
+					await waitForTierActivation(returnTierId, tierLabel, generation);
 				}
 				if (checkout === 'return' || checkout === 'cancel')
 					window.history.replaceState({}, '', '/pricing');
 			} catch (error) {
-				if (active) {
+				if (active && generationRef.current === generation) {
 					setState((current) =>
-						withError(
-							current,
-							error instanceof Error ? error.message : 'Could not load pricing or account details.'
-						)
+						generationRef.current === generation
+							? withError(
+									current,
+									error instanceof Error
+										? error.message
+										: 'Could not load pricing or account details.'
+								)
+							: current
 					);
 				}
 			}
@@ -307,6 +374,7 @@ export default function PricingPlans({
 
 		return () => {
 			active = false;
+			generationRef.current += 1;
 			document.removeEventListener(PRICING_CHECKOUT_PROGRESS_EVENT, onCheckoutProgress);
 		};
 	}, [initialCatalog, refreshSession, waitForTierActivation]);
@@ -331,11 +399,13 @@ export default function PricingPlans({
 			return;
 		}
 		setCheckoutTierId(planId);
+		generationRef.current += 1;
 		captureAnalyticsEvent(CHECKOUT_STARTED_EVENT, { interval, location, plan: planId });
 		await runCheckout(planId, interval);
 	}
 
 	async function manageBilling() {
+		generationRef.current += 1;
 		captureAnalyticsEvent(CTA_CLICKED_EVENT, { cta: 'pricing_manage_billing', location });
 		try {
 			setState((current) =>
@@ -354,15 +424,21 @@ export default function PricingPlans({
 
 	async function signOut() {
 		captureAnalyticsEvent(CTA_CLICKED_EVENT, { cta: 'pricing_sign_out', location });
+		if (CHECKOUT_STARTED_STATUSES.has(state.status)) clearPendingPricingAction();
+		generationRef.current += 1;
+		setState((current) => ({ ...current, busy: false }));
 		await signOutOfPricing();
+		const generation = generationRef.current;
 		setState((current) =>
-			withReadySession(current, {
-				authenticated: false,
-				tier: 'free',
-				tierLabel: 'Free',
-				billingManaged: false,
-				userLabel: null
-			})
+			generationRef.current === generation
+				? withReadySession(current, {
+						authenticated: false,
+						tier: 'free',
+						tierLabel: 'Free',
+						billingManaged: false,
+						userLabel: null
+					})
+				: current
 		);
 	}
 

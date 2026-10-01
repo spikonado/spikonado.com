@@ -92,7 +92,9 @@ export function priceLabel(interval: BillingInterval, prices: TierPrices): Price
 	const money = formatMoney(perMonth, price.currency);
 	const periodLabel = formatMoney(periodMajor, price.currency);
 	if (interval === 'annual') {
-		const monthlyTimes12 = prices.monthly ? monthlyEquivalentMajor(prices.monthly) * 12 : null;
+		const monthly = prices.monthly;
+		const monthlyTimes12 =
+			monthly && monthly.currency === price.currency ? monthlyEquivalentMajor(monthly) * 12 : null;
 		const compareAt =
 			monthlyTimes12 !== null && monthlyTimes12 > periodMajor
 				? formatMoney(monthlyTimes12, price.currency)

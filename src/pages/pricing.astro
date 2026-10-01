@@ -4,7 +4,7 @@ import PricingPlans from '@/components/pricing-plans';
 import BaseLayout from '@/layouts/base-layout.astro';
 import type { PublicPricingCatalog } from '@/lib/convex/api';
 import { fetchPublicPricingCatalog } from '@/lib/pricing/billing-client';
-import { priceLabel, pricesForPlan, pricingFaqs } from '@/lib/pricing/catalog';
+import { pricingFaqs } from '@/lib/pricing/catalog';
 import { fetchPricingModelCatalog, type PricingModelCatalog } from '@/lib/pricing/model-catalog';
 import { SITE_URL, titleWithBrand } from '@/lib/seo';
 
@@ -33,32 +33,17 @@ const initialModelCatalog = await loadModelCatalog();
 
 const offers = initialCatalog
 	? initialCatalog.plans.flatMap((plan) => {
-			if (plan.id === 'free') {
-				return [
-					{
-						'@type': 'Offer',
-						name: `Sprocket ${plan.label}`,
-						price: '0',
-						priceCurrency: 'USD',
-						description: plan.description ?? 'Start building with Sprocket at no cost.'
-					}
-				];
-			}
-			const prices = pricesForPlan(plan);
-			return (['monthly', 'annual'] as const).flatMap((interval) => {
-				const price = priceLabel(interval, prices);
-				if (!price) return [];
-				return [
-					{
-						'@type': 'Offer',
-						name: `Sprocket ${plan.label} ${interval === 'annual' ? 'Annual' : 'Monthly'}`,
-						price: String(price.periodMajor),
-						priceCurrency: price.currency,
-						billingDuration: interval === 'annual' ? 'P1Y' : 'P1M',
-						description: plan.description ?? `${plan.label} Sprocket subscription.`
-					}
-				];
-			});
+			// Static page: paid prices can drift after build, so only the free plan is offered.
+			if (plan.id !== 'free') return [];
+			return [
+				{
+					'@type': 'Offer',
+					name: `Sprocket ${plan.label}`,
+					price: '0',
+					priceCurrency: 'USD',
+					description: plan.description ?? 'Start building with Sprocket at no cost.'
+				}
+			];
 		})
 	: [
 			{

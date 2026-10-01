@@ -5,7 +5,9 @@ export interface BillingPlan {
 	highlight?: boolean;
 	currency?: string;
 	monthlyPrice: string;
+	monthlyCurrency?: string;
 	yearlyPrice: string;
+	yearlyCurrency?: string;
 	buttonText: string;
 	badge?: string;
 	features: Array<{
