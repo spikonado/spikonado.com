@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PricingTableOne } from '@/components/billingsdk/pricing-table-one';
+import { PricingAccount } from '@/components/pricing-account';
 import { captureAnalyticsEvent } from '@/lib/analytics/bootstrap';
 import {
 	CHECKOUT_STARTED_EVENT,
@@ -45,7 +46,6 @@ import {
 	runCheckout,
 	type CheckoutProgress
 } from '@/lib/pricing/start-checkout';
-import { cn } from '@/utils';
 
 interface PricingPlansProps {
 	initialCatalog?: PublicPricingCatalog | null;
@@ -446,41 +446,11 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 	}
 
 	const account = (
-		<>
-			{state.message ? (
-				<p
-					className={cn(
-						'mt-6 max-w-2xl rounded-xl border px-4 py-3 text-left text-sm',
-						state.status === 'error'
-							? 'border-red-300/70 bg-red-50 text-red-900'
-							: 'border-accent/25 bg-accent-soft text-foreground'
-					)}
-					role={state.status === 'error' ? 'alert' : 'status'}
-					aria-live="polite"
-				>
-					{state.message}
-				</p>
-			) : null}
-			{state.authenticated && state.userLabel ? (
-				<div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground">
-					<p>
-						Signed in as <span className="text-foreground">{state.userLabel}</span>
-						{isPaidTier(state.tier) ? (
-							<>
-								. Current plan: <span className="text-foreground">{state.tierLabel}</span>
-							</>
-						) : null}
-					</p>
-					<button
-						type="button"
-						className="font-medium text-accent-strong underline decoration-accent-strong/30 underline-offset-4"
-						onClick={() => void signOut()}
-					>
-						Sign out
-					</button>
-				</div>
-			) : null}
-		</>
+		<PricingAccount
+			state={state}
+			onManageBilling={() => void manageBilling()}
+			onSignOut={() => void signOut()}
+		/>
 	);
 
 	return (
@@ -491,7 +461,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 					interval={interval}
 					onIntervalChange={selectInterval}
 					onPlanSelect={(planId) =>
-						planId === state.tier && showsManageBilling(state)
+						planId !== 'free' && planId === state.tier && showsManageBilling(state)
 							? void manageBilling()
 							: void selectPlan(planId)
 					}

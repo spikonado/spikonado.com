@@ -34,6 +34,18 @@ describe('pricing checkout state', () => {
 		expect(showsManageBilling(state)).toBe(false);
 	});
 
+	test('lapsed free users keep manage billing and purchase eligibility', () => {
+		const state = withReadySession(createInitialPricingState(), {
+			authenticated: true,
+			tier: 'free',
+			tierLabel: 'Free',
+			billingManaged: true,
+			userLabel: 'dev@example.com'
+		});
+		expect(canStartCheckout(state)).toBe(true);
+		expect(showsManageBilling(state)).toBe(true);
+	});
+
 	test('shows manage billing for an active paid tier and blocks duplicate checkout', () => {
 		const state = withActivatedTier(
 			withBusyStatus(createInitialPricingState(), 'activating', 'Confirming...'),
