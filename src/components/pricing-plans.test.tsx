@@ -648,6 +648,31 @@ describe('pricing plans orchestration', () => {
 		expect(text()).toContain('did not complete');
 	});
 
+	test('terminal recovery retains its reference through a failed account refresh and retries', async () => {
+		signedIn();
+		sessionMemory.set(
+			'spikonado_pricing_attempt',
+			JSON.stringify({
+				userId: 'user-a',
+				attemptId: 'terminal-retry',
+				tierId: 'team',
+				interval: 'monthly',
+				startedAt: Date.now()
+			})
+		);
+		current.statusResult = { attemptId: 'terminal-retry', status: 'expired' };
+		queueSubscriptions(subscription(), new Error('Temporary refresh failure'), subscription());
+		await mount();
+		expect(sessionMemory.has('spikonado_pricing_attempt')).toBe(true);
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 2_600));
+		});
+		expect(current.statusCalls).toEqual(['terminal-retry', 'terminal-retry']);
+		expect(sessionMemory.has('spikonado_pricing_attempt')).toBe(false);
+		expect(text()).toContain('did not complete');
+		expect(findButton('Get Team').disabled).toBe(false);
+	}, 15_000);
+
 	test('attempts from another account are ignored after sign-in switches users', async () => {
 		sessionMemory.set(
 			'spikonado_pricing_attempt',

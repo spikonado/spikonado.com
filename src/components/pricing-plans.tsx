@@ -238,11 +238,12 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 					const status = await fetchCheckoutStatus(attemptId, accountId);
 					if (!isCurrent()) return;
 					if (status.status === 'failed' || status.status === 'expired') {
-						clearCheckoutAttempt();
-						await refreshSession(
+						const session = await refreshSession(
 							'Your previous checkout did not complete. You can start a new checkout below.',
 							guard
 						);
+						if (!isCurrent() || !session) return;
+						clearCheckoutAttempt();
 						return;
 					}
 					if (status.activated === true) {
