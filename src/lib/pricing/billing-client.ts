@@ -5,7 +5,6 @@ import {
 	type AccessPhase,
 	type BillingInterval,
 	type CheckoutAttemptStatus,
-	type CheckoutEligibility,
 	type PublicPricingCatalog,
 	type SubscriptionTier
 } from '@/lib/convex/api';
@@ -18,7 +17,6 @@ export type {
 	AccessPhase,
 	BillingInterval,
 	CheckoutAttemptStatus,
-	CheckoutEligibility,
 	PublicPricingCatalog,
 	SubscriptionTier
 };
@@ -27,20 +25,7 @@ export type MySubscription = {
 	tier: SubscriptionTier;
 	tierLabel: string;
 	billingManaged: boolean;
-	checkoutEligibility?: CheckoutEligibility;
 	accessPhase?: AccessPhase;
-};
-
-/**
- * Backend-confirmed checkout readiness and provider mode. Consumed additively:
- * `mode` is present once the backend ships it. When the backend does not
- * confirm a mode, the frontend must fail closed rather than assume agreement.
- */
-export type CheckoutGate = {
-	eligibility: CheckoutEligibility;
-	checkoutEnabled: boolean;
-	reason: string;
-	mode?: DodoCheckoutMode;
 };
 
 export type CheckoutResult = {
@@ -219,82 +204,36 @@ export async function fetchMySubscription(expectedAccountId?: string): Promise<M
 		tier: result.tier,
 		tierLabel: result.tierLabel,
 		billingManaged: result.billingManaged,
-		checkoutEligibility: result.checkoutEligibility,
 		accessPhase: result.accessPhase
 	};
 }
 
-function isCheckoutEligibilityValue(value: unknown): value is CheckoutEligibility {
-	return (
-		value === 'purchasable' ||
-		value === 'active' ||
-		value === 'repair_required' ||
-		value === 'confirmation_pending' ||
-		value === 'checkout_disabled'
-	);
-}
-
 /**
- * The backend reports its Dodo environment ('test_mode' | 'live_mode'); the
- * overlay speaks 'test' | 'live'. Anything unrecognized stays undefined so the
- * mode check below fails closed instead of assuming agreement.
+ * The checkout/status payloads carry the backend Dodo environment. Anything
+ * unrecognized stays undefined so the mode check below fails closed instead of
+ * assuming agreement.
  */
 function normalizeBackendMode(value: unknown): DodoCheckoutMode | undefined {
-	if (value === 'test_mode' || value === 'test') return 'test';
-	if (value === 'live_mode' || value === 'live') return 'live';
+	if (value === 'test') return 'test';
+	if (value === 'live') return 'live';
 	return undefined;
 }
 
 /**
- * Authoritative checkout readiness and provider mode from the backend. The
- * backend enforces the checkout kill switch and its own Dodo environment; the
- * frontend must not offer checkout unless the backend reports it enabled and
- * the provider mode agrees with the configured overlay mode.
+ * Throws unless the frontend overlay mode agrees with the backend-confirmed
+ * Dodo mode carried by a checkout or status payload. An absent mode fails
+ * closed: the hosted URL is never opened against an unconfirmed environment.
  */
-export async function fetchCheckoutGate(expectedAccountId?: string): Promise<CheckoutGate> {
-	const client = await initializePricingBilling();
-	const initiator = liveUser(client);
-	if (!initiator) {
-		return {
-			eligibility: 'purchasable',
-			checkoutEnabled: true,
-			reason: 'not signed in',
-			mode: undefined
-		};
-	}
-	if (expectedAccountId && accountIdFor(initiator) !== expectedAccountId) {
-		throw new Error('This billing action was cancelled.');
-	}
-	const result = await client.convex.query(api.billing.checkoutEligibility, {});
-	const current = liveUser(client);
-	if (!current || accountIdFor(current) !== accountIdFor(initiator)) {
-		throw new Error('This billing action was cancelled.');
-	}
-	return {
-		eligibility: isCheckoutEligibilityValue(result.eligibility)
-			? result.eligibility
-			: 'purchasable',
-		checkoutEnabled: result.checkoutEnabled === true,
-		reason: typeof result.reason === 'string' ? result.reason : '',
-		mode: normalizeBackendMode(result.mode)
-	};
-}
-
-/**
- * Throws unless the frontend overlay mode agrees with the backend's confirmed
- * Dodo mode. Mode agreement is required before checkout: an absent backend
- * mode fails closed instead of assuming agreement.
- */
-function assertCheckoutModeAgrees(backendMode: DodoCheckoutMode | undefined): void {
+function assertReturnedCheckoutMode(backendMode: DodoCheckoutMode | undefined): void {
 	const frontendMode = resolveCheckoutMode();
 	if (backendMode === undefined) {
 		throw new Error(
-			'Checkout mode is not confirmed by the billing backend. Cannot verify that PUBLIC_DODO_CHECKOUT_MODE matches the backend Dodo environment.'
+			'Checkout did not report its billing mode. Cannot verify that PUBLIC_DODO_CHECKOUT_MODE matches the backend Dodo environment.'
 		);
 	}
 	if (frontendMode !== backendMode) {
 		throw new Error(
-			`Checkout is configured in ${frontendMode} mode but billing is running in ${backendMode} mode. Fix PUBLIC_DODO_CHECKOUT_MODE to match the billing backend.`
+			`Checkout is configured in ${frontendMode} mode but this checkout link is ${backendMode} mode. Fix PUBLIC_DODO_CHECKOUT_MODE to match the billing backend.`
 		);
 	}
 }
@@ -311,16 +250,10 @@ export async function createCheckout(
 	if (expectedAccountId && initiatorAccount !== expectedAccountId) {
 		throw new Error('This billing action was cancelled.');
 	}
-	const gate = await fetchCheckoutGate(initiatorAccount);
-	if (!gate.checkoutEnabled || gate.eligibility === 'checkout_disabled') {
-		throw new Error('New purchases are temporarily unavailable.');
-	}
-	assertCheckoutModeAgrees(gate.mode);
 	const result = await client.convex.action(api.billing.checkout, {
 		tier: tierId,
 		interval
 	});
-	if (!result.checkout_url) throw new Error('Checkout session was not created.');
 	// Persist the attempt only while the initiating account still owns the
 	// session: a switched account throws instead of receiving a checkout URL
 	// it must not open.
@@ -331,12 +264,17 @@ export async function createCheckout(
 	if (!result.attemptId?.trim()) {
 		throw new Error('Checkout recovery is unavailable. Contact billing support before paying.');
 	}
+	// Persist the account-bound attempt reference before any validation that
+	// can strand recovery (mode disagreement, missing URL): once the provider
+	// session exists, status lookups must stay possible.
 	storeCheckoutAttempt(accountIdFor(current), {
 		attemptId: result.attemptId,
 		tierId,
 		interval,
 		startedAt: Date.now()
 	});
+	assertReturnedCheckoutMode(normalizeBackendMode(result.mode));
+	if (!result.checkout_url) throw new Error('Checkout session was not created.');
 	return {
 		checkoutUrl: result.checkout_url,
 		attemptId: result.attemptId,
@@ -364,6 +302,11 @@ export async function fetchCheckoutStatus(
 	const current = liveUser(client);
 	if (!current || accountIdFor(current) !== initiatorAccount) {
 		throw new Error('This billing action was cancelled.');
+	}
+	// A resumable URL is only handed out when its provider environment agrees
+	// with the overlay; anything else fails closed before it can be opened.
+	if (typeof result.checkout_url === 'string' && result.checkout_url.trim()) {
+		assertReturnedCheckoutMode(normalizeBackendMode(result.mode));
 	}
 	return result;
 }

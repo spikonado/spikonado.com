@@ -33,13 +33,11 @@ import { createCheckoutOverlay, type CheckoutOverlay } from '@/lib/pricing/check
 import {
 	createInitialPricingState,
 	canStartCheckout,
-	effectiveCheckoutEligibility,
-	resolveCheckoutEligibility,
 	showsManageBilling,
 	withActivatedTier,
 	withBusyStatus,
-	withConfirmationPending,
 	withError,
+	withPaymentPending,
 	withReadySession,
 	withReadyStatus,
 	type PricingUiState
@@ -173,9 +171,6 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			}
 			if (accountIdFrom(client.auth?.getUser() ?? null) !== accountId) return null;
 			accountRef.current = accountId;
-			const eligibility = resolveCheckoutEligibility({
-				checkoutEligibility: subscription.checkoutEligibility
-			});
 			setState((current) => {
 				if (!isCurrent()) return current;
 				return withReadySession(current, {
@@ -183,7 +178,6 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 					tier: subscription.tier,
 					tierLabel: subscription.tierLabel,
 					billingManaged: subscription.billingManaged,
-					checkoutEligibility: eligibility ?? undefined,
 					accessPhase:
 						typeof subscription.accessPhase === 'string' ? subscription.accessPhase : undefined,
 					userLabel: user?.email ?? user?.firstName ?? null,
@@ -195,7 +189,6 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 				tier: subscription.tier,
 				tierLabel: subscription.tierLabel,
 				billingManaged: subscription.billingManaged,
-				checkoutEligibility: eligibility,
 				authenticated: Boolean(user),
 				accountId
 			};
@@ -204,11 +197,65 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 	);
 
 	/**
+	 * Apply one attempt status lookup: settle awaiting-payment resume,
+	 * terminal-state recovery, and activation. Returns true when the lookup
+	 * fully settled the attempt so polling can stop.
+	 */
+	const applyAttemptStatus = useCallback(
+		async (
+			status: Awaited<ReturnType<typeof fetchCheckoutStatus>>,
+			tierId: string,
+			tierLabel: string,
+			guard: OperationGuard,
+			accountId: string
+		): Promise<boolean> => {
+			const isCurrent = guard.isCurrent;
+			if (!isCurrent()) return true;
+			if (status.status === 'awaiting_payment') {
+				setState((current) =>
+					isCurrent()
+						? withPaymentPending(current, tierLabel, status.attemptId, status.checkout_url ?? null)
+						: current
+				);
+				return true;
+			}
+			if (status.status === 'failed' || status.status === 'expired') {
+				const session = await refreshSession(
+					'Your previous checkout did not complete. You can start a new checkout below.',
+					guard
+				);
+				if (!isCurrent() || !session) return true;
+				clearCheckoutAttempt();
+				return true;
+			}
+			if (status.activated === true) {
+				const subscription = await fetchMySubscription(accountId);
+				if (!isCurrent()) return true;
+				if (subscription.tier === tierId && subscription.billingManaged) {
+					captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activated', location });
+					setState((current) =>
+						isCurrent()
+							? withActivatedTier(current, subscription.tier, subscription.tierLabel)
+							: current
+					);
+					clearCheckoutAttempt();
+					return true;
+				}
+			}
+			return false;
+		},
+		[refreshSession]
+	);
+
+	/**
 	 * Poll for activation of a specific account-owned checkout attempt. Activation
 	 * is only claimed when the backend confirms that exact attempt activated
 	 * (`getCheckoutStatus` activated flag) and the subscription projection
 	 * reflects the purchased tier. A matching tier from any other purchase, an
 	 * unsigned URL parameter, or a provider status alone never proves activation.
+	 * An attempt still awaiting payment surfaces the server-authorized checkout
+	 * URL so the user can explicitly resume the same session; a new checkout is
+	 * never created for it.
 	 */
 	const waitForTierActivation = useCallback(
 		async (
@@ -229,37 +276,14 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 				);
 			} else {
 				setState((current) =>
-					isCurrent() ? withConfirmationPending(current, tierLabel, attemptId) : current
+					isCurrent() ? withPaymentPending(current, tierLabel, attemptId, null) : current
 				);
 			}
 			const started = Date.now();
 			while (isCurrent() && Date.now() - started < ACTIVATION_TIMEOUT_MS) {
 				try {
 					const status = await fetchCheckoutStatus(attemptId, accountId);
-					if (!isCurrent()) return;
-					if (status.status === 'failed' || status.status === 'expired') {
-						const session = await refreshSession(
-							'Your previous checkout did not complete. You can start a new checkout below.',
-							guard
-						);
-						if (!isCurrent() || !session) return;
-						clearCheckoutAttempt();
-						return;
-					}
-					if (status.activated === true) {
-						const subscription = await fetchMySubscription(accountId);
-						if (!isCurrent()) return;
-						if (subscription.tier === tierId && subscription.billingManaged) {
-							captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activated', location });
-							setState((current) =>
-								isCurrent()
-									? withActivatedTier(current, subscription.tier, subscription.tierLabel)
-									: current
-							);
-							clearCheckoutAttempt();
-							return;
-						}
-					}
+					if (await applyAttemptStatus(status, tierId, tierLabel, guard, accountId)) return;
 				} catch {
 					// The webhook may still be in flight; keep polling until the bound.
 				}
@@ -268,10 +292,10 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			if (!isCurrent()) return;
 			captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activation_pending', location });
 			setState((current) =>
-				isCurrent() ? withConfirmationPending(current, tierLabel, attemptId) : current
+				isCurrent() ? withPaymentPending(current, tierLabel, attemptId, null) : current
 			);
 		},
-		[refreshSession]
+		[applyAttemptStatus]
 	);
 
 	const recoverStoredAttempt = useCallback(
@@ -386,10 +410,6 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 					}
 					const session = await refreshSession(null, mountGuard);
 					if (!isCurrent() || !session) return;
-					if (session.checkoutEligibility && session.checkoutEligibility !== 'purchasable') {
-						return;
-					}
-					if (!session.checkoutEligibility && session.tier !== 'free') return;
 					window.history.replaceState(
 						window.history.state,
 						'',
@@ -462,20 +482,12 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			return;
 		}
 		// An open overlay must not trap the user: picking another plan or
-		// interval supersedes it and closes it below. Only creation/processing
-		// work (starting checkout, activating, portal navigation) blocks a new
-		// selection.
+		// interval supersedes it and closes it below. Only in-flight work blocks
+		// a new selection; the provider rejects a second active subscription.
 		if (!canStartCheckout(state) && state.status !== 'checkout_open') {
-			const eligibility = effectiveCheckoutEligibility(state);
-			const message =
-				eligibility === 'checkout_disabled'
-					? 'New purchases are temporarily unavailable. You can still manage billing in the portal.'
-					: eligibility === 'repair_required'
-						? 'A payment for your subscription needs attention. Open the billing portal to repair it.'
-						: eligibility === 'confirmation_pending'
-							? 'A payment is still being confirmed. Check its status instead of starting another checkout.'
-							: 'A paid plan is already active on this account.';
-			setState((current) => withError(current, message));
+			setState((current) =>
+				withError(current, 'Another billing action is in progress. Try again in a moment.')
+			);
 			return;
 		}
 		if (!planIsAvailable(catalog, planId, planInterval)) {
@@ -569,6 +581,85 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		}
 	}
 
+	/**
+	 * Explicit resume of an attempt the server still reports awaiting payment:
+	 * reopens the server-authorized checkout URL for that exact attempt. No new
+	 * checkout session is ever created here. A delayed account switch supersedes
+	 * the stored reference before the URL can be opened.
+	 */
+	async function continueCheckout() {
+		const attemptId = state.pendingAttemptId;
+		if (!attemptId || !state.pendingCheckoutUrl) return;
+		const operations = getOperations();
+		operations.bumpGeneration();
+		const expectedAccount = accountRef.current;
+		const probe = operations.begin('checkout', 'pending', null);
+		const client = await initializePricingBilling().catch(() => null);
+		const account = accountIdFrom(client?.auth?.getUser() ?? null);
+		if (!probe.isCurrent() || account !== expectedAccount || expectedAccount !== accountRef.current)
+			return;
+		if (!account) return;
+		const overlay = getOverlay();
+		const guard = operations.begin('checkout', account, overlay);
+		try {
+			const status = await fetchCheckoutStatus(attemptId, account);
+			guard.assertCurrent();
+			const attempt = readCheckoutAttempt(account);
+			if (attempt?.attemptId !== attemptId) return;
+			const tierLabel =
+				catalogRef.current?.plans.find((plan) => plan.id === attempt.tierId)?.label ??
+				attempt.tierId;
+			if (
+				status.status !== 'awaiting_payment' ||
+				!status.checkout_url ||
+				status.checkout_url !== state.pendingCheckoutUrl
+			) {
+				if (!(await applyAttemptStatus(status, attempt.tierId, tierLabel, guard, account))) {
+					await waitForTierActivation(attempt.tierId, tierLabel, guard, attemptId, account);
+				}
+				return;
+			}
+			setState((current) =>
+				guard.isCurrent()
+					? withBusyStatus(current, 'checkout_open', 'Complete checkout in the overlay…')
+					: current
+			);
+			overlay.open(status.checkout_url, (event) => {
+				if (!guard.isCurrent()) return;
+				if (event.event_type === 'checkout.error') {
+					setState((current) =>
+						guard.isCurrent()
+							? withError(
+									current,
+									'Checkout hit a problem before closing. If you paid, your plan will activate shortly — check the payment status instead of starting a new purchase.'
+								)
+							: current
+					);
+					return;
+				}
+				if (event.event_type === 'checkout.closed') {
+					void waitForTierActivation(
+						attempt.tierId,
+						tierLabel,
+						guard,
+						attemptId,
+						account,
+						false
+					).catch(() => {});
+				}
+			});
+		} catch (error) {
+			setState((current) =>
+				guard.isCurrent()
+					? withError(
+							current,
+							error instanceof Error ? error.message : 'Could not resume the checkout.'
+						)
+					: current
+			);
+		}
+	}
+
 	async function signOut() {
 		captureAnalyticsEvent(CTA_CLICKED_EVENT, { cta: 'pricing_sign_out', location });
 		clearPendingPricingAction();
@@ -595,7 +686,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			setState((current) =>
 				withError(
 					attempt && planLabel
-						? withConfirmationPending(current, planLabel, attempt.attemptId)
+						? withPaymentPending(current, planLabel, attempt.attemptId, null)
 						: current,
 					'Could not sign out. Please try again.'
 				)
@@ -621,7 +712,6 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 	function planButtonLabel(plan: BillingPlan): string {
 		if (plan.id === 'free') return plan.buttonText;
 		const isCurrentTier = state.tier === plan.id;
-		const eligibility = effectiveCheckoutEligibility(state);
 		if (state.status === 'managing_billing' && isCurrentTier) return 'Opening billing portal...';
 		if (checkoutTierId === plan.id) {
 			if (state.status === 'signing_in') return 'Redirecting to sign in...';
@@ -631,10 +721,6 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		}
 		if (isCurrentTier && showsManageBilling(state)) return 'Manage billing';
 		if (isCurrentTier) return 'Current plan';
-		if (eligibility === 'checkout_disabled') return 'Checkout unavailable';
-		if (eligibility === 'repair_required') return 'Repair in billing portal';
-		if (eligibility === 'confirmation_pending') return 'Payment confirming';
-		if (eligibility === 'active') return 'Paid plan already active';
 		if (!planIsAvailable(catalog, plan.id, interval)) return 'Unavailable';
 		return plan.buttonText;
 	}
@@ -644,6 +730,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			state={state}
 			onManageBilling={() => void manageBilling()}
 			onCheckStatus={() => void checkPaymentStatus()}
+			onContinueCheckout={() => void continueCheckout()}
 			onSignOut={() => void signOut()}
 		/>
 	);
@@ -666,7 +753,6 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 						if (plan.id === 'free') return false;
 						if (plan.id === state.tier) return !showsManageBilling(state);
 						if (state.status === 'checkout_open') return false;
-						if (!canStartCheckout(state)) return true;
 						return !planIsAvailable(catalog, plan.id, interval);
 					}}
 					headerFooter={account}

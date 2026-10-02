@@ -17,37 +17,15 @@ export type PublicApiType = {
 				tier: string;
 				tierLabel: string;
 				billingManaged: boolean;
-				checkoutEligibility?:
-					| 'purchasable'
-					| 'active'
-					| 'repair_required'
-					| 'confirmation_pending'
-					| 'checkout_disabled';
 				accessPhase?: 'active' | 'scheduled_cancel' | 'ended' | 'none';
 			}
 		>;
 		ensureMySubscription: FunctionReference<'mutation', 'public', Record<string, never>, null>;
-		checkoutEligibility: FunctionReference<
-			'query',
-			'public',
-			Record<string, never>,
-			{
-				eligibility:
-					| 'purchasable'
-					| 'active'
-					| 'repair_required'
-					| 'confirmation_pending'
-					| 'checkout_disabled';
-				checkoutEnabled: boolean;
-				mode?: 'test' | 'live';
-				reason: string;
-			}
-		>;
 		checkout: FunctionReference<
 			'action',
 			'public',
 			{ tier: string; interval: 'monthly' | 'annual' },
-			{ checkout_url: string; attemptId?: string; sessionId?: string }
+			{ checkout_url: string; mode: 'test' | 'live'; attemptId?: string; sessionId?: string }
 		>;
 		customerPortal: FunctionReference<
 			'action',
@@ -62,6 +40,7 @@ export type PublicApiType = {
 			{
 				attemptId: string;
 				status: 'awaiting_payment' | 'pending' | 'succeeded' | 'failed' | 'expired' | 'unknown';
+				mode: 'test' | 'live';
 				activated?: boolean;
 				checkout_url?: string;
 				sessionId?: string;
@@ -116,9 +95,6 @@ export type SubscriptionTier = FunctionReturnType<
 	PublicApiType['billing']['getMySubscription']
 >['tier'];
 export type BillingInterval = 'monthly' | 'annual';
-export type CheckoutEligibility = NonNullable<
-	FunctionReturnType<PublicApiType['billing']['getMySubscription']>['checkoutEligibility']
->;
 export type AccessPhase = NonNullable<
 	FunctionReturnType<PublicApiType['billing']['getMySubscription']>['accessPhase']
 >;

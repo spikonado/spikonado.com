@@ -46,34 +46,6 @@
 						},
 						"optional": false
 					},
-					"checkoutEligibility": {
-						"fieldType": {
-							"type": "union",
-							"value": [
-								{
-									"type": "literal",
-									"value": "purchasable"
-								},
-								{
-									"type": "literal",
-									"value": "active"
-								},
-								{
-									"type": "literal",
-									"value": "repair_required"
-								},
-								{
-									"type": "literal",
-									"value": "confirmation_pending"
-								},
-								{
-									"type": "literal",
-									"value": "checkout_disabled"
-								}
-							]
-						},
-						"optional": true
-					},
 					"accessPhase": {
 						"fieldType": {
 							"type": "union",
@@ -111,74 +83,6 @@
 				"type": "null"
 			}
 		},
-		"billing:checkoutEligibility": {
-			"kind": "query",
-			"args": {
-				"type": "object",
-				"value": {}
-			},
-			"returns": {
-				"type": "object",
-				"value": {
-					"eligibility": {
-						"fieldType": {
-							"type": "union",
-							"value": [
-								{
-									"type": "literal",
-									"value": "purchasable"
-								},
-								{
-									"type": "literal",
-									"value": "active"
-								},
-								{
-									"type": "literal",
-									"value": "repair_required"
-								},
-								{
-									"type": "literal",
-									"value": "confirmation_pending"
-								},
-								{
-									"type": "literal",
-									"value": "checkout_disabled"
-								}
-							]
-						},
-						"optional": false
-					},
-					"checkoutEnabled": {
-						"fieldType": {
-							"type": "boolean"
-						},
-						"optional": false
-					},
-					"mode": {
-						"fieldType": {
-							"type": "union",
-							"value": [
-								{
-									"type": "literal",
-									"value": "test"
-								},
-								{
-									"type": "literal",
-									"value": "live"
-								}
-							]
-						},
-						"optional": true
-					},
-					"reason": {
-						"fieldType": {
-							"type": "string"
-						},
-						"optional": false
-					}
-				}
-			}
-		},
 		"billing:checkout": {
 			"kind": "action",
 			"args": {
@@ -214,6 +118,22 @@
 					"checkout_url": {
 						"fieldType": {
 							"type": "string"
+						},
+						"optional": false
+					},
+					"mode": {
+						"fieldType": {
+							"type": "union",
+							"value": [
+								{
+									"type": "literal",
+									"value": "test"
+								},
+								{
+									"type": "literal",
+									"value": "live"
+								}
+							]
 						},
 						"optional": false
 					},
@@ -299,6 +219,22 @@
 								{
 									"type": "literal",
 									"value": "unknown"
+								}
+							]
+						},
+						"optional": false
+					},
+					"mode": {
+						"fieldType": {
+							"type": "union",
+							"value": [
+								{
+									"type": "literal",
+									"value": "test"
+								},
+								{
+									"type": "literal",
+									"value": "live"
 								}
 							]
 						},
@@ -542,5 +478,5 @@
 			}
 		}
 	},
-	"sourceRevision": "117166a1291662054f7dc984b314a01537381c36"
+	"sourceRevision": "89f05fc36e2e2afdc3c81677045313c91f683f20"
 }

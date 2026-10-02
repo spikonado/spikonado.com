@@ -5,6 +5,7 @@ import {
 	createInitialPricingState,
 	withActivatedTier,
 	withBusyStatus,
+	withPaymentPending,
 	withReadySession,
 	type PricingUiState
 } from '@/lib/pricing/checkout-state';
@@ -16,6 +17,7 @@ function render(state: PricingUiState): string {
 			state,
 			onManageBilling: () => {},
 			onCheckStatus: () => {},
+			onContinueCheckout: () => {},
 			onSignOut: () => {}
 		})
 	);
@@ -85,47 +87,38 @@ describe('pricing account section', () => {
 		expect(markup).toContain('disabled');
 	});
 
-	test('repair-required accounts get portal repair instead of purchase', () => {
-		const state = withReadySession(createInitialPricingState(), {
-			authenticated: true,
-			tier: 'free',
-			tierLabel: 'Free',
-			billingManaged: true,
-			checkoutEligibility: 'repair_required',
-			userLabel: 'dev@example.com'
-		});
-		const markup = render(state);
-		expect(markup).toContain('payment for your subscription needs attention');
-		expect(markup).toContain('Manage billing');
-		expect(markup).not.toContain('Get Team');
-	});
-
-	test('confirmation-pending accounts can re-check status without repurchasing', () => {
-		const state = withReadySession(createInitialPricingState(), {
-			authenticated: true,
-			tier: 'free',
-			tierLabel: 'Free',
-			billingManaged: true,
-			checkoutEligibility: 'confirmation_pending',
-			userLabel: 'dev@example.com'
-		});
+	test('a pending attempt without a resumable URL offers status checking and support', () => {
+		const state = withPaymentPending(lapsedFreeState(), 'Team', 'attempt-1', null);
 		const markup = render(state);
 		expect(markup).toContain('Check payment status');
-		expect(markup).toContain('still being confirmed');
+		expect(markup).toContain('not confirmed yet');
+		expect(markup).toContain('aarav@spikonado.com');
+		expect(markup).not.toContain('Continue checkout');
 		expect(markup).not.toContain('Payment received');
 	});
 
-	test('checkout-disabled messaging keeps the portal available', () => {
-		const state = withReadySession(createInitialPricingState(), {
-			authenticated: true,
-			tier: 'team',
-			tierLabel: 'Team',
-			billingManaged: true,
-			checkoutEligibility: 'checkout_disabled',
-			userLabel: 'dev@example.com'
-		});
+	test('a pending attempt with a resumable URL offers continue checkout', () => {
+		const state = withPaymentPending(
+			lapsedFreeState(),
+			'Team',
+			'attempt-1',
+			'https://checkout.example/session/cks_a'
+		);
 		const markup = render(state);
-		expect(markup).toContain('New purchases are temporarily unavailable');
-		expect(markup).toContain('Manage billing');
+		expect(markup).toContain('Continue checkout');
+		expect(markup).toContain('Check payment status');
+	});
+
+	test('signed-out visitors never see pending recovery actions', () => {
+		const signedOut = withReadySession(createInitialPricingState(), {
+			authenticated: false,
+			tier: 'free',
+			tierLabel: 'Free',
+			billingManaged: false,
+			userLabel: null
+		});
+		const markup = render(signedOut);
+		expect(markup).not.toContain('Check payment status');
+		expect(markup).not.toContain('Continue checkout');
 	});
 });

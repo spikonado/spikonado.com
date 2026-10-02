@@ -1,6 +1,5 @@
 import {
 	createCheckout,
-	fetchCheckoutGate,
 	initializePricingBilling,
 	signInForPricing
 } from '@/lib/pricing/billing-client';
@@ -8,6 +7,14 @@ import { isBillingInterval, type BillingInterval } from '@/lib/pricing/catalog';
 import type { CheckoutOverlay } from '@/lib/pricing/checkout-overlay';
 import type { OperationGuard } from '@/lib/pricing/operation';
 import { clearPendingPricingAction, storePendingPricingAction } from '@/lib/pricing/pending';
+
+function accountIdFrom(user: { id?: unknown; email?: unknown } | null): string | null {
+	if (!user) return null;
+	const id = typeof user.id === 'string' ? user.id.trim() : '';
+	if (id) return id;
+	const email = typeof user.email === 'string' ? user.email.trim() : '';
+	return email || null;
+}
 
 export const PRICING_CHECKOUT_PROGRESS_EVENT = 'spikonado:pricing-checkout-progress';
 
@@ -130,7 +137,10 @@ export async function runCheckout(
 			emit('error', client.error ?? 'Checkout is not configured yet.');
 			return;
 		}
-		if (!client.user) {
+		// The live auth user, never the initialization-time snapshot: an account
+		// switch between client creation and this point must route to sign-in.
+		const user = client.auth?.getUser() ?? null;
+		if (!user) {
 			emit('signing_in', 'Redirecting to sign in…');
 			await signInForPricing();
 			// The account may have changed while the sign-in redirect was in flight.
@@ -138,32 +148,38 @@ export async function runCheckout(
 			return;
 		}
 
-		// Confirm mode agreement with the backend before creating any checkout.
-		// createCheckout also enforces this, but the guard must be checked after
-		// the awaited gate fetch.
-		const gate = await fetchCheckoutGate();
-		guard.assertCurrent();
-		if (!gate.checkoutEnabled || gate.eligibility === 'checkout_disabled') {
-			emit('error', 'New purchases are temporarily unavailable.');
-			return;
-		}
-
 		clearPendingPricingAction();
 		emit('starting', 'Opening secure checkout…');
 
-		const checkout = await createCheckout(tierId, interval, guard.context.accountId);
+		const checkout = await createCheckout(
+			tierId,
+			interval,
+			accountIdFrom(user) ?? guard.context.accountId
+		);
 		guard.assertCurrent();
 
 		emit('checkout_open', 'Complete checkout in the overlay…', checkout.attemptId);
-		let checkoutFailed = false;
+		// An SDK checkout.error is not an authoritative payment failure: the
+		// attempt reference is already persisted, so the close path still offers
+		// status checks and same-link resume. Each error surfaces once.
+		let sdkErrorReported = false;
 		overlay.open(checkout.checkoutUrl, (event) => {
 			if (!guard.isCurrent()) return;
 			if (event.event_type === 'checkout.closed') {
-				if (checkoutFailed) return;
-				emit('checkout_closed', 'Checkout closed. You can try again anytime.', checkout.attemptId);
+				emit(
+					'checkout_closed',
+					sdkErrorReported
+						? 'Checkout closed after a problem. You can check the payment status or continue the same checkout from this page.'
+						: 'Checkout closed. You can try again anytime.',
+					checkout.attemptId
+				);
 			} else if (event.event_type === 'checkout.error') {
-				checkoutFailed = true;
-				emit('error', 'Checkout could not be completed.');
+				sdkErrorReported = true;
+				emit(
+					'error',
+					'Checkout hit a problem before closing. If you paid, your plan will activate shortly — check the payment status instead of starting a new purchase.',
+					checkout.attemptId
+				);
 			}
 		});
 	} catch (error) {

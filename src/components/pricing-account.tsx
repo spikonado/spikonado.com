@@ -1,9 +1,4 @@
-import {
-	effectiveCheckoutEligibility,
-	showsManageBilling,
-	showsRepairBilling,
-	type PricingUiState
-} from '@/lib/pricing/checkout-state';
+import { showsManageBilling, type PricingUiState } from '@/lib/pricing/checkout-state';
 import { cn } from '@/utils';
 
 const BILLING_SUPPORT_EMAIL = 'aarav@spikonado.com';
@@ -12,6 +7,7 @@ export type PricingAccountProps = {
 	state: PricingUiState;
 	onManageBilling: () => void;
 	onCheckStatus: () => void;
+	onContinueCheckout: () => void;
 	onSignOut: () => void;
 };
 
@@ -19,10 +15,11 @@ export function PricingAccount({
 	state,
 	onManageBilling,
 	onCheckStatus,
+	onContinueCheckout,
 	onSignOut
 }: PricingAccountProps) {
 	const paidTier = state.tier !== 'free';
-	const eligibility = effectiveCheckoutEligibility(state);
+	const paymentPending = state.authenticated && state.pendingAttemptId !== null;
 	return (
 		<>
 			{state.message ? (
@@ -39,12 +36,29 @@ export function PricingAccount({
 					{state.message}
 				</p>
 			) : null}
-			{eligibility === 'confirmation_pending' && state.authenticated ? (
+			{paymentPending ? (
 				<div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm">
 					<p className="w-full text-muted-foreground">
-						Your payment is still being confirmed. This can take a moment — your plan updates
-						automatically once the payment is confirmed.
+						Your payment is not confirmed yet. This can take a moment — your plan updates
+						automatically once the payment is confirmed. If you are stuck, email{' '}
+						<a
+							className="font-medium text-accent-strong underline decoration-accent-strong/30 underline-offset-4"
+							href={`mailto:${BILLING_SUPPORT_EMAIL}?subject=Sprocket%20billing%20support`}
+						>
+							{BILLING_SUPPORT_EMAIL}
+						</a>
+						.
 					</p>
+					{state.pendingCheckoutUrl ? (
+						<button
+							type="button"
+							className="font-medium text-accent-strong underline decoration-accent-strong/30 underline-offset-4"
+							disabled={state.busy}
+							onClick={onContinueCheckout}
+						>
+							Continue checkout
+						</button>
+					) : null}
 					<button
 						type="button"
 						className="font-medium text-accent-strong underline decoration-accent-strong/30 underline-offset-4"
@@ -54,25 +68,6 @@ export function PricingAccount({
 						{state.status === 'activating' ? 'Checking…' : 'Check payment status'}
 					</button>
 				</div>
-			) : null}
-			{eligibility === 'repair_required' ? (
-				<p className="mt-4 text-sm text-muted-foreground">
-					A payment for your subscription needs attention. Open the billing portal to update your
-					payment method or cancel the subscription. For refunds or billing disputes, email{' '}
-					<a
-						className="font-medium text-accent-strong underline decoration-accent-strong/30 underline-offset-4"
-						href={`mailto:${BILLING_SUPPORT_EMAIL}?subject=Sprocket%20billing%20support`}
-					>
-						{BILLING_SUPPORT_EMAIL}
-					</a>
-					.
-				</p>
-			) : null}
-			{eligibility === 'checkout_disabled' && state.authenticated ? (
-				<p className="mt-4 text-sm text-muted-foreground">
-					New purchases are temporarily unavailable. Existing subscriptions can still be managed in
-					the billing portal.
-				</p>
 			) : null}
 			{state.authenticated && state.userLabel ? (
 				<div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground">
@@ -93,9 +88,9 @@ export function PricingAccount({
 					</button>
 				</div>
 			) : null}
-			{showsManageBilling(state) || showsRepairBilling(state) ? (
+			{showsManageBilling(state) ? (
 				<div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm">
-					{!paidTier && eligibility !== 'repair_required' ? (
+					{!paidTier ? (
 						<p className="w-full text-muted-foreground">
 							No paid plan is active. View billing history or fix a failed payment in the billing
 							portal.
