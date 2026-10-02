@@ -137,8 +137,6 @@ export async function runCheckout(
 			emit('error', client.error ?? 'Checkout is not configured yet.');
 			return;
 		}
-		// The live auth user, never the initialization-time snapshot: an account
-		// switch between client creation and this point must route to sign-in.
 		const user = client.auth?.getUser() ?? null;
 		if (!user) {
 			emit('signing_in', 'Redirecting to sign in…');
@@ -147,15 +145,14 @@ export async function runCheckout(
 			guard.assertCurrent();
 			return;
 		}
+		if (accountIdFrom(user) !== guard.context.accountId) {
+			throw new Error('This billing action was cancelled.');
+		}
 
 		clearPendingPricingAction();
 		emit('starting', 'Opening secure checkout…');
 
-		const checkout = await createCheckout(
-			tierId,
-			interval,
-			accountIdFrom(user) ?? guard.context.accountId
-		);
+		const checkout = await createCheckout(tierId, interval, guard.context.accountId);
 		guard.assertCurrent();
 
 		emit('checkout_open', 'Complete checkout in the overlay…', checkout.attemptId);

@@ -605,7 +605,12 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			const status = await fetchCheckoutStatus(attemptId, account);
 			guard.assertCurrent();
 			const attempt = readCheckoutAttempt(account);
-			if (attempt?.attemptId !== attemptId) return;
+			if (attempt?.attemptId !== attemptId) {
+				if (!(await recoverStoredAttempt(guard))) {
+					await refreshSession('Your account billing status has been refreshed.', guard);
+				}
+				return;
+			}
 			const tierLabel =
 				catalogRef.current?.plans.find((plan) => plan.id === attempt.tierId)?.label ??
 				attempt.tierId;

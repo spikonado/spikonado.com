@@ -467,6 +467,33 @@ describe('pricing plans orchestration', () => {
 		expect(current.overlayCloses).toBeGreaterThan(0);
 	}, 15_000);
 
+	test('resume refreshes billing when its stored attempt disappears', async () => {
+		sessionMemory.set(
+			'spikonado_pricing_attempt',
+			JSON.stringify({
+				userId: 'user-a',
+				attemptId: 'attempt-removed',
+				tierId: 'team',
+				interval: 'monthly',
+				startedAt: Date.now()
+			})
+		);
+		signedIn();
+		current.statusResult = {
+			attemptId: 'attempt-removed',
+			status: 'awaiting_payment',
+			checkout_url: 'https://checkout.example/session/cks_removed'
+		};
+		await mount();
+		sessionMemory.delete('spikonado_pricing_attempt');
+		await click(findButton('Continue checkout'));
+
+		expect(text()).toContain('Your account billing status has been refreshed.');
+		expect(text()).not.toContain('Continue checkout');
+		expect(current.overlayOpenings).toEqual([]);
+		expect(current.checkoutCalls).toEqual([]);
+	});
+
 	test('an account switch before resume never reopens the old account checkout', async () => {
 		sessionMemory.set(
 			'spikonado_pricing_attempt',
