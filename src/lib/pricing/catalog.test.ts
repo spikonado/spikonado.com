@@ -48,7 +48,7 @@ const sampleCatalog: PublicPricingCatalog = {
 			weeklyUsageDollars: 5,
 			monthlyUsageDollars: 15,
 			description: null,
-			features: ['Community support'],
+			features: ['Selected AI models', 'Community support'],
 			displayOrder: 0,
 			highlighted: false,
 			prices: { monthly: null, annual: null }
@@ -59,7 +59,7 @@ const sampleCatalog: PublicPricingCatalog = {
 			weeklyUsageDollars: 25,
 			monthlyUsageDollars: 75,
 			description: 'For engineering teams.',
-			features: ['Shared projects'],
+			features: ['All available AI models', 'Shared projects'],
 			displayOrder: 10,
 			highlighted: true,
 			prices: { monthly: monthlyPrice, annual: annualPrice }
@@ -166,14 +166,14 @@ describe('pricing catalog', () => {
 		expect(plans[0]?.features).toEqual([
 			'No credit card required',
 			'$15 of AI usage each month',
-			'Use the best AI models',
+			'Selected AI models',
 			'Community support'
 		]);
 		expect(plans[1]).toMatchObject({
 			name: 'Team',
 			description: 'For engineering teams.',
 			highlighted: true,
-			features: ['$75 of AI usage each month', 'Use the best AI models', 'Shared projects']
+			features: ['$75 of AI usage each month', 'All available AI models', 'Shared projects']
 		});
 	});
 

@@ -17,7 +17,6 @@ import {
 	initializePricingBilling,
 	openCustomerPortal,
 	signOutOfPricing,
-	type CheckoutStatus,
 	type MySubscription,
 	type PublicPricingCatalog
 } from '@/lib/pricing/billing-client';
@@ -218,8 +217,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			guard: OperationGuard,
 			attemptId: string,
 			accountId: string,
-			showPendingState = true,
-			initialStatus: CheckoutStatus | null = null
+			showPendingState = true
 		) => {
 			const isCurrent = guard.isCurrent;
 			if (!isCurrent()) return;
@@ -229,14 +227,24 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 						? withBusyStatus(current, 'activating', `Confirming your ${tierLabel} subscription...`)
 						: current
 				);
+			} else {
+				setState((current) =>
+					isCurrent() ? withConfirmationPending(current, tierLabel, attemptId) : current
+				);
 			}
 			const started = Date.now();
-			let suppliedStatus = initialStatus;
 			while (isCurrent() && Date.now() - started < ACTIVATION_TIMEOUT_MS) {
 				try {
-					const status = suppliedStatus ?? (await fetchCheckoutStatus(attemptId, accountId));
-					suppliedStatus = null;
+					const status = await fetchCheckoutStatus(attemptId, accountId);
 					if (!isCurrent()) return;
+					if (status.status === 'failed' || status.status === 'expired') {
+						clearCheckoutAttempt();
+						await refreshSession(
+							'Your previous checkout did not complete. You can start a new checkout below.',
+							guard
+						);
+						return;
+					}
 					if (status.activated === true) {
 						const subscription = await fetchMySubscription(accountId);
 						if (!isCurrent()) return;
@@ -247,6 +255,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 									? withActivatedTier(current, subscription.tier, subscription.tierLabel)
 									: current
 							);
+							clearCheckoutAttempt();
 							return;
 						}
 					}
@@ -255,65 +264,27 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 				}
 				await new Promise((resolve) => setTimeout(resolve, ACTIVATION_POLL_MS));
 			}
-			if (!showPendingState || !isCurrent()) return;
+			if (!isCurrent()) return;
 			captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activation_pending', location });
 			setState((current) =>
 				isCurrent() ? withConfirmationPending(current, tierLabel, attemptId) : current
 			);
 		},
-		[]
+		[refreshSession]
 	);
 
 	const recoverStoredAttempt = useCallback(
 		async (guard: OperationGuard) => {
 			const client = await initializePricingBilling();
-			if (!guard.isCurrent()) return;
-			const accountId = accountIdFrom(client.user);
+			if (!guard.isCurrent()) return false;
+			const accountId = accountIdFrom(client.auth?.getUser() ?? null);
 			const attempt = readCheckoutAttempt(accountId);
-			if (!attempt || !accountId) return;
-			let status: CheckoutStatus;
-			try {
-				const result = await fetchCheckoutStatus(attempt.attemptId, accountId);
-				if (!guard.isCurrent()) return;
-				status = result;
-			} catch {
-				if (!guard.isCurrent()) return;
-				setState((current) =>
-					guard.isCurrent()
-						? withReadyStatus(
-								current,
-								'Could not check your previous checkout status. If you completed a payment, your plan will update automatically once confirmed.'
-							)
-						: current
-				);
-				return;
-			}
-			// Neutral provider state only narrows messaging. The server `activated`
-			// flag authoritatively gates whether we poll this attempt for activation.
-			if (status.status === 'failed' || status.status === 'expired') {
-				clearCheckoutAttempt();
-				setState((current) =>
-					guard.isCurrent()
-						? withReadyStatus(
-								current,
-								'Your previous checkout did not complete. You can start a new checkout below.'
-							)
-						: current
-				);
-				return;
-			}
+			if (!attempt || !accountId) return false;
 			const planLabel =
 				catalogRef.current?.plans.find((plan) => plan.id === attempt.tierId)?.label ??
 				attempt.tierId;
-			await waitForTierActivation(
-				attempt.tierId,
-				planLabel,
-				guard,
-				attempt.attemptId,
-				accountId,
-				true,
-				status
-			);
+			await waitForTierActivation(attempt.tierId, planLabel, guard, attempt.attemptId, accountId);
+			return true;
 		},
 		[waitForTierActivation]
 	);
@@ -582,29 +553,9 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			return;
 		const guard = operations.begin('portal', account ?? 'unknown', null);
 		try {
-			// Activation is only claimed for the account-owned attempt stored at
-			// checkout time; a matching tier from any other purchase proves nothing.
-			const attempt = readCheckoutAttempt(account);
-			if (!attempt) {
-				await refreshSession('Your payment is still being confirmed.', guard);
-				return;
+			if (!(await recoverStoredAttempt(guard))) {
+				await refreshSession('Your account billing status has been refreshed.', guard);
 			}
-			const status = await fetchCheckoutStatus(attempt.attemptId, account ?? undefined);
-			if (!guard.isCurrent()) return;
-			if (status.activated === true) {
-				const subscription = await fetchMySubscription(account ?? undefined);
-				if (!guard.isCurrent()) return;
-				if (subscription.tier !== 'free' && subscription.billingManaged) {
-					setState((current) =>
-						guard.isCurrent()
-							? withActivatedTier(current, subscription.tier, subscription.tierLabel)
-							: current
-					);
-					clearCheckoutAttempt();
-					return;
-				}
-			}
-			await refreshSession('Your payment is still being confirmed.', guard);
 		} catch (error) {
 			setState((current) =>
 				guard.isCurrent()
@@ -620,7 +571,6 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 	async function signOut() {
 		captureAnalyticsEvent(CTA_CLICKED_EVENT, { cta: 'pricing_sign_out', location });
 		clearPendingPricingAction();
-		clearCheckoutAttempt();
 		const operations = getOperations();
 		// Invalidate every in-flight operation and close overlays immediately,
 		// before awaiting the network sign-out below.
@@ -628,10 +578,33 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		accountRef.current = null;
 		setState((current) => ({ ...current, busy: false }));
 		const probe = operations.begin('portal', 'signed-out', null);
-		await signOutOfPricing();
+		try {
+			await signOutOfPricing();
+		} catch {
+			if (!probe.isCurrent()) return;
+			const client = await initializePricingBilling().catch(() => null);
+			if (!probe.isCurrent()) return;
+			accountRef.current = accountIdFrom(client?.auth?.getUser() ?? null);
+			await refreshSession(null, probe).catch(() => null);
+			if (!probe.isCurrent()) return;
+			const attempt = readCheckoutAttempt(accountRef.current);
+			const planLabel =
+				catalogRef.current?.plans.find((plan) => plan.id === attempt?.tierId)?.label ??
+				attempt?.tierId;
+			setState((current) =>
+				withError(
+					attempt && planLabel
+						? withConfirmationPending(current, planLabel, attempt.attemptId)
+						: current,
+					'Could not sign out. Please try again.'
+				)
+			);
+			return;
+		}
 		// A component unmount or account replacement during the network call must
 		// not resurrect a signed-out view over the current UI.
 		if (probe.isCurrent()) {
+			clearCheckoutAttempt();
 			setState((current) =>
 				withReadySession(current, {
 					authenticated: false,

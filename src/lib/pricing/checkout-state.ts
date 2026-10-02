@@ -168,7 +168,7 @@ export function withConfirmationPending(
 	return {
 		...state,
 		status: 'idle',
-		checkoutEligibility: state.checkoutEligibility ?? 'confirmation_pending',
+		checkoutEligibility: 'confirmation_pending',
 		pendingAttemptId: attemptId ?? state.pendingAttemptId,
 		message: `We could not confirm your ${tierLabel} payment yet. Use "Check payment status" below to check again — no new purchase will be started.`,
 		busy: false

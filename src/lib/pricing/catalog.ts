@@ -256,7 +256,6 @@ export function buildPricingPlans(catalog: PublicPricingCatalog): PricingPlan[] 
 		const features = [
 			...(plan.id === 'free' ? ['No credit card required'] : []),
 			usageFeature(plan.monthlyUsageDollars),
-			'Use the best AI models',
 			...configuredFeatures
 		];
 		return {
