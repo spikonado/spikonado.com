@@ -260,4 +260,34 @@ describe('runCheckout orchestration', () => {
 		expect(openings).toEqual([]);
 		expect(events.map((event) => event.status)).toEqual(['starting', 'signing_in']);
 	});
+
+	test('checkout remains bound to its initiating account while billing initializes', async () => {
+		const client = deferred<ReturnType<typeof signedInClient>>();
+		const create = mock(async () => ({
+			checkoutUrl: 'https://checkout.example/session/cks_b',
+			attemptId: 'b1'
+		}));
+		mock.module('@/lib/pricing/billing-client', () => ({
+			initializePricingBilling: () => client.promise,
+			signInForPricing: async () => {},
+			createCheckout: create
+		}));
+		const { overlay } = fakeOverlay();
+		const guard = createBillingOperations().begin('checkout', 'user-a', overlay);
+		const events: CheckoutProgress[] = [];
+		const run = runCheckout('team', 'monthly', {
+			overlay,
+			guard,
+			emit: collectProgress(events)
+		});
+		client.resolve(signedInClient({ id: 'user-b', email: 'b@example.com' }));
+		await run;
+
+		expect(create.mock.calls).toEqual([]);
+		expect(events.at(-1)).toMatchObject({
+			status: 'error',
+			message: 'This billing action was cancelled.',
+			accountId: 'user-a'
+		});
+	});
 });
