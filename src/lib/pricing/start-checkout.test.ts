@@ -49,30 +49,26 @@ Object.defineProperty(globalThis, 'sessionStorage', {
 	configurable: true
 });
 
-const signedInClient = {
-	convex: {},
-	auth: {},
-	user: { id: 'user-a', email: 'a@example.com' },
-	isReady: true,
-	isConfigured: true,
-	error: null
-};
+function signedInClient(user: { id: string; email: string } | null = { id: 'user-a', email: 'a@example.com' }) {
+	return {
+		convex: {},
+		auth: { getUser: () => user },
+		user,
+		isReady: true,
+		isConfigured: true,
+		error: null
+	};
+}
 
 function mockBillingModule({
-	client = signedInClient,
+	client = signedInClient(),
 	checkout
 }: {
-	client?: typeof signedInClient | Promise<typeof signedInClient>;
+	client?: ReturnType<typeof signedInClient> | Promise<ReturnType<typeof signedInClient>>;
 	checkout: ReturnType<typeof deferred<{ checkoutUrl: string; attemptId: string }>>;
 }) {
 	mock.module('@/lib/pricing/billing-client', () => ({
 		initializePricingBilling: () => client,
-		fetchCheckoutGate: async () => ({
-			eligibility: 'purchasable' as const,
-			checkoutEnabled: true,
-			reason: '',
-			mode: 'test' as const
-		}),
 		signInForPricing: async () => {},
 		createCheckout: () => checkout.promise
 	}));
@@ -205,5 +201,61 @@ describe('runCheckout orchestration', () => {
 			message: 'Checkout is temporarily disabled.',
 			accountId: 'user-a'
 		});
+	});
+
+	test('an SDK error does not fail the payment: close still reports the attempt for recovery', async () => {
+		const checkout = deferred<{ checkoutUrl: string; attemptId: string }>();
+		mockBillingModule({ checkout });
+		const { overlay, openings } = fakeOverlay();
+		const ops = createBillingOperations();
+		const guard = ops.begin('checkout', 'user-a', overlay);
+		const events: CheckoutProgress[] = [];
+
+		const run = runCheckout('team', 'monthly', {
+			overlay,
+			guard,
+			emit: collectProgress(events)
+		});
+		checkout.resolve({ checkoutUrl: 'https://checkout.example/session/cks_a', attemptId: 'a1' });
+		await run;
+
+		openings[0]?.handler?.({ event_type: 'checkout.error' });
+		openings[0]?.handler?.({ event_type: 'checkout.closed' });
+
+		expect(events.map((event) => event.status)).toEqual([
+			'starting',
+			'starting',
+			'checkout_open',
+			'error',
+			'checkout_closed'
+		]);
+		// The SDK error is not an authoritative payment failure: recovery still
+		// keys off the account-owned attempt reference.
+		expect(events.at(-2)).toMatchObject({ status: 'error', attemptId: 'a1' });
+		expect(events.at(-1)).toMatchObject({ status: 'checkout_closed', attemptId: 'a1' });
+		expect(events.at(-1)!.message).toContain('check the payment status');
+	});
+
+	test('a signed-out live auth user routes to sign-in even when the client snapshot has a user', async () => {
+		const checkout = deferred<{ checkoutUrl: string; attemptId: string }>();
+		// The snapshot still shows a user, but the live auth read does not.
+		const client = {
+			...signedInClient(),
+			auth: { getUser: () => null }
+		};
+		mockBillingModule({ client, checkout });
+		const { overlay, openings } = fakeOverlay();
+		const ops = createBillingOperations();
+		const guard = ops.begin('checkout', 'user-a', overlay);
+		const events: CheckoutProgress[] = [];
+
+		await runCheckout('team', 'monthly', {
+			overlay,
+			guard,
+			emit: collectProgress(events)
+		});
+
+		expect(openings).toEqual([]);
+		expect(events.map((event) => event.status)).toEqual(['starting', 'signing_in']);
 	});
 });

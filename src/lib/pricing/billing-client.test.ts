@@ -2,20 +2,16 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import type { User } from '@workos-inc/authkit-js';
 import {
 	createCheckout,
-	fetchCheckoutGate,
 	fetchCheckoutStatus,
 	fetchMySubscription,
 	openCustomerPortal,
 	resetPricingBillingForTests
 } from '@/lib/pricing/billing-client';
 
-type ConvexRoute =
-	'getMySubscription' | 'checkoutEligibility' | 'getCheckoutStatus' | 'customerPortal' | 'checkout';
+type ConvexRoute = 'getMySubscription' | 'getCheckoutStatus' | 'customerPortal' | 'checkout';
 
 // anyApi references are lazily-resolved proxies with no stable identity, so
-// route on the argument shape each billing entry point uses. The two no-arg
-// queries are disambiguated per test: each flow exercises only one of them.
-let noArgsQueryRoute: 'getMySubscription' | 'checkoutEligibility';
+// route on the argument shape each billing entry point uses.
 
 function routeFor(args: unknown): ConvexRoute | null {
 	const record = args as Record<string, unknown>;
@@ -50,11 +46,16 @@ let checkoutBehavior: () => Promise<{
 	checkout_url: string;
 	attemptId?: string;
 	sessionId?: string;
+	mode?: unknown;
 }>;
 let statusBehavior: () => Promise<{
 	attemptId: string;
 	status: string;
 	activated?: boolean;
+	checkout_url?: string;
+	mode?: unknown;
+	sessionId?: string;
+	expiresAt?: number;
 }>;
 let portalBehavior: () => Promise<{ portal_url: string }>;
 let subscriptionBehavior: () => Promise<{
@@ -62,13 +63,6 @@ let subscriptionBehavior: () => Promise<{
 	tierLabel: string;
 	billingManaged: boolean;
 }>;
-let gateBehavior: () => Promise<{
-	eligibility: string;
-	checkoutEnabled: boolean;
-	reason: string;
-	mode: unknown;
-}>;
-let gateMode: unknown = 'test_mode';
 
 const originalConvexUrl = process.env.PUBLIC_CONVEX_URL;
 const originalCheckoutMode = process.env.PUBLIC_DODO_CHECKOUT_MODE;
@@ -93,11 +87,8 @@ mock.module('convex/browser', () => ({
 		constructor(public url: string) {}
 		setAuth() {}
 		async query(ref: unknown, args: unknown) {
-			const route = routeFor(args) ?? noArgsQueryRoute;
-			convexCalls.push({ route, args });
-			if (route === 'getMySubscription') return subscriptionBehavior();
-			if (route === 'checkoutEligibility') return gateBehavior();
-			throw new Error(`Unexpected query route: ${route}`);
+			convexCalls.push({ route: 'getMySubscription', args });
+			return subscriptionBehavior();
 		}
 		async action(ref: unknown, args: unknown) {
 			const route = routeFor(args) ?? 'customerPortal';
@@ -130,14 +121,6 @@ beforeEach(() => {
 	currentUser = initiatingUser();
 	convexCalls.length = 0;
 	sessionMemory.clear();
-	gateMode = 'test_mode';
-	noArgsQueryRoute = 'checkoutEligibility';
-	gateBehavior = async () => ({
-		eligibility: 'purchasable',
-		checkoutEnabled: true,
-		reason: '',
-		mode: gateMode
-	});
 	subscriptionBehavior = async () => ({
 		tier: 'free',
 		tierLabel: 'Free',
@@ -147,7 +130,8 @@ beforeEach(() => {
 	portalBehavior = async () => ({ portal_url: 'https://portal.example/session' });
 	checkoutBehavior = async () => ({
 		checkout_url: 'https://checkout.example/session/cks_a',
-		attemptId: 'attempt-1'
+		attemptId: 'attempt-1',
+		mode: 'test'
 	});
 	resetPricingBillingForTests();
 });
@@ -214,27 +198,58 @@ describe('createCheckout account scoping', () => {
 	});
 });
 
-describe('checkout gate mode agreement', () => {
-	test('the backend test_mode environment maps to the test overlay mode', async () => {
-		const gate = await fetchCheckoutGate();
-		expect(gate.mode).toBe('test');
+describe('checkout mode agreement on returned payloads', () => {
+	test('a mode mismatch refuses to hand out the checkout URL but keeps recovery', async () => {
+		checkoutBehavior = async () => ({
+			checkout_url: 'https://checkout.example/session/cks_live',
+			attemptId: 'attempt-live',
+			mode: 'live'
+		});
+		await expect(createCheckout('team', 'monthly', 'user-a')).rejects.toThrow(
+			'Checkout is configured in test mode but this checkout link is live mode.'
+		);
+		// The provider session exists, so the attempt reference stays persisted
+		// for status-based recovery even though the URL was never handed out.
+		expect(storedAttempt()).toMatchObject({ userId: 'user-a', attemptId: 'attempt-live' });
 	});
 
-	test('a missing backend mode stays unconfirmed so checkout fails closed', async () => {
-		gateMode = undefined;
-		const gate = await fetchCheckoutGate();
-		expect(gate.mode).toBeUndefined();
+	test('an unconfirmed checkout mode fails closed while keeping recovery', async () => {
+		checkoutBehavior = async () => ({
+			checkout_url: 'https://checkout.example/session/cks_none',
+			attemptId: 'attempt-none'
+		});
 		await expect(createCheckout('team', 'monthly', 'user-a')).rejects.toThrow(
-			'Checkout mode is not confirmed by the billing backend.'
+			'Checkout did not report its billing mode.'
 		);
+		expect(storedAttempt()).toMatchObject({ userId: 'user-a', attemptId: 'attempt-none' });
+	});
+
+	test('a resumable status URL with a mismatched mode fails closed', async () => {
+		statusBehavior = async () => ({
+			attemptId: 'attempt-1',
+			status: 'awaiting_payment',
+			checkout_url: 'https://checkout.example/session/cks_a',
+			mode: 'live'
+		});
+		await expect(fetchCheckoutStatus('attempt-1', 'user-a')).rejects.toThrow(
+			'Checkout is configured in test mode but this checkout link is live mode.'
+		);
+	});
+
+	test('a resumable status URL with a matching mode passes through', async () => {
+		statusBehavior = async () => ({
+			attemptId: 'attempt-1',
+			status: 'awaiting_payment',
+			checkout_url: 'https://checkout.example/session/cks_a',
+			mode: 'test'
+		});
+		const status = await fetchCheckoutStatus('attempt-1', 'user-a');
+		expect(status.status).toBe('awaiting_payment');
+		expect(status.checkout_url).toBe('https://checkout.example/session/cks_a');
 	});
 });
 
 describe('fetchMySubscription account scoping', () => {
-	beforeEach(() => {
-		noArgsQueryRoute = 'getMySubscription';
-	});
-
 	test('an account switch during the query cancels the stale result', async () => {
 		const query = deferred<{ tier: string; tierLabel: string; billingManaged: boolean }>();
 		subscriptionBehavior = () => {
@@ -262,35 +277,6 @@ describe('fetchMySubscription account scoping', () => {
 		});
 		const result = await fetchMySubscription('user-a');
 		expect(result.tier).toBe('team');
-	});
-});
-
-describe('fetchCheckoutGate account scoping', () => {
-	test('an account switch during the query cancels the stale gate', async () => {
-		const query = deferred<{
-			eligibility: string;
-			checkoutEnabled: boolean;
-			reason: string;
-			mode: unknown;
-		}>();
-		gateBehavior = () => {
-			currentUser = userB();
-			return query.promise;
-		};
-		const pending = fetchCheckoutGate('user-a');
-		query.resolve({
-			eligibility: 'purchasable',
-			checkoutEnabled: true,
-			reason: '',
-			mode: 'test_mode'
-		});
-		await expect(pending).rejects.toThrow('This billing action was cancelled.');
-	});
-
-	test('a caller bound to a different account never issues the query', async () => {
-		await expect(fetchCheckoutGate('user-b')).rejects.toThrow('This billing action was cancelled.');
-		const queries = convexCalls.filter((call) => call.route === 'checkoutEligibility');
-		expect(queries).toEqual([]);
 	});
 });
 

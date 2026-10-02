@@ -102,7 +102,6 @@ export type DodoPublicPrice = NonNullable<PublicPricingPlan['prices']['monthly']
 export type PublicPlanId = PublicPricingPlan['id'];
 export type SubscriptionTier = FunctionReturnType<PublicApiType['billing']['getMySubscription']>['tier'];
 export type BillingInterval = 'monthly' | 'annual';
-export type CheckoutEligibility = NonNullable<FunctionReturnType<PublicApiType['billing']['getMySubscription']>['checkoutEligibility']>;
 export type AccessPhase = NonNullable<FunctionReturnType<PublicApiType['billing']['getMySubscription']>['accessPhase']>;
 export type CheckoutAttemptStatus = FunctionReturnType<PublicApiType['billing']['getCheckoutStatus']>['status'];
 `;

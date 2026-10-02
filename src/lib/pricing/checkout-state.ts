@@ -1,4 +1,4 @@
-import type { AccessPhase, CheckoutEligibility } from '@/lib/convex/api';
+import type { AccessPhase } from '@/lib/convex/api';
 import type { SubscriptionTier } from '@/lib/pricing/billing-client';
 
 export type PricingUiStatus =
@@ -16,14 +16,15 @@ export type PricingUiState = {
 	tier: SubscriptionTier;
 	tierLabel: string;
 	billingManaged: boolean;
-	checkoutEligibility: CheckoutEligibility | null;
 	accessPhase: AccessPhase | null;
 	authenticated: boolean;
 	userLabel: string | null;
 	message: string | null;
 	busy: boolean;
-	/** Account-owned attempt awaiting activation; required for status checks. */
+	/** Account-owned attempt awaiting payment or activation; drives resume/status UI. */
 	pendingAttemptId: string | null;
+	/** Server-confirmed URL for reopening the pending attempt's checkout. */
+	pendingCheckoutUrl: string | null;
 };
 
 export function isAccessPhase(value: unknown): value is AccessPhase {
@@ -32,42 +33,19 @@ export function isAccessPhase(value: unknown): value is AccessPhase {
 	);
 }
 
-export function isCheckoutEligibility(value: unknown): value is CheckoutEligibility {
-	return (
-		value === 'purchasable' ||
-		value === 'active' ||
-		value === 'repair_required' ||
-		value === 'confirmation_pending' ||
-		value === 'checkout_disabled'
-	);
-}
-
-/**
- * Server-reported eligibility passes through when present; deployments
- * predating the field return null and callers fall back to the released tier
- * heuristic (see effectiveCheckoutEligibility).
- */
-export function resolveCheckoutEligibility(input: {
-	checkoutEligibility: unknown;
-}): CheckoutEligibility | null {
-	if (input.checkoutEligibility === undefined) return null;
-	if (isCheckoutEligibility(input.checkoutEligibility)) return input.checkoutEligibility;
-	return null;
-}
-
 export function createInitialPricingState(): PricingUiState {
 	return {
 		status: 'loading',
 		tier: 'free',
 		tierLabel: 'Free',
 		billingManaged: false,
-		checkoutEligibility: null,
 		accessPhase: null,
 		authenticated: false,
 		userLabel: null,
 		message: null,
 		busy: true,
-		pendingAttemptId: null
+		pendingAttemptId: null,
+		pendingCheckoutUrl: null
 	};
 }
 
@@ -78,18 +56,11 @@ export function withReadySession(
 		tier: SubscriptionTier;
 		tierLabel: string;
 		billingManaged: boolean;
-		checkoutEligibility?: CheckoutEligibility;
 		accessPhase?: AccessPhase;
 		userLabel: string | null;
 		message?: string | null;
 	}
 ): PricingUiState {
-	const checkoutEligibility =
-		input.checkoutEligibility !== undefined
-			? input.checkoutEligibility
-			: input.tier !== 'free'
-				? 'active'
-				: 'purchasable';
 	return {
 		...state,
 		status: 'idle',
@@ -97,12 +68,12 @@ export function withReadySession(
 		tier: input.tier,
 		tierLabel: input.tierLabel,
 		billingManaged: input.billingManaged,
-		checkoutEligibility,
 		accessPhase: input.accessPhase ?? null,
 		userLabel: input.userLabel,
 		message: input.message ?? null,
 		busy: false,
-		pendingAttemptId: null
+		pendingAttemptId: null,
+		pendingCheckoutUrl: null
 	};
 }
 
@@ -152,44 +123,42 @@ export function withActivatedTier(
 		tier,
 		tierLabel,
 		billingManaged: true,
-		checkoutEligibility: 'active',
 		accessPhase: null,
 		message: `${tierLabel} is active. You can manage billing anytime from this page.`,
 		busy: false,
-		pendingAttemptId: null
+		pendingAttemptId: null,
+		pendingCheckoutUrl: null
 	};
 }
 
-export function withConfirmationPending(
+/**
+ * The account owns an attempt whose payment is not confirmed. When the server
+ * reports the attempt still awaiting payment it also returns the authorized
+ * checkout URL, which the UI offers as an explicit "Continue checkout" resume
+ * instead of creating a new session.
+ */
+export function withPaymentPending(
 	state: PricingUiState,
 	tierLabel: string,
-	attemptId?: string | null
+	attemptId: string,
+	checkoutUrl: string | null
 ): PricingUiState {
 	return {
 		...state,
 		status: 'idle',
-		checkoutEligibility: 'confirmation_pending',
-		pendingAttemptId: attemptId ?? state.pendingAttemptId,
+		pendingAttemptId: attemptId,
+		pendingCheckoutUrl: checkoutUrl,
 		message: `We could not confirm your ${tierLabel} payment yet. Use "Check payment status" below to check again — no new purchase will be started.`,
 		busy: false
 	};
 }
 
-export function effectiveCheckoutEligibility(state: PricingUiState): CheckoutEligibility {
-	return state.checkoutEligibility ?? (state.tier !== 'free' ? 'active' : 'purchasable');
-}
-
+// Duplicate protection lives at the provider; only an in-flight operation
+// (creation, activation, portal navigation) blocks a new selection.
 export function canStartCheckout(state: PricingUiState): boolean {
-	if (state.busy) return false;
-	const eligibility = effectiveCheckoutEligibility(state);
-	if (eligibility !== 'purchasable') return false;
-	return state.checkoutEligibility !== null || state.tier === 'free';
+	return !state.busy;
 }
 
 export function showsManageBilling(state: PricingUiState): boolean {
 	return state.authenticated && state.billingManaged;
-}
-
-export function showsRepairBilling(state: PricingUiState): boolean {
-	return state.authenticated && effectiveCheckoutEligibility(state) === 'repair_required';
 }
