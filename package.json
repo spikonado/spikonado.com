@@ -10,6 +10,7 @@
 		"sync:convex-api": "bun scripts/sync-convex-api.ts",
 		"prebuild": "bun run sync:sprocket-image",
 		"build": "astro build",
+		"test": "bun test --isolate --preload ./test/setup-dom.ts",
 		"preview": "astro preview"
 	},
 	"dependencies": {
@@ -42,6 +43,7 @@
 		"typescript": "^6.0.0"
 	},
 	"devDependencies": {
+		"@happy-dom/global-registrator": "^20.14.5",
 		"@astrojs/check": "0.9.10",
 		"@eslint/js": "^10.0.0",
 		"@types/bun": "^1.3.14",

@@ -2,10 +2,13 @@ import { describe, expect, test } from 'bun:test';
 import {
 	canStartCheckout,
 	createInitialPricingState,
+	effectiveCheckoutEligibility,
+	isCheckoutEligibility,
 	showsManageBilling,
+	showsRepairBilling,
 	withActivatedTier,
-	withActivationTimeout,
 	withBusyStatus,
+	withConfirmationPending,
 	withError,
 	withReadySession,
 	withReadyStatus
@@ -74,14 +77,83 @@ describe('pricing checkout state', () => {
 		const errored = withError(createInitialPricingState(), 'Checkout failed');
 		expect(errored).toMatchObject({ status: 'error', message: 'Checkout failed', busy: false });
 
-		const pending = withActivationTimeout(errored, 'Team');
+		const pending = withConfirmationPending(errored, 'Team');
 		expect(pending.status).toBe('idle');
-		expect(pending.message).toContain('Team activation is still confirming');
+		expect(pending.message).toContain('could not confirm your Team payment');
+		expect(pending.message).not.toContain('Payment received');
+		expect(pending.checkoutEligibility).toBe('confirmation_pending');
 
 		expect(withReadyStatus(errored, 'Checkout closed')).toMatchObject({
 			status: 'idle',
 			message: 'Checkout closed',
 			busy: false
 		});
+	});
+
+	test('server eligibility gates checkout independently of tier', () => {
+		const pending = withReadySession(createInitialPricingState(), {
+			authenticated: true,
+			tier: 'free',
+			tierLabel: 'Free',
+			billingManaged: true,
+			checkoutEligibility: 'confirmation_pending',
+			userLabel: 'dev@example.com'
+		});
+		expect(canStartCheckout(pending)).toBe(false);
+
+		const repair = withReadySession(createInitialPricingState(), {
+			authenticated: true,
+			tier: 'free',
+			tierLabel: 'Free',
+			billingManaged: true,
+			checkoutEligibility: 'repair_required',
+			userLabel: 'dev@example.com'
+		});
+		expect(canStartCheckout(repair)).toBe(false);
+		expect(showsRepairBilling(repair)).toBe(true);
+		expect(showsManageBilling(repair)).toBe(true);
+
+		const disabled = withReadySession(createInitialPricingState(), {
+			authenticated: true,
+			tier: 'free',
+			tierLabel: 'Free',
+			billingManaged: true,
+			checkoutEligibility: 'checkout_disabled',
+			userLabel: 'dev@example.com'
+		});
+		expect(canStartCheckout(disabled)).toBe(false);
+
+		const purchasable = withReadySession(createInitialPricingState(), {
+			authenticated: true,
+			tier: 'team',
+			tierLabel: 'Team',
+			billingManaged: true,
+			checkoutEligibility: 'purchasable',
+			userLabel: 'dev@example.com'
+		});
+		expect(canStartCheckout(purchasable)).toBe(true);
+	});
+
+	test('validates server eligibility values and falls back without them', () => {
+		expect(isCheckoutEligibility('purchasable')).toBe(true);
+		expect(isCheckoutEligibility('confirmation_pending')).toBe(true);
+		expect(isCheckoutEligibility('blocked')).toBe(false);
+		expect(isCheckoutEligibility(undefined)).toBe(false);
+
+		const legacy = withReadySession(createInitialPricingState(), {
+			authenticated: true,
+			tier: 'free',
+			tierLabel: 'Free',
+			billingManaged: false,
+			userLabel: null
+		});
+		expect(effectiveCheckoutEligibility(legacy)).toBe('purchasable');
+
+		const legacyPaid = withActivatedTier(
+			withBusyStatus(createInitialPricingState(), 'activating', null),
+			'team',
+			'Team'
+		);
+		expect(effectiveCheckoutEligibility(legacyPaid)).toBe('active');
 	});
 });
