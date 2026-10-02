@@ -1,0 +1,77 @@
+---
+import Footer from '@/components/footer.svelte';
+import PricingPlans from '@/components/pricing-plans';
+import BaseLayout from '@/layouts/base-layout.astro';
+import type { PublicPricingCatalog } from '@/lib/convex/api';
+import { fetchPublicPricingCatalog } from '@/lib/pricing/billing-client';
+import { pricingFaqs } from '@/lib/pricing/catalog';
+import { SITE_URL, titleWithBrand } from '@/lib/seo';
+
+const title = titleWithBrand('Pricing');
+const description =
+	'Compare Sprocket plans and choose the AI usage limits that fit your engineering work.';
+
+const convexUrl = import.meta.env.PUBLIC_CONVEX_URL?.trim();
+let initialCatalog: PublicPricingCatalog | null = null;
+if (convexUrl) {
+	try {
+		initialCatalog = await fetchPublicPricingCatalog(convexUrl);
+	} catch {
+		initialCatalog = null;
+	}
+}
+
+const offers = initialCatalog
+	? initialCatalog.plans.flatMap((plan) => {
+			// Static page: paid prices can drift after build, so only the free plan is offered.
+			if (plan.id !== 'free') return [];
+			return [
+				{
+					'@type': 'Offer',
+					name: `Sprocket ${plan.label}`,
+					price: '0',
+					priceCurrency: 'USD',
+					description: plan.description ?? 'Start building with Sprocket at no cost.'
+				}
+			];
+		})
+	: [
+			{
+				'@type': 'Offer',
+				name: 'Sprocket Free',
+				price: '0',
+				priceCurrency: 'USD',
+				description: 'Start building with Sprocket at no cost.'
+			}
+		];
+
+const productLd = {
+	'@type': 'Product',
+	name: 'Sprocket',
+	description,
+	brand: { '@type': 'Brand', name: 'Spikonado' },
+	url: `${SITE_URL}/pricing`,
+	offers
+};
+
+const faqLd = {
+	'@type': 'FAQPage',
+	mainEntity: pricingFaqs.map((faq) => ({
+		'@type': 'Question',
+		name: faq.question,
+		acceptedAnswer: {
+			'@type': 'Answer',
+			text: faq.answer
+		}
+	}))
+};
+---
+
+<BaseLayout title={title} description={description} jsonLd={[productLd, faqLd]}>
+	<main id="main" class="atmosphere min-h-svh px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8">
+		<article class="mx-auto max-w-6xl">
+			<PricingPlans client:load initialCatalog={initialCatalog} />
+		</article>
+	</main>
+	<Footer />
+</BaseLayout>

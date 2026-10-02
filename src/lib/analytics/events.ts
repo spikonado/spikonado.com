@@ -27,6 +27,15 @@ export const NEWSLETTER_SUBSCRIBED_EVENT = 'newsletter_subscribed';
 /** PostHog event when a build-log / newsletter subscription fails. */
 export const NEWSLETTER_SUBSCRIBE_FAILED_EVENT = 'newsletter_subscribe_failed';
 
+/** User selected monthly vs annual on the pricing page. */
+export const INTERVAL_SELECTED_EVENT = 'pricing_interval_selected';
+
+/** Authenticated paid-plan checkout session creation started. */
+export const CHECKOUT_STARTED_EVENT = 'pricing_checkout_started';
+
+/** Checkout lifecycle update (overlay, redirect, activation, error). No PII. */
+export const CHECKOUT_STATUS_EVENT = 'pricing_checkout_status';
+
 export const NEWSLETTER_FORM = 'build_log' as const;
 
 /** Placement of an interactive element on the page. */
@@ -39,6 +48,7 @@ export type AnalyticsLocation =
 	| 'home_vario'
 	| 'home_build_log'
 	| 'sprocket_page'
+	| 'pricing_page'
 	| 'footer'
 	| 'privacy';
 

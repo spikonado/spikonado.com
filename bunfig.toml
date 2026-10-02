@@ -1,0 +1,3 @@
+[test]
+isolate = true
+preload = "./test/setup-dom.ts"

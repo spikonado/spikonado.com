@@ -178,7 +178,7 @@ export async function renderOgImagePng(): Promise<Buffer> {
 					}
 				]
 			}
-		},
+		} as Parameters<typeof satori>[0],
 		{
 			width: OG_IMAGE_WIDTH,
 			height: OG_IMAGE_HEIGHT,
