@@ -204,6 +204,14 @@ describe('createCheckout account scoping', () => {
 		expect(result.attemptId).toBe('attempt-1');
 		expect(storedAttempt()).toMatchObject({ userId: 'user-a', attemptId: 'attempt-1' });
 	});
+
+	test('a legacy checkout without an attempt cannot open without recovery', async () => {
+		checkoutBehavior = async () => ({ checkout_url: 'https://checkout.example/session/legacy' });
+		await expect(createCheckout('team', 'monthly', 'user-a')).rejects.toThrow(
+			'Checkout recovery is unavailable'
+		);
+		expect(storedAttempt()).toBeNull();
+	});
 });
 
 describe('checkout gate mode agreement', () => {

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { MySubscription } from '@/lib/pricing/billing-client';
@@ -115,6 +115,8 @@ type PricingMocks = {
 	// When set, initializePricingBilling awaits this before resolving, letting a
 	// test change the account while initialization is genuinely in flight.
 	initializeDeferred: Deferred<void> | null;
+	initialAccount: { id: string; email: string } | null;
+	signOutError: Error | null;
 	subscriptionResults: Array<MySubscription | Error>;
 	subscriptionDeferreds: Array<Deferred<MySubscription>>;
 	subscriptionExpectedAccounts: Array<string | undefined>;
@@ -126,6 +128,7 @@ type PricingMocks = {
 	statusExpectedAccounts: Array<string | undefined>;
 	statusDeferred: Deferred<{ attemptId: string; status: string; activated?: boolean }> | null;
 	statusResult: { attemptId: string; status: string; activated?: boolean };
+	statusFailures: number;
 	gateState: { checkoutEnabled: boolean; mode?: 'test' | 'live' };
 	overlayOpenings: { url: string; handler?: (event: OverlayEvent) => void }[];
 	overlayCloses: number;
@@ -170,7 +173,7 @@ mock.module('@/lib/pricing/billing-client', () => ({
 			convex: {},
 			// Live account reads go through the auth client, like the real client.
 			auth: { getUser: () => current.clientState.user },
-			user: current.clientState.user,
+			user: current.initialAccount ?? current.clientState.user,
 			isReady: true,
 			isConfigured: current.clientState.isConfigured,
 			error: null
@@ -233,6 +236,7 @@ mock.module('@/lib/pricing/billing-client', () => ({
 	fetchCheckoutStatus: async (attemptId: string, expectedAccountId?: string) => {
 		current.statusCalls.push(attemptId);
 		current.statusExpectedAccounts.push(expectedAccountId);
+		if (current.statusFailures-- > 0) throw new Error('Temporary provider outage');
 		const result = current.statusDeferred
 			? await current.statusDeferred.promise
 			: current.statusResult;
@@ -243,6 +247,7 @@ mock.module('@/lib/pricing/billing-client', () => ({
 	},
 	signInForPricing: async () => {},
 	signOutOfPricing: async () => {
+		if (current.signOutError) throw current.signOutError;
 		current.clientState.user = null;
 	}
 }));
@@ -301,6 +306,8 @@ beforeEach(() => {
 	current = {
 		clientState: { user: null, isConfigured: true },
 		initializeDeferred: null,
+		initialAccount: null,
+		signOutError: null,
 		subscriptionResults: [subscription()],
 		subscriptionDeferreds: [],
 		subscriptionExpectedAccounts: [],
@@ -312,6 +319,7 @@ beforeEach(() => {
 		statusExpectedAccounts: [],
 		statusDeferred: null,
 		statusResult: { attemptId: 'attempt-1', status: 'pending' },
+		statusFailures: 0,
 		gateState: { checkoutEnabled: true, mode: 'test' },
 		overlayOpenings: [],
 		overlayCloses: 0
@@ -371,6 +379,37 @@ describe('pricing plans orchestration', () => {
 		});
 		expect(text()).toContain('Team is active');
 	});
+
+	test('closing an unconfirmed checkout retains recovery and blocks another purchase after timeout', async () => {
+		let now = Date.now();
+		const clock = spyOn(Date, 'now').mockImplementation(() => now);
+		try {
+			signedIn();
+			await mount();
+			await click(findButton('Get Team'));
+			await act(async () => {
+				current.checkoutDeferred.resolve({
+					checkoutUrl: 'https://checkout.example/session/cks_pending',
+					attemptId: 'pending'
+				});
+			});
+			await act(async () => {
+				current.overlayOpenings[0]?.handler?.({ event_type: 'checkout.closed' });
+			});
+			expect(findButton('Payment confirming').disabled).toBe(true);
+			now += 31_000;
+			await act(async () => {
+				await new Promise((resolve) => setTimeout(resolve, 2_600));
+			});
+			expect(text()).toContain('We could not confirm');
+			expect(findButton('Check payment status').disabled).toBe(false);
+			expect(findButton('Payment confirming').disabled).toBe(true);
+			expect(sessionMemory.has('spikonado_pricing_attempt')).toBe(true);
+			expect(current.checkoutCalls).toEqual([{ tier: 'team', interval: 'monthly' }]);
+		} finally {
+			clock.mockRestore();
+		}
+	}, 15_000);
 
 	test('a forged checkout=return URL never claims payment without server confirmation', async () => {
 		signedIn();
@@ -524,7 +563,72 @@ describe('pricing plans orchestration', () => {
 			await new Promise((resolve) => setTimeout(resolve, 2_600));
 		});
 		expect(text()).toContain('Team is active');
+		expect(sessionMemory.has('spikonado_pricing_attempt')).toBe(false);
 	}, 15_000);
+
+	test('recovery retries a transient lookup failure using the live cached-client account', async () => {
+		signedIn('user-b');
+		current.initialAccount = { id: 'user-a', email: 'user-a@example.com' };
+		sessionMemory.set(
+			'spikonado_pricing_attempt',
+			JSON.stringify({
+				userId: 'user-b',
+				attemptId: 'retry',
+				tierId: 'team',
+				interval: 'monthly',
+				startedAt: Date.now()
+			})
+		);
+		current.statusFailures = 1;
+		current.statusResult = { attemptId: 'retry', status: 'succeeded', activated: true };
+		queueSubscriptions(
+			subscription(),
+			subscription({ tier: 'team', tierLabel: 'Team', billingManaged: true })
+		);
+		await mount();
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 2_600));
+		});
+		expect(current.statusExpectedAccounts).toEqual(['user-b', 'user-b']);
+		expect(text()).toContain('Team is active');
+		expect(sessionMemory.has('spikonado_pricing_attempt')).toBe(false);
+	}, 15_000);
+
+	test('failed sign-out keeps the account and its recoverable checkout usable', async () => {
+		signedIn();
+		current.signOutError = new Error('Network unavailable');
+		await mount();
+		sessionMemory.set(
+			'spikonado_pricing_attempt',
+			JSON.stringify({
+				userId: 'user-a',
+				attemptId: 'recoverable',
+				tierId: 'team',
+				interval: 'monthly',
+				startedAt: Date.now()
+			})
+		);
+		await click(findButton('Sign out'));
+		expect(text()).toContain('Could not sign out');
+		expect(text()).toContain('user-a@example.com');
+		expect(sessionMemory.has('spikonado_pricing_attempt')).toBe(true);
+		expect(findButton('Payment confirming').disabled).toBe(true);
+		await click(findButton('Check payment status'));
+		expect(current.statusCalls).toEqual(['recoverable']);
+		expect(current.checkoutCalls).toEqual([]);
+	});
+
+	test('manual status checking refreshes account eligibility without a stored attempt', async () => {
+		signedIn();
+		queueSubscriptions(subscription({ checkoutEligibility: 'confirmation_pending' }));
+		await mount();
+		queueSubscriptions(subscription());
+		await click(findButton('Check payment status'));
+		expect(current.subscriptionExpectedAccounts).toEqual(['user-a', 'user-a']);
+		expect(findButton('Get Team').disabled).toBe(false);
+		expect(current.statusCalls).toEqual([]);
+		expect(current.checkoutCalls).toEqual([]);
+	});
 
 	test('recovery of an expired attempt invites a new checkout', async () => {
 		sessionMemory.set(

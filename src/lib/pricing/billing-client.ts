@@ -328,8 +328,11 @@ export async function createCheckout(
 	if (!current || accountIdFor(current) !== initiatorAccount) {
 		throw new Error('This billing action was cancelled.');
 	}
+	if (!result.attemptId?.trim()) {
+		throw new Error('Checkout recovery is unavailable. Contact billing support before paying.');
+	}
 	storeCheckoutAttempt(accountIdFor(current), {
-		attemptId: result.attemptId ?? '',
+		attemptId: result.attemptId,
 		tierId,
 		interval,
 		startedAt: Date.now()

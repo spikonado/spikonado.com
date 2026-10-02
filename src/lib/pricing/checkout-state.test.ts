@@ -82,6 +82,15 @@ describe('pricing checkout state', () => {
 		expect(pending.message).toContain('could not confirm your Team payment');
 		expect(pending.message).not.toContain('Payment received');
 		expect(pending.checkoutEligibility).toBe('confirmation_pending');
+		const purchasable = withReadySession(createInitialPricingState(), {
+			authenticated: true,
+			tier: 'free',
+			tierLabel: 'Free',
+			billingManaged: false,
+			checkoutEligibility: 'purchasable',
+			userLabel: 'dev@example.com'
+		});
+		expect(canStartCheckout(withConfirmationPending(purchasable, 'Team', 'pending'))).toBe(false);
 
 		expect(withReadyStatus(errored, 'Checkout closed')).toMatchObject({
 			status: 'idle',
