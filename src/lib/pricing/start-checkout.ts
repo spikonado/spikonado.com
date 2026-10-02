@@ -1,10 +1,12 @@
 import {
 	createCheckout,
+	fetchCheckoutGate,
 	initializePricingBilling,
 	signInForPricing
 } from '@/lib/pricing/billing-client';
 import { isBillingInterval, type BillingInterval } from '@/lib/pricing/catalog';
-import { openCheckoutUrl } from '@/lib/pricing/checkout-overlay';
+import type { CheckoutOverlay } from '@/lib/pricing/checkout-overlay';
+import type { OperationGuard } from '@/lib/pricing/operation';
 import { clearPendingPricingAction, storePendingPricingAction } from '@/lib/pricing/pending';
 
 export const PRICING_CHECKOUT_PROGRESS_EVENT = 'spikonado:pricing-checkout-progress';
@@ -17,6 +19,9 @@ export type CheckoutProgress = {
 	message: string;
 	tierId: string;
 	interval: BillingInterval;
+	generation: number;
+	accountId: string | null;
+	attemptId?: string;
 };
 
 export type CheckoutRequest = {
@@ -24,11 +29,16 @@ export type CheckoutRequest = {
 	interval: BillingInterval;
 };
 
+export type RunCheckoutOptions = {
+	overlay: CheckoutOverlay;
+	guard: OperationGuard;
+	attemptId?: string;
+	emit?: (progress: CheckoutProgress) => void;
+};
+
 const INIT_TIMEOUT_MS = 12_000;
 
-let inFlight: Promise<void> | null = null;
-
-function emit(detail: CheckoutProgress): void {
+export function emitCheckoutProgress(detail: CheckoutProgress): void {
 	if (typeof document === 'undefined') return;
 	document.dispatchEvent(
 		new CustomEvent<CheckoutProgress>(PRICING_CHECKOUT_PROGRESS_EVENT, { detail })
@@ -37,14 +47,14 @@ function emit(detail: CheckoutProgress): void {
 
 function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
 	return new Promise((resolve, reject) => {
-		const timer = window.setTimeout(() => reject(new Error(message)), ms);
+		const timer = setTimeout(() => reject(new Error(message)), ms);
 		promise.then(
 			(value) => {
-				window.clearTimeout(timer);
+				clearTimeout(timer);
 				resolve(value);
 			},
 			(error: unknown) => {
-				window.clearTimeout(timer);
+				clearTimeout(timer);
 				reject(error);
 			}
 		);
@@ -73,72 +83,91 @@ export function pricingUrlWithoutCheckoutCommand(url: string): string {
 	return `${parsed.pathname}${parsed.search}${parsed.hash}`;
 }
 
-export function runCheckout(tierId: string, interval: BillingInterval): Promise<void> {
-	if (inFlight) return inFlight;
+/**
+ * Runs one checkout attempt bound to the operation guard's account and
+ * generation. The guard is checked after every awaited step and before any
+ * URL is opened or progress reported, so a superseded operation (sign-out,
+ * account switch, unmount, newer click) can neither open a link nor emit into
+ * the current UI. Never resolves another caller's operation; the server
+ * serializes attempts per account.
+ */
+export async function runCheckout(
+	tierId: string,
+	interval: BillingInterval,
+	options: RunCheckoutOptions
+): Promise<void> {
+	const { overlay, guard } = options;
+	const emit = (status: CheckoutProgressStatus, message: string, attemptId?: string) => {
+		if (!guard.isCurrent()) return;
+		const detail: CheckoutProgress = {
+			status,
+			message,
+			tierId,
+			interval,
+			generation: guard.context.generation,
+			accountId: guard.context.accountId,
+			attemptId
+		};
+		if (options.emit) options.emit(detail);
+		else emitCheckoutProgress(detail);
+	};
 
-	inFlight = (async () => {
-		storePendingPricingAction({ type: 'checkout', tierId, interval });
-		emit({ status: 'starting', message: 'Preparing secure checkout…', tierId, interval });
-		try {
-			const client = await withTimeout(
-				initializePricingBilling(),
-				INIT_TIMEOUT_MS,
-				'Could not reach billing. Check your connection and try again.'
-			);
-			if (!client.isConfigured) {
-				emit({
-					status: 'error',
-					message: client.error ?? 'Checkout is not configured yet.',
-					tierId,
-					interval
-				});
-				return;
-			}
-			if (!client.user) {
-				emit({ status: 'signing_in', message: 'Redirecting to sign in…', tierId, interval });
-				await signInForPricing();
-				return;
-			}
-			clearPendingPricingAction();
-			emit({ status: 'starting', message: 'Opening secure checkout…', tierId, interval });
-			const checkoutUrl = await createCheckout(tierId, interval);
-			emit({
-				status: 'checkout_open',
-				message: 'Complete checkout in the overlay…',
-				tierId,
-				interval
-			});
-			let checkoutFailed = false;
-			await openCheckoutUrl(checkoutUrl, (event) => {
-				if (event.event_type === 'checkout.closed') {
-					if (checkoutFailed) return;
-					emit({
-						status: 'checkout_closed',
-						message: 'Checkout closed. You can try again anytime.',
-						tierId,
-						interval
-					});
-				} else if (event.event_type === 'checkout.error') {
-					checkoutFailed = true;
-					emit({
-						status: 'error',
-						message: 'Checkout could not be completed.',
-						tierId,
-						interval
-					});
-				}
-			});
-		} catch (error) {
-			emit({
-				status: 'error',
-				message: error instanceof Error ? error.message : 'Could not start checkout.',
-				tierId,
-				interval
-			});
-		} finally {
-			inFlight = null;
+	// Account guard before the first await: the guard must still be current
+	// before we touch storage or emit progress.
+	if (!guard.isCurrent()) return;
+	storePendingPricingAction({ type: 'checkout', tierId, interval });
+	emit('starting', 'Preparing secure checkout…');
+
+	try {
+		const client = await withTimeout(
+			Promise.resolve().then(() => initializePricingBilling()),
+			INIT_TIMEOUT_MS,
+			'Could not reach billing. Check your connection and try again.'
+		);
+		guard.assertCurrent();
+
+		if (!client.isConfigured) {
+			emit('error', client.error ?? 'Checkout is not configured yet.');
+			return;
 		}
-	})();
+		if (!client.user) {
+			emit('signing_in', 'Redirecting to sign in…');
+			await signInForPricing();
+			// The account may have changed while the sign-in redirect was in flight.
+			guard.assertCurrent();
+			return;
+		}
 
-	return inFlight;
+		// Confirm mode agreement with the backend before creating any checkout.
+		// createCheckout also enforces this, but the guard must be checked after
+		// the awaited gate fetch.
+		const gate = await fetchCheckoutGate();
+		guard.assertCurrent();
+		if (!gate.checkoutEnabled || gate.eligibility === 'checkout_disabled') {
+			emit('error', 'New purchases are temporarily unavailable.');
+			return;
+		}
+
+		clearPendingPricingAction();
+		emit('starting', 'Opening secure checkout…');
+
+		const checkout = await createCheckout(tierId, interval, guard.context.accountId);
+		guard.assertCurrent();
+
+		emit('checkout_open', 'Complete checkout in the overlay…', checkout.attemptId);
+		let checkoutFailed = false;
+		overlay.open(checkout.checkoutUrl, (event) => {
+			if (!guard.isCurrent()) return;
+			if (event.event_type === 'checkout.closed') {
+				if (checkoutFailed) return;
+				emit('checkout_closed', 'Checkout closed. You can try again anytime.', checkout.attemptId);
+			} else if (event.event_type === 'checkout.error') {
+				checkoutFailed = true;
+				emit('error', 'Checkout could not be completed.');
+			}
+		});
+	} catch (error) {
+		if (!guard.isCurrent()) return;
+		emit('error', error instanceof Error ? error.message : 'Could not start checkout.');
+	}
 }

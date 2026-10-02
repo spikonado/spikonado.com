@@ -2,10 +2,25 @@ import { describe, expect, test } from 'bun:test';
 import type { DodoPublicPrice, PublicPricingCatalog } from '@/lib/convex/api';
 import {
 	buildPricingPlans,
+	currencyCodeLabel,
+	currencyMinorExponent,
 	isBillingInterval,
+	majorFromMinor,
 	monthlyEquivalentMajor,
 	priceLabel
 } from './catalog.ts';
+
+function price(overrides: Partial<DodoPublicPrice>): DodoPublicPrice {
+	return {
+		productId: 'prod_x',
+		name: null,
+		amountMinor: 1_000,
+		currency: 'USD',
+		paymentFrequencyCount: 1,
+		paymentFrequencyInterval: 'Month',
+		...overrides
+	};
+}
 
 const monthlyPrice: DodoPublicPrice = {
 	productId: 'prod_team_monthly',
@@ -58,22 +73,22 @@ describe('pricing catalog', () => {
 		expect(monthlyEquivalentMajor(monthlyPrice)).toBe(20);
 		expect(monthlyEquivalentMajor(annualPrice)).toBe(18);
 		expect(priceLabel('monthly', prices)).toEqual({
-			cardPrice: '$20/mo.',
-			perMonthLabel: '$20',
+			cardPrice: '$20.00/mo.',
+			perMonthLabel: '$20.00',
 			billed: 'Billed monthly',
 			currency: 'USD',
 			periodMajor: 20,
-			periodLabel: '$20',
+			periodLabel: '$20.00',
 			compareAt: null
 		});
 		expect(priceLabel('annual', prices)).toEqual({
-			cardPrice: '$216/yr.',
-			perMonthLabel: '$18',
+			cardPrice: '$216.00/yr.',
+			perMonthLabel: '$18.00',
 			billed: 'Billed annually',
 			currency: 'USD',
 			periodMajor: 216,
-			periodLabel: '$216',
-			compareAt: '$240'
+			periodLabel: '$216.00',
+			compareAt: '$240.00'
 		});
 		expect(priceLabel('monthly', { monthly: null, annual: null })).toBeNull();
 	});
@@ -84,7 +99,60 @@ describe('pricing catalog', () => {
 			annual: annualPrice
 		};
 		expect(priceLabel('annual', prices)?.compareAt).toBeNull();
-		expect(priceLabel('annual', prices)?.cardPrice).toBe('$216/yr.');
+		expect(priceLabel('annual', prices)?.cardPrice).toBe('$216.00/yr.');
+	});
+
+	describe('currency exponents', () => {
+		test('resolves zero-, two-, and three-decimal ISO exponents', () => {
+			expect(currencyMinorExponent('USD')).toBe(2);
+			expect(currencyMinorExponent('JPY')).toBe(0);
+			expect(currencyMinorExponent('KWD')).toBe(3);
+			expect(currencyMinorExponent('usd')).toBe(2);
+		});
+
+		test('fails explicitly on unsupported or unknown currencies instead of guessing /100', () => {
+			expect(() => currencyMinorExponent('NOT_A_CURRENCY')).toThrow(/Unsupported currency/);
+			expect(() => currencyMinorExponent('XXX')).toThrow(/Unsupported currency/);
+			expect(() => currencyMinorExponent('')).toThrow(/Unsupported currency/);
+			expect(() => majorFromMinor(1_000, 'NOT_A_CURRENCY')).toThrow(/Unsupported currency/);
+		});
+
+		test('converts minor units with the currency exponent', () => {
+			expect(majorFromMinor(2_000, 'USD')).toBe(20);
+			expect(majorFromMinor(2_000, 'JPY')).toBe(2_000);
+			expect(majorFromMinor(2_000, 'KWD')).toBe(2);
+		});
+
+		test('formats zero-decimal currencies without fractional digits', () => {
+			const jpy = price({ amountMinor: 2_000, currency: 'JPY' });
+			expect(monthlyEquivalentMajor(jpy)).toBe(2_000);
+			const label = priceLabel('monthly', { monthly: jpy, annual: null });
+			expect(label?.periodMajor).toBe(2_000);
+			expect(label?.periodLabel).toContain('2,000');
+			expect(label?.periodLabel).not.toContain('.');
+		});
+
+		test('formats three-decimal currencies with three fractional digits', () => {
+			const kwd = price({ amountMinor: 2_000, currency: 'KWD' });
+			const label = priceLabel('monthly', { monthly: kwd, annual: null });
+			expect(label?.periodMajor).toBe(2);
+			expect(label?.periodLabel).toContain('2.000');
+			expect(label?.cardPrice).toContain('/mo.');
+			// A non-integer three-decimal amount keeps all three fractional digits.
+			const kwdFraction = price({ amountMinor: 2_500, currency: 'KWD' });
+			expect(priceLabel('monthly', { monthly: kwdFraction, annual: null })?.periodLabel).toContain(
+				'2.500'
+			);
+		});
+
+		test('disambiguates dollar currencies that share a symbol', () => {
+			expect(currencyCodeLabel('USD')).toBe('$ USD');
+			expect(currencyCodeLabel('CAD')).toBe('$ CAD');
+			expect(currencyCodeLabel('AUD')).toBe('$ AUD');
+			expect(currencyCodeLabel('EUR')).toBe('€');
+			expect(currencyCodeLabel('JPY')).toBe('¥');
+			expect(() => currencyCodeLabel('NOT_A_CURRENCY')).toThrow(/Unsupported currency/);
+		});
 	});
 
 	test('builds every plan from live card and allowance data', () => {

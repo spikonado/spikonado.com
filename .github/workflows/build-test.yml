@@ -35,10 +35,32 @@ jobs:
         shell: 'nix develop --profile spikonado.com-shell -c bash -e {0}'
         run: bun install --frozen-lockfile
 
+      - name: Read pinned billing backend
+        id: billing-backend
+        run: echo "revision=$(jq -r .sourceRevision src/lib/convex/billing-contract.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          repository: spikonado/sprocket
+          ref: ${{ steps.billing-backend.outputs.revision }}
+          path: .billing-backend
+
+      - name: Verify generated billing contract
+        shell: 'nix develop --profile spikonado.com-shell -c bash -e {0}'
+        run: |
+          cd .billing-backend
+          bun install --frozen-lockfile
+          cd ..
+          bun run sync:convex-api --check --source .billing-backend
+
+      - name: Remove backend checkout
+        if: always()
+        run: rm -rf .billing-backend
+
       - name: Build
         shell: 'nix develop --profile spikonado.com-shell -c bash -e {0}'
         run: bun run build --mode test
 
       - name: Test
         shell: 'nix develop --profile spikonado.com-shell -c bash -e {0}'
-        run: bun test
+        run: bun run test

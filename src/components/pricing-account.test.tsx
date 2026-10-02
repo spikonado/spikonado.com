@@ -15,6 +15,7 @@ function render(state: PricingUiState): string {
 		createElement(PricingAccount, {
 			state,
 			onManageBilling: () => {},
+			onCheckStatus: () => {},
 			onSignOut: () => {}
 		})
 	);
@@ -82,5 +83,49 @@ describe('pricing account section', () => {
 		const markup = render(state);
 		expect(markup).toContain('Opening billing portal...');
 		expect(markup).toContain('disabled');
+	});
+
+	test('repair-required accounts get portal repair instead of purchase', () => {
+		const state = withReadySession(createInitialPricingState(), {
+			authenticated: true,
+			tier: 'free',
+			tierLabel: 'Free',
+			billingManaged: true,
+			checkoutEligibility: 'repair_required',
+			userLabel: 'dev@example.com'
+		});
+		const markup = render(state);
+		expect(markup).toContain('payment for your subscription needs attention');
+		expect(markup).toContain('Manage billing');
+		expect(markup).not.toContain('Get Team');
+	});
+
+	test('confirmation-pending accounts can re-check status without repurchasing', () => {
+		const state = withReadySession(createInitialPricingState(), {
+			authenticated: true,
+			tier: 'free',
+			tierLabel: 'Free',
+			billingManaged: true,
+			checkoutEligibility: 'confirmation_pending',
+			userLabel: 'dev@example.com'
+		});
+		const markup = render(state);
+		expect(markup).toContain('Check payment status');
+		expect(markup).toContain('still being confirmed');
+		expect(markup).not.toContain('Payment received');
+	});
+
+	test('checkout-disabled messaging keeps the portal available', () => {
+		const state = withReadySession(createInitialPricingState(), {
+			authenticated: true,
+			tier: 'team',
+			tierLabel: 'Team',
+			billingManaged: true,
+			checkoutEligibility: 'checkout_disabled',
+			userLabel: 'dev@example.com'
+		});
+		const markup = render(state);
+		expect(markup).toContain('New purchases are temporarily unavailable');
+		expect(markup).toContain('Manage billing');
 	});
 });

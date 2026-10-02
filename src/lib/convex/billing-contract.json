@@ -1,0 +1,546 @@
+{
+	"version": 1,
+	"functions": {
+		"authBootstrap:getClientConfig": {
+			"kind": "query",
+			"args": {
+				"type": "object",
+				"value": {}
+			},
+			"returns": {
+				"type": "object",
+				"value": {
+					"workosClientId": {
+						"fieldType": {
+							"type": "string"
+						},
+						"optional": false
+					}
+				}
+			}
+		},
+		"billing:getMySubscription": {
+			"kind": "query",
+			"args": {
+				"type": "object",
+				"value": {}
+			},
+			"returns": {
+				"type": "object",
+				"value": {
+					"tier": {
+						"fieldType": {
+							"type": "string"
+						},
+						"optional": false
+					},
+					"tierLabel": {
+						"fieldType": {
+							"type": "string"
+						},
+						"optional": false
+					},
+					"billingManaged": {
+						"fieldType": {
+							"type": "boolean"
+						},
+						"optional": false
+					},
+					"checkoutEligibility": {
+						"fieldType": {
+							"type": "union",
+							"value": [
+								{
+									"type": "literal",
+									"value": "purchasable"
+								},
+								{
+									"type": "literal",
+									"value": "active"
+								},
+								{
+									"type": "literal",
+									"value": "repair_required"
+								},
+								{
+									"type": "literal",
+									"value": "confirmation_pending"
+								},
+								{
+									"type": "literal",
+									"value": "checkout_disabled"
+								}
+							]
+						},
+						"optional": true
+					},
+					"accessPhase": {
+						"fieldType": {
+							"type": "union",
+							"value": [
+								{
+									"type": "literal",
+									"value": "active"
+								},
+								{
+									"type": "literal",
+									"value": "scheduled_cancel"
+								},
+								{
+									"type": "literal",
+									"value": "ended"
+								},
+								{
+									"type": "literal",
+									"value": "none"
+								}
+							]
+						},
+						"optional": true
+					}
+				}
+			}
+		},
+		"billing:ensureMySubscription": {
+			"kind": "mutation",
+			"args": {
+				"type": "object",
+				"value": {}
+			},
+			"returns": {
+				"type": "null"
+			}
+		},
+		"billing:checkoutEligibility": {
+			"kind": "query",
+			"args": {
+				"type": "object",
+				"value": {}
+			},
+			"returns": {
+				"type": "object",
+				"value": {
+					"eligibility": {
+						"fieldType": {
+							"type": "union",
+							"value": [
+								{
+									"type": "literal",
+									"value": "purchasable"
+								},
+								{
+									"type": "literal",
+									"value": "active"
+								},
+								{
+									"type": "literal",
+									"value": "repair_required"
+								},
+								{
+									"type": "literal",
+									"value": "confirmation_pending"
+								},
+								{
+									"type": "literal",
+									"value": "checkout_disabled"
+								}
+							]
+						},
+						"optional": false
+					},
+					"checkoutEnabled": {
+						"fieldType": {
+							"type": "boolean"
+						},
+						"optional": false
+					},
+					"mode": {
+						"fieldType": {
+							"type": "union",
+							"value": [
+								{
+									"type": "literal",
+									"value": "test"
+								},
+								{
+									"type": "literal",
+									"value": "live"
+								}
+							]
+						},
+						"optional": true
+					},
+					"reason": {
+						"fieldType": {
+							"type": "string"
+						},
+						"optional": false
+					}
+				}
+			}
+		},
+		"billing:checkout": {
+			"kind": "action",
+			"args": {
+				"type": "object",
+				"value": {
+					"tier": {
+						"fieldType": {
+							"type": "string"
+						},
+						"optional": false
+					},
+					"interval": {
+						"fieldType": {
+							"type": "union",
+							"value": [
+								{
+									"type": "literal",
+									"value": "monthly"
+								},
+								{
+									"type": "literal",
+									"value": "annual"
+								}
+							]
+						},
+						"optional": false
+					}
+				}
+			},
+			"returns": {
+				"type": "object",
+				"value": {
+					"checkout_url": {
+						"fieldType": {
+							"type": "string"
+						},
+						"optional": false
+					},
+					"attemptId": {
+						"fieldType": {
+							"type": "string"
+						},
+						"optional": true
+					},
+					"sessionId": {
+						"fieldType": {
+							"type": "string"
+						},
+						"optional": true
+					}
+				}
+			}
+		},
+		"billing:customerPortal": {
+			"kind": "action",
+			"args": {
+				"type": "object",
+				"value": {}
+			},
+			"returns": {
+				"type": "object",
+				"value": {
+					"portal_url": {
+						"fieldType": {
+							"type": "string"
+						},
+						"optional": false
+					}
+				}
+			}
+		},
+		"billing:getCheckoutStatus": {
+			"kind": "action",
+			"args": {
+				"type": "object",
+				"value": {
+					"attemptId": {
+						"fieldType": {
+							"type": "string"
+						},
+						"optional": false
+					}
+				}
+			},
+			"returns": {
+				"type": "object",
+				"value": {
+					"attemptId": {
+						"fieldType": {
+							"type": "string"
+						},
+						"optional": false
+					},
+					"status": {
+						"fieldType": {
+							"type": "union",
+							"value": [
+								{
+									"type": "literal",
+									"value": "awaiting_payment"
+								},
+								{
+									"type": "literal",
+									"value": "pending"
+								},
+								{
+									"type": "literal",
+									"value": "succeeded"
+								},
+								{
+									"type": "literal",
+									"value": "failed"
+								},
+								{
+									"type": "literal",
+									"value": "expired"
+								},
+								{
+									"type": "literal",
+									"value": "unknown"
+								}
+							]
+						},
+						"optional": false
+					},
+					"activated": {
+						"fieldType": {
+							"type": "boolean"
+						},
+						"optional": true
+					},
+					"checkout_url": {
+						"fieldType": {
+							"type": "string"
+						},
+						"optional": true
+					},
+					"sessionId": {
+						"fieldType": {
+							"type": "string"
+						},
+						"optional": true
+					},
+					"expiresAt": {
+						"fieldType": {
+							"type": "number"
+						},
+						"optional": true
+					}
+				}
+			}
+		},
+		"pricing:getPublicCatalog": {
+			"kind": "action",
+			"args": {
+				"type": "object",
+				"value": {}
+			},
+			"returns": {
+				"type": "object",
+				"value": {
+					"plans": {
+						"fieldType": {
+							"type": "array",
+							"value": {
+								"type": "object",
+								"value": {
+									"id": {
+										"fieldType": {
+											"type": "string"
+										},
+										"optional": false
+									},
+									"label": {
+										"fieldType": {
+											"type": "string"
+										},
+										"optional": false
+									},
+									"weeklyUsageDollars": {
+										"fieldType": {
+											"type": "number"
+										},
+										"optional": false
+									},
+									"monthlyUsageDollars": {
+										"fieldType": {
+											"type": "number"
+										},
+										"optional": false
+									},
+									"description": {
+										"fieldType": {
+											"type": "union",
+											"value": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "null"
+												}
+											]
+										},
+										"optional": false
+									},
+									"features": {
+										"fieldType": {
+											"type": "array",
+											"value": {
+												"type": "string"
+											}
+										},
+										"optional": false
+									},
+									"displayOrder": {
+										"fieldType": {
+											"type": "number"
+										},
+										"optional": false
+									},
+									"highlighted": {
+										"fieldType": {
+											"type": "boolean"
+										},
+										"optional": false
+									},
+									"prices": {
+										"fieldType": {
+											"type": "object",
+											"value": {
+												"monthly": {
+													"fieldType": {
+														"type": "union",
+														"value": [
+															{
+																"type": "object",
+																"value": {
+																	"productId": {
+																		"fieldType": {
+																			"type": "string"
+																		},
+																		"optional": false
+																	},
+																	"name": {
+																		"fieldType": {
+																			"type": "union",
+																			"value": [
+																				{
+																					"type": "string"
+																				},
+																				{
+																					"type": "null"
+																				}
+																			]
+																		},
+																		"optional": false
+																	},
+																	"amountMinor": {
+																		"fieldType": {
+																			"type": "number"
+																		},
+																		"optional": false
+																	},
+																	"currency": {
+																		"fieldType": {
+																			"type": "string"
+																		},
+																		"optional": false
+																	},
+																	"paymentFrequencyCount": {
+																		"fieldType": {
+																			"type": "number"
+																		},
+																		"optional": false
+																	},
+																	"paymentFrequencyInterval": {
+																		"fieldType": {
+																			"type": "string"
+																		},
+																		"optional": false
+																	}
+																}
+															},
+															{
+																"type": "null"
+															}
+														]
+													},
+													"optional": false
+												},
+												"annual": {
+													"fieldType": {
+														"type": "union",
+														"value": [
+															{
+																"type": "object",
+																"value": {
+																	"productId": {
+																		"fieldType": {
+																			"type": "string"
+																		},
+																		"optional": false
+																	},
+																	"name": {
+																		"fieldType": {
+																			"type": "union",
+																			"value": [
+																				{
+																					"type": "string"
+																				},
+																				{
+																					"type": "null"
+																				}
+																			]
+																		},
+																		"optional": false
+																	},
+																	"amountMinor": {
+																		"fieldType": {
+																			"type": "number"
+																		},
+																		"optional": false
+																	},
+																	"currency": {
+																		"fieldType": {
+																			"type": "string"
+																		},
+																		"optional": false
+																	},
+																	"paymentFrequencyCount": {
+																		"fieldType": {
+																			"type": "number"
+																		},
+																		"optional": false
+																	},
+																	"paymentFrequencyInterval": {
+																		"fieldType": {
+																			"type": "string"
+																		},
+																		"optional": false
+																	}
+																}
+															},
+															{
+																"type": "null"
+															}
+														]
+													},
+													"optional": false
+												}
+											}
+										},
+										"optional": false
+									}
+								}
+							}
+						},
+						"optional": false
+					}
+				}
+			}
+		}
+	},
+	"sourceRevision": "73fbe104d459c7c9986f912672b105f847a16923"
+}
