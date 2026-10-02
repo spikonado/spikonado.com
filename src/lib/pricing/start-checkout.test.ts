@@ -49,7 +49,9 @@ Object.defineProperty(globalThis, 'sessionStorage', {
 	configurable: true
 });
 
-function signedInClient(user: { id: string; email: string } | null = { id: 'user-a', email: 'a@example.com' }) {
+function signedInClient(
+	user: { id: string; email: string } | null = { id: 'user-a', email: 'a@example.com' }
+) {
 	return {
 		convex: {},
 		auth: { getUser: () => user },
