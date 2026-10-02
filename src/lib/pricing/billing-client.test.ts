@@ -70,6 +70,9 @@ let gateBehavior: () => Promise<{
 }>;
 let gateMode: unknown = 'test_mode';
 
+const originalConvexUrl = process.env.PUBLIC_CONVEX_URL;
+const originalCheckoutMode = process.env.PUBLIC_DODO_CHECKOUT_MODE;
+
 mock.module('@workos-inc/authkit-js', () => ({
 	createClient: async () => {
 		return { getUser: () => currentUser, signIn: async () => {} };
@@ -122,6 +125,8 @@ function storedAttempt(): Record<string, unknown> | null {
 }
 
 beforeEach(() => {
+	process.env.PUBLIC_CONVEX_URL = 'https://billing-tests.convex.cloud';
+	process.env.PUBLIC_DODO_CHECKOUT_MODE = 'test';
 	currentUser = initiatingUser();
 	convexCalls.length = 0;
 	sessionMemory.clear();
@@ -149,6 +154,10 @@ beforeEach(() => {
 
 afterEach(() => {
 	resetPricingBillingForTests();
+	if (originalConvexUrl === undefined) delete process.env.PUBLIC_CONVEX_URL;
+	else process.env.PUBLIC_CONVEX_URL = originalConvexUrl;
+	if (originalCheckoutMode === undefined) delete process.env.PUBLIC_DODO_CHECKOUT_MODE;
+	else process.env.PUBLIC_DODO_CHECKOUT_MODE = originalCheckoutMode;
 });
 
 describe('createCheckout account scoping', () => {
