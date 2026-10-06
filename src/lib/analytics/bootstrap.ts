@@ -169,8 +169,9 @@ export function initPostHogAnalytics(): void {
 	posthog.init(posthogKey, {
 		api_host: 'https://kpg.spikonado.com',
 		ui_host: 'https://eu.posthog.com',
-		// 2026-06-25 also strips URL hashes; this site uses /#section links for CTAs.
-		defaults: '2026-05-30',
+		// Latest snapshot. Keep hash capture: the site uses /#section links for CTAs.
+		defaults: '2026-08-30',
+		disable_capture_url_hashes: false,
 		person_profiles: 'identified_only',
 		capture_exceptions: true,
 		capture_performance: { web_vitals: true, network_timing: true },
