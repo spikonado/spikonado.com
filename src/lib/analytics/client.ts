@@ -1,3 +1,4 @@
+import { PUBLIC_POSTHOG_KEY } from 'astro:env/client';
 import posthog from 'posthog-js';
 import { captureAnalyticsEvent } from '@/lib/analytics/bootstrap';
 import type { AnalyticsProperties } from '@/lib/analytics/events';
@@ -13,7 +14,7 @@ export function captureEvent(event: string, properties?: AnalyticsProperties): v
 
 export function captureExceptionSafe(error: unknown, properties?: AnalyticsProperties): void {
 	try {
-		if (!import.meta.env.PUBLIC_POSTHOG_KEY) {
+		if (!PUBLIC_POSTHOG_KEY) {
 			return;
 		}
 		posthog.captureException(error, properties);
@@ -37,7 +38,7 @@ export function posthogRequestHeaders(): Record<string, string> {
 
 export function identifySubscriber(subscriberEmail: string): void {
 	try {
-		if (!import.meta.env.PUBLIC_POSTHOG_KEY) {
+		if (!PUBLIC_POSTHOG_KEY) {
 			return;
 		}
 		posthog.identify(subscriberEmail, {
