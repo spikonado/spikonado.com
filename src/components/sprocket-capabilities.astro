@@ -5,44 +5,44 @@ import { cn } from '@/utils';
 
 const capabilities = [
 	{
-		id: 'web-context',
-		category: 'Rich web context',
-		heading: 'Read the page.',
-		accent: 'Not just the snippet.',
-		body: "Work from current API docs, technical guides, and supplier pages. Sprocket prefers a site's Markdown, uses Firecrawl to read dynamic pages, and saves long results instead of cutting them short.",
-		image: 'API documentation + supplier page → web context',
-		caption: 'The source content stays available for the agent to read.',
+		id: 'building',
+		category: 'From idea to project',
+		heading: 'Describe it.',
+		accent: 'Start building.',
+		body: 'Ask for an app, a website, or a new feature. Sprocket writes the code, changes your project files, and runs checks. Building a device? It can also create electronics diagrams, parts lists, and assembly guides.',
+		image: 'An idea in the chat + the app Sprocket is building',
+		caption: 'Start a new project or work on one you already have.',
+		note: 'Review the results before using them. Hardware designs need validation before you build.'
+	},
+	{
+		id: 'iteration',
+		category: 'Make it yours',
+		heading: 'See it.',
+		accent: 'Shape it.',
+		body: 'Review previews and project files as Sprocket works. Ask for a simpler layout, another feature, or a fix. It makes the changes, and you keep the files.',
+		image: 'App preview + a request for changes + the updated app',
+		caption: 'Keep improving the result through conversation.',
 		note: ''
 	},
 	{
-		id: 'file-context',
-		category: 'Built-in document parsing',
-		heading: 'Your files.',
-		accent: 'Usable context.',
-		body: 'Turn PDFs, Word documents, slides, and spreadsheets into Markdown the agent can work from. Bring in a product brief, a test report, or a datasheet without converting it yourself.',
-		image: 'Product brief + spreadsheet + datasheet → Markdown',
-		caption: 'One parsing tool, across document formats and model choices.',
-		note: 'Supported formats and size limits apply. Documents that need hosted parsing or OCR are sent to Firecrawl.'
+		id: 'project-inputs',
+		category: 'Use what you have',
+		heading: 'Bring your',
+		accent: 'starting point.',
+		body: 'Share a brief, a screenshot, a spreadsheet, or a technical document. Sprocket reads your materials and looks up current information online to help build what you asked for.',
+		image: 'A brief + a reference image + the project taking shape',
+		caption: 'Your materials help Sprocket understand what to make.',
+		note: 'File formats and size limits apply. Documents that need online conversion or text extraction are sent to Firecrawl.'
 	},
 	{
 		id: 'purchasing',
-		category: 'Agentic purchasing',
-		heading: 'Approve it.',
-		accent: 'Let Sprocket buy it.',
-		body: 'Ask Sprocket to buy a SaaS subscription or electronics. Approve a merchant and spending limit, then let the agent complete checkout using a single-use payment credential.',
-		image: 'SaaS subscription + electronics → spending approval + checkout',
-		caption: 'Buy the services and components your project needs.',
-		note: 'Standing mandates can allow later charges without another approval. Merchant and payment-service support varies.'
-	},
-	{
-		id: 'project-artifacts',
-		category: 'Live project artifacts',
-		heading: 'Live files.',
-		accent: 'Shared context.',
-		body: 'Publish interactive HTML or React previews and Markdown reports from real project files. Keep edits synced and open the same artifacts from any thread in the project.',
-		image: 'Interactive app mockup + design report → shared project artifacts',
-		caption: 'A live preview backed by a file you can keep working on.',
-		note: ''
+		category: 'Parts and subscriptions',
+		heading: 'Get what',
+		accent: 'you need.',
+		body: 'Need an online service for your app or electronics for a prototype? Ask Sprocket to find and buy them. You approve the seller and spending limit before it can pay.',
+		image: 'An online subscription + electronics + spending approval',
+		caption: 'Purchasing can be part of the same project conversation.',
+		note: 'A standing approval can allow later purchases within its limits. Store and payment support varies.'
 	}
 ] as const;
 ---

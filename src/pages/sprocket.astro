@@ -24,7 +24,7 @@ import { cn } from '@/utils';
 
 const release = await fetchLatestSprocketRelease();
 
-const title = titleWithBrand('Sprocket - The Engineering Agent');
+const title = titleWithBrand('Sprocket - Build apps, websites, and devices');
 const description = SPROCKET_DESCRIPTION;
 
 const softwareLd = {
@@ -52,14 +52,12 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 			</p>
 			<h1 class={cn(marketingProductHeadingClass, 'mt-3')}>Sprocket</h1>
 			<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-				An AI engineering agent for{' '}
-				<span class="mark-verb">software</span> and{' '}
-				<span class="mark-verb">hardware</span>.
+				Build <span class="mark-verb">apps, websites, and devices</span> with AI.
 			</p>
 			<figure
 				class="mt-8 overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]"
 			>
-				<ProductImagePlaceholder />
+				<ProductImagePlaceholder label="Describe an app → Sprocket builds it" />
 			</figure>
 			<ul class="mt-6 divide-y divide-border/60 border-y border-border/60">
 				<li class="flex gap-4 py-5">
@@ -74,8 +72,8 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 						</svg>
 					</span>
 					<p class={featureTextClass}>
-						<span class="mark-verb">Web context beyond search snippets</span>. Read full pages,
-						including dynamic sites, and keep long results available in saved files.
+						<span class="mark-verb">Describe what you want to make</span>. Sprocket writes code,
+						creates project files, and runs checks on your computer.
 					</p>
 				</li>
 				<li class="flex gap-4 py-5">
@@ -90,8 +88,8 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 						</svg>
 					</span>
 					<p class={featureTextClass}>
-						<span class="mark-verb">Documents become Markdown</span>. Parse PDFs, Office documents,
-						and spreadsheets, with hosted OCR when needed.
+						<span class="mark-verb">See the result and ask for changes</span>. Build something new,
+						add a feature, or fix a problem in an existing project.
 					</p>
 				</li>
 				<li class="flex gap-4 py-5">
@@ -106,8 +104,9 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 						</svg>
 					</span>
 					<p class={featureTextClass}>
-						<span class="mark-verb">Buy SaaS subscriptions or electronics</span> with single-use payment
-						credentials and spending limits you approve.
+						<span class="mark-verb">Get help with the rest, too</span>. Sprocket reads your
+						documents, looks things up online, and can buy parts or subscriptions within limits you
+						approve.
 					</p>
 				</li>
 			</ul>

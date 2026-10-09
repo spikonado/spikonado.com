@@ -24,16 +24,16 @@ const sprocketRelease = await fetchLatestSprocketRelease();
 
 const capabilityItems = [
 	{
-		title: 'Web context beyond search results',
-		body: 'Read full pages as Markdown, including dynamic sites. Long results stay available in saved files.'
+		title: 'Tell Sprocket what you want to make',
+		body: 'Describe your idea in everyday language. Start something new or choose a project you already have.'
 	},
 	{
-		title: 'Documents become context',
-		body: 'Built-in parsing turns PDFs, Office documents, and spreadsheets into Markdown, with hosted OCR when needed.'
+		title: 'It works on the project',
+		body: 'Sprocket writes code, creates files, and runs checks on your computer. You can follow its progress.'
 	},
 	{
-		title: 'Purchasing, with limits you approve',
-		body: 'Buy SaaS subscriptions or electronics with single-use payment credentials and approved spending limits.'
+		title: 'Review it and ask for changes',
+		body: 'Try the result, tell Sprocket what to change, and keep building. The project files are yours to use.'
 	}
 ] as const;
 
@@ -131,15 +131,11 @@ const softwareLd = {
 					</p>
 					<h2 class={cn(marketingProductHeadingClass, 'mt-3')}>Sprocket</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						An AI engineering agent for{' '}
-						<span class="mark-verb">software</span> and{' '}
-						<span class="mark-verb">hardware</span>.
+						Build <span class="mark-verb">apps, websites, and devices</span> with AI.
 					</p>
 					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
-						Work from <span class="mark-verb">rich web context</span>, bring your documents, and{
-							' '
-						}
-						<span class="mark-verb">buy the services or components</span> your project needs.
+						Tell Sprocket what you want to make. It <span class="mark-verb">writes code</span>,
+						creates project files, and helps you test and improve the result on your computer.
 					</p>
 					<div class="mt-8 flex w-full max-w-md flex-col gap-3">
 						<div class="flex flex-col gap-3 sm:flex-row sm:items-start">
@@ -178,7 +174,7 @@ const softwareLd = {
 					<figure
 						class="relative overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]"
 					>
-						<ProductImagePlaceholder />
+						<ProductImagePlaceholder label="Describe an app → Sprocket builds it" />
 					</figure>
 				</div>
 			</div>
@@ -191,14 +187,15 @@ const softwareLd = {
 			>
 				<div>
 					<h2 class={marketingSectionHeadingClass}>
-						Less <span class="mark-accent">busywork.</span>
+						How <span class="mark-accent">it works.</span>
 					</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						An app, a device, or both. Sprocket handles the{' '}
-						<span class="mark-verb">research, documents, and purchasing</span> that sit around development.
+						Sprocket works directly in a <span class="mark-verb"
+							>project folder on your computer</span
+						>. It creates and changes files, and runs the programs needed to build and test them.
 					</p>
 					<p class="mt-8 font-brand text-xl font-semibold text-foreground">
-						Built in, without a separate tool setup.
+						Start with an idea. Keep going with a conversation.
 					</p>
 					<a
 						href="/#sprocket"
