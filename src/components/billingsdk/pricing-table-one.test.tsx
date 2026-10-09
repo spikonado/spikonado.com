@@ -29,6 +29,21 @@ function render(plan: BillingPlan, interval: 'monthly' | 'annual' = 'annual'): s
 }
 
 describe('pricing table card rendering', () => {
+	test('places features directly after the price when the description is empty', () => {
+		const document = new DOMParser().parseFromString(
+			render({ ...basePlan, description: '' }),
+			'text/html'
+		);
+		expect(
+			Array.from(document.querySelector('article')!.children, (child) => child.tagName)
+		).toEqual(['H2', 'DIV', 'UL', 'BUTTON']);
+	});
+
+	test('renders a configured description between the price and features', () => {
+		const document = new DOMParser().parseFromString(render(basePlan), 'text/html');
+		expect(document.querySelector('article > p')?.textContent).toBe('For engineering teams.');
+	});
+
 	test('renders the yearly price with the selected interval currency', () => {
 		const markup = render({ ...basePlan, currency: '€' }, 'annual');
 		expect(markup).toContain('€216');

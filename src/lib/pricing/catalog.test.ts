@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import type { DodoPublicPrice, PublicPricingCatalog } from '@/lib/convex/api';
 import {
 	buildPricingPlans,
-	currencyCodeLabel,
 	currencyMinorExponent,
+	currencySymbol,
 	isBillingInterval,
 	majorFromMinor,
 	monthlyEquivalentMajor,
@@ -145,13 +145,13 @@ describe('pricing catalog', () => {
 			);
 		});
 
-		test('disambiguates dollar currencies that share a symbol', () => {
-			expect(currencyCodeLabel('USD')).toBe('$ USD');
-			expect(currencyCodeLabel('CAD')).toBe('$ CAD');
-			expect(currencyCodeLabel('AUD')).toBe('$ AUD');
-			expect(currencyCodeLabel('EUR')).toBe('€');
-			expect(currencyCodeLabel('JPY')).toBe('¥');
-			expect(() => currencyCodeLabel('NOT_A_CURRENCY')).toThrow(/Unsupported currency/);
+		test('uses currency symbols for card prices', () => {
+			expect(currencySymbol('USD')).toBe('$');
+			expect(currencySymbol('CAD')).toBe('$');
+			expect(currencySymbol('AUD')).toBe('$');
+			expect(currencySymbol('EUR')).toBe('€');
+			expect(currencySymbol('JPY')).toBe('¥');
+			expect(() => currencySymbol('NOT_A_CURRENCY')).toThrow(/Unsupported currency/);
 		});
 	});
 
@@ -160,7 +160,7 @@ describe('pricing catalog', () => {
 		expect(plans.map((plan) => plan.id)).toEqual(['free', 'team']);
 		expect(plans[0]).toMatchObject({
 			name: 'Free',
-			description: 'For trying Sprocket and building without a card.',
+			description: '',
 			highlighted: false
 		});
 		expect(plans[0]?.features).toEqual([
@@ -175,6 +175,18 @@ describe('pricing catalog', () => {
 			highlighted: true,
 			features: ['$75 of AI usage each month', 'All available AI models', 'Shared projects']
 		});
+	});
+
+	test.each([
+		[null, ''],
+		['', ''],
+		['   ', ''],
+		['  For engineering teams.  ', 'For engineering teams.']
+	])('uses only configured tier descriptions: %p', (description, expected) => {
+		const plans = buildPricingPlans({
+			plans: sampleCatalog.plans.map((plan) => ({ ...plan, description }))
+		});
+		expect(plans.map((plan) => plan.description)).toEqual([expected, expected]);
 	});
 
 	test('validates billing intervals', () => {

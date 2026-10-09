@@ -57,10 +57,6 @@ export function PricingTableOne({
 				>
 					Pricing
 				</h1>
-				<p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-					Build with every Sprocket feature. Pay for more AI capacity when you need it.
-				</p>
-
 				<fieldset className="mt-8 inline-flex rounded-full border border-border/70 bg-surface p-1">
 					<legend className="sr-only">Billing interval</legend>
 					{(['monthly', 'annual'] as const).map((value) => (
@@ -115,9 +111,11 @@ export function PricingTableOne({
 									</p>
 								) : null}
 							</div>
-							<p className="mt-3 min-h-11 text-sm leading-relaxed text-muted-foreground">
-								{plan.description}
-							</p>
+							{plan.description ? (
+								<p className="mt-3 min-h-11 text-sm leading-relaxed text-muted-foreground">
+									{plan.description}
+								</p>
+							) : null}
 							<ul className="mt-6 flex-1 space-y-2.5">
 								{plan.features.map((feature) => (
 									<li

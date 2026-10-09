@@ -31,7 +31,7 @@ const offers = initialCatalog
 					name: `Sprocket ${plan.label}`,
 					price: '0',
 					priceCurrency: 'USD',
-					description: plan.description ?? 'Start building with Sprocket at no cost.'
+					description: plan.description?.trim() || undefined
 				}
 			];
 		})
@@ -40,8 +40,7 @@ const offers = initialCatalog
 				'@type': 'Offer',
 				name: 'Sprocket Free',
 				price: '0',
-				priceCurrency: 'USD',
-				description: 'Start building with Sprocket at no cost.'
+				priceCurrency: 'USD'
 			}
 		];
 

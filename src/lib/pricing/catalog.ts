@@ -168,12 +168,7 @@ function formatCompactMoney(amountMajor: number, currency: string): string {
 	}).format(amountMajor);
 }
 
-/**
- * Distinct currencies can share one narrow symbol (USD/CAD/AUD all render
- * "$"), so card footers name the ISO code explicitly for those. A currency
- * whose narrow symbol is just its code (KWD, CHF) already names itself.
- */
-export function currencyCodeLabel(currency: string): string {
+export function currencySymbol(currency: string): string {
 	const exponent = currencyMinorExponent(currency);
 	const normalized = currency.trim().toUpperCase();
 	const parts = new Intl.NumberFormat('en-US', {
@@ -183,8 +178,7 @@ export function currencyCodeLabel(currency: string): string {
 		maximumFractionDigits: exponent,
 		minimumFractionDigits: exponent
 	}).formatToParts(0);
-	const symbol = parts.find((part) => part.type === 'currency')?.value ?? currency;
-	return symbol === '$' ? `${symbol} ${normalized}` : symbol;
+	return parts.find((part) => part.type === 'currency')?.value ?? currency;
 }
 
 /** Normalize a Dodo recurring price into a monthly-equivalent major-unit amount. */
@@ -261,11 +255,7 @@ export function buildPricingPlans(catalog: PublicPricingCatalog): PricingPlan[] 
 		return {
 			id: plan.id,
 			name: plan.label,
-			description:
-				configuredDescription ||
-				(plan.id === 'free'
-					? 'For trying Sprocket and building without a card.'
-					: `For projects that need the ${plan.label} usage limits.`),
+			description: configuredDescription || '',
 			highlighted: plan.highlighted ?? false,
 			features: [...new Set(features)]
 		};
@@ -304,9 +294,6 @@ export const pricingFaqs: PricingFaq[] = [
 			'Email aarav@spikonado.com. Refunds and disputes are handled through Dodo and the support inbox — there is no mid-term self-service refund. Manage billing shows your invoices and payment methods.'
 	}
 ];
-
-export const pricingBasePriceCaveat =
-	'Base prices. Checkout determines the final price, including applicable tax, discounts, regional pricing, and trials.';
 
 export function isBillingInterval(value: string | null | undefined): value is BillingInterval {
 	return value === 'monthly' || value === 'annual';

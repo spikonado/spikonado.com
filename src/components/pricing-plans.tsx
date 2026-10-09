@@ -22,9 +22,8 @@ import {
 } from '@/lib/pricing/billing-client';
 import {
 	buildPricingPlans,
-	currencyCodeLabel,
+	currencySymbol,
 	priceLabel,
-	pricingBasePriceCaveat,
 	pricingFaqs,
 	pricesForPlan,
 	type BillingInterval
@@ -93,7 +92,7 @@ function billingPlans(catalog: PublicPricingCatalog, interval: BillingInterval):
 			description: plan.description,
 			highlight: plan.highlighted,
 			badge: plan.highlighted ? 'Most popular' : undefined,
-			currency: currencyCodeLabel(
+			currency: currencySymbol(
 				selected?.currency ?? monthly?.currency ?? annual?.currency ?? 'USD'
 			),
 			monthlyPrice: planPrice(plan.id, monthly?.periodMajor),
@@ -782,7 +781,6 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 				<h2 id="pricing-faq-heading" className="font-brand text-2xl font-semibold text-foreground">
 					FAQ
 				</h2>
-				<p className="mt-2 text-sm text-muted-foreground">{pricingBasePriceCaveat}</p>
 				<div className="mt-6 space-y-4">
 					{pricingFaqs.map((faq) => (
 						<details

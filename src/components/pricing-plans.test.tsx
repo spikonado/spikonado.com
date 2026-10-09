@@ -338,6 +338,21 @@ afterEach(async () => {
 });
 
 describe('pricing plans orchestration', () => {
+	test('renders live tier prices and descriptions for each billing interval', async () => {
+		await mount();
+		const [free, team] = Array.from(container.querySelectorAll('article'));
+		expect(free?.querySelector('div p')?.textContent).toBe('$0');
+		expect(free?.querySelector('div')?.nextElementSibling?.tagName).toBe('UL');
+		expect(team?.querySelector('div p')?.textContent).toBe('$20');
+		expect(team?.querySelector(':scope > p')?.textContent).toBe('For engineering teams.');
+
+		await act(async () => {
+			container.querySelector<HTMLInputElement>('input[value="annual"]')!.click();
+		});
+		expect(free?.querySelector('div p')?.textContent).toBe('$0');
+		expect(team?.querySelector('div p')?.textContent).toBe('$200');
+	});
+
 	test('runs checkout for the signed-in account and confirms via server state only', async () => {
 		signedIn();
 		await mount();
