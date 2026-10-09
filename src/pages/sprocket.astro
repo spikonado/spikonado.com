@@ -1,7 +1,6 @@
 ---
 import CopyCommand from '@/components/copy-command.svelte';
 import ProductImagePlaceholder from '@/components/product-image-placeholder.astro';
-import SprocketCapabilities from '@/components/sprocket-capabilities.astro';
 import SprocketDownload from '@/components/sprocket-download.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
 import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
@@ -163,8 +162,5 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 				</a>
 			</div>
 		</article>
-		<div class="-mx-4 mt-20 sm:-mx-6 lg:-mx-8">
-			<SprocketCapabilities />
-		</div>
 	</main>
 </BaseLayout>

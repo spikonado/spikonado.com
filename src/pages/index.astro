@@ -5,7 +5,6 @@ import CopyCommand from '@/components/copy-command.svelte';
 import GetStarted from '@/components/get-started.svelte';
 import SprocketDownload from '@/components/sprocket-download.svelte';
 import ProductImagePlaceholder from '@/components/product-image-placeholder.astro';
-import SprocketCapabilities from '@/components/sprocket-capabilities.astro';
 import BaseLayout from '@/layouts/base-layout.astro';
 import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
 import { fetchLatestSprocketRelease, SPROCKET_NPM_COMMAND } from '@/lib/sprocket-releases';
@@ -24,12 +23,12 @@ const sprocketRelease = await fetchLatestSprocketRelease();
 
 const capabilityItems = [
 	{
-		title: 'Software and hardware in one project',
-		body: 'Apps, firmware, schematics, parts lists, and assembly guides. Sprocket creates the files and runs checks using your tools.'
+		title: 'Your tools, in your project',
+		body: 'Run terminal commands, edit files, and test the result in a browser. Sprocket works with the tools your project already uses.'
 	},
 	{
-		title: 'Technical context, ready to use',
-		body: 'Full web pages, current docs, PDFs, spreadsheets, and images inform the work. No manual copying or file conversion.'
+		title: 'Full pages and files, not snippets',
+		body: 'Read current docs and dynamic web pages. Bring in PDFs, spreadsheets, and images without manual conversion. Long web results stay available instead of being cut short.'
 	},
 	{
 		title: 'Parts and subscriptions, purchased',
@@ -135,9 +134,8 @@ const softwareLd = {
 						<span class="mark-verb">hardware</span>.
 					</p>
 					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
-						<span class="mark-verb">Write and test code</span>, design electronics, and{' '}
-						<span class="mark-verb">buy parts or subscriptions</span>. Sprocket works in your
-						project, using current web sources and your files to guide the build.
+						Sprocket designs electronics, tests code end-to-end, and buys parts or subscriptions for
+						your project when asked.
 					</p>
 					<div class="mt-8 flex w-full max-w-md flex-col gap-3">
 						<div class="flex flex-col gap-3 sm:flex-row sm:items-start">
@@ -182,22 +180,20 @@ const softwareLd = {
 			</div>
 		</section>
 
-		<!-- Platform / Solved -->
+		<!-- Platform -->
 		<section id="platform" class="border-t border-border/50 bg-surface" data-ph-section="platform">
 			<div
 				class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-8 lg:py-28"
 			>
 				<div>
-					<h2 class={marketingSectionHeadingClass}>
-						From idea to <span class="mark-accent">working project.</span>
-					</h2>
+					<h2 class={marketingSectionHeadingClass}>Better tools. Richer context.</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						Build a web app, prototype a device, or connect the two. Sprocket handles{' '}
-						<span class="mark-verb">implementation, technical context, and purchasing</span> in the same
-						project.
+						Sprocket uses your development tools, reads complete web pages, and brings your
+						documents into the project. It gathers the details it needs, then uses them to build and
+						test.
 					</p>
 					<p class="mt-8 font-brand text-xl font-semibold text-foreground">
-						Direct the work. Review the files. Ask for changes.
+						Code, context, and checkout in one place.
 					</p>
 					<a
 						href="/#sprocket"
@@ -243,8 +239,6 @@ const softwareLd = {
 			</div>
 		</section>
 
-		<SprocketCapabilities />
-
 		<!-- Vario -->
 		<section id="vario" class="border-t border-border/50 bg-background" data-ph-section="vario">
 			<div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
@@ -280,9 +274,7 @@ const softwareLd = {
 				class="mx-auto grid max-w-6xl items-start gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28"
 			>
 				<div>
-					<h2 class={marketingSectionHeadingClass}>
-						Stay in the <span class="mark-accent">loop</span>
-					</h2>
+					<h2 class={marketingSectionHeadingClass}>Stay in the loop</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
 						Product launches, architecture notes, and what we're building next, written for people
 						who actually ship.
