@@ -106,9 +106,7 @@ export function inertBackground(keep?: HTMLElement | null): () => void {
 /** Render a node as a direct child of document.body. */
 export function portal(node: HTMLElement) {
 	document.body.appendChild(node);
-	return {
-		destroy() {
-			node.remove();
-		}
+	return () => {
+		node.remove();
 	};
 }
