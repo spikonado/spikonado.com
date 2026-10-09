@@ -21,18 +21,18 @@ import { cn } from '@/utils';
 
 const sprocketRelease = await fetchLatestSprocketRelease();
 
-const capabilityItems = [
+const solvedItems = [
 	{
-		title: 'Your tools, in your project',
-		body: 'Run terminal commands, edit files, and test the result in a browser. Sprocket works with the tools your project already uses.'
+		title: 'Hardware and software, same platform',
+		body: 'One agent for software and hardware. Ship apps & websites, design electronics, and build full systems without switching tools.'
 	},
 	{
-		title: 'Full pages and files, not snippets',
-		body: 'Read current docs and dynamic web pages. Bring in PDFs, spreadsheets, and images without manual conversion. Long web results stay available instead of being cut short.'
+		title: 'Built for anyone who invents',
+		body: 'Apps, robots, devices, and the systems that glue them together should all be in reach, not locked behind expert-only tooling.'
 	},
 	{
-		title: 'Parts and subscriptions, purchased',
-		body: 'Ask Sprocket to source and buy what you need, with payments kept within the merchant and spending limits you approve.'
+		title: 'Built for agents and humans',
+		body: 'A stack designed so AI and people can ship together, without fighting the tools along the way.'
 	}
 ] as const;
 
@@ -65,7 +65,10 @@ const softwareLd = {
 					<h1
 						class="max-w-xl font-brand text-3xl leading-[1.1] font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl"
 					>
-						Your imagination is the limit to what you can build
+						<span class="mark-accent">Your</span>{' '}
+						<span class="mark-accent">imagination</span> is the limit to what <span
+							class="mark-accent">you can build</span
+						>
 					</h1>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
 						A way for anyone to build <span class="mark-accent">any kind of technology</span>
@@ -136,8 +139,9 @@ const softwareLd = {
 						<span class="mark-verb">hardware</span>.
 					</p>
 					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
-						Sprocket designs electronics, tests code end-to-end, and buys parts or subscriptions for
-						your project when asked.
+						Sprocket <span class="mark-verb">designs electronics</span>,{' '}
+						<span class="mark-verb">tests code end-to-end</span>, and{' '}
+						<span class="mark-verb">buys parts or subscriptions</span> for your project when asked.
 					</p>
 					<div class="mt-8 flex w-full max-w-md flex-col gap-3">
 						<div class="flex flex-col gap-3 sm:flex-row sm:items-start">
@@ -182,20 +186,20 @@ const softwareLd = {
 			</div>
 		</section>
 
-		<!-- Platform -->
+		<!-- Platform / Solved -->
 		<section id="platform" class="border-t border-border/50 bg-surface" data-ph-section="platform">
 			<div
 				class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-8 lg:py-28"
 			>
 				<div>
-					<h2 class={marketingSectionHeadingClass}>Better tools. Richer context.</h2>
+					<h2 class={marketingSectionHeadingClass}>Solved.</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						Sprocket uses your development tools, reads complete web pages, and brings your
-						documents into the project. It gathers the details it needs, then uses them to build and
-						test.
+						We take on the hard parts of building technology so you, and your agents, can move from
+						idea to working system{' '}
+						<span class="mark-verb">without reinventing the stack</span>.
 					</p>
 					<p class="mt-8 font-brand text-xl font-semibold text-foreground">
-						Code, context, and checkout in one place.
+						Spikonado is better than stitching it together yourself.
 					</p>
 					<a
 						href="/#sprocket"
@@ -210,7 +214,7 @@ const softwareLd = {
 
 				<ul class="divide-y divide-border/60 border-y border-border/60">
 					{
-						capabilityItems.map((item) => (
+						solvedItems.map((item) => (
 							<li class="flex gap-4 py-7 md:py-8">
 								<span
 									class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-strong md:h-8 md:w-8"
