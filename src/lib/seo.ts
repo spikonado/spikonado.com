@@ -10,7 +10,7 @@ export const DEFAULT_DESCRIPTION =
 	'Spikonado helps anyone build apps, robots, devices, and the systems that glue them together.';
 
 export const SPROCKET_DESCRIPTION =
-	'Turn your ideas into apps, websites, and devices with Sprocket. Describe what you want, let it write code and create project files, then ask for changes.';
+	'Sprocket builds software and designs hardware with AI. Write and test code, create schematics, use rich web and file context, and buy parts or subscriptions within approved limits.';
 
 export const ORGANIZATION_SAME_AS = [
 	'https://github.com/spikonado',

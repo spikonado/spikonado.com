@@ -24,7 +24,7 @@ import { cn } from '@/utils';
 
 const release = await fetchLatestSprocketRelease();
 
-const title = titleWithBrand('Sprocket - Build apps, websites, and devices');
+const title = titleWithBrand('Sprocket - Build software and hardware with AI');
 const description = SPROCKET_DESCRIPTION;
 
 const softwareLd = {
@@ -52,12 +52,13 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 			</p>
 			<h1 class={cn(marketingProductHeadingClass, 'mt-3')}>Sprocket</h1>
 			<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-				Build <span class="mark-verb">apps, websites, and devices</span> with AI.
+				An AI engineering partner for <span class="mark-verb">software</span> and{' '}
+				<span class="mark-verb">hardware</span>.
 			</p>
 			<figure
 				class="mt-8 overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]"
 			>
-				<ProductImagePlaceholder label="Describe an app → Sprocket builds it" />
+				<ProductImagePlaceholder label="Sprocket working on code and a hardware design" />
 			</figure>
 			<ul class="mt-6 divide-y divide-border/60 border-y border-border/60">
 				<li class="flex gap-4 py-5">
@@ -72,8 +73,8 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 						</svg>
 					</span>
 					<p class={featureTextClass}>
-						<span class="mark-verb">Describe what you want to make</span>. Sprocket writes code,
-						creates project files, and runs checks on your computer.
+						<span class="mark-verb">Build software and design electronics</span>. Sprocket writes
+						and tests code, creates schematics, and prepares parts lists and assembly guides.
 					</p>
 				</li>
 				<li class="flex gap-4 py-5">
@@ -88,8 +89,9 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 						</svg>
 					</span>
 					<p class={featureTextClass}>
-						<span class="mark-verb">See the result and ask for changes</span>. Build something new,
-						add a feature, or fix a problem in an existing project.
+						<span class="mark-verb">Put rich technical context to work</span>. Full web pages,
+						current docs, PDFs, spreadsheets, and images guide the build, without manual copying or
+						conversion.
 					</p>
 				</li>
 				<li class="flex gap-4 py-5">
@@ -104,9 +106,8 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 						</svg>
 					</span>
 					<p class={featureTextClass}>
-						<span class="mark-verb">Get help with the rest, too</span>. Sprocket reads your
-						documents, looks things up online, and can buy parts or subscriptions within limits you
-						approve.
+						<span class="mark-verb">Buy electronics and SaaS subscriptions</span>. Sprocket sources
+						what you need and pays within merchant and spending limits you approve.
 					</p>
 				</li>
 			</ul>

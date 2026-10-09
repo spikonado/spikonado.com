@@ -6,43 +6,43 @@ import { cn } from '@/utils';
 const capabilities = [
 	{
 		id: 'building',
-		category: 'From idea to project',
-		heading: 'Describe it.',
-		accent: 'Start building.',
-		body: 'Ask for an app, a website, or a new feature. Sprocket writes the code, changes your project files, and runs checks. Building a device? It can also create electronics diagrams, parts lists, and assembly guides.',
-		image: 'An idea in the chat + the app Sprocket is building',
-		caption: 'Start a new project or work on one you already have.',
+		category: 'Software and hardware',
+		heading: 'Write the code.',
+		accent: 'Design the circuit.',
+		body: 'Build an app, develop firmware, or design electronics. Sprocket writes and tests code, creates schematics, and prepares parts lists and assembly guides. Work on software, hardware, or the two together.',
+		image: 'App code + firmware + circuit schematic',
+		caption: 'Project files you can inspect, edit, and build on.',
 		note: 'Review the results before using them. Hardware designs need validation before you build.'
 	},
 	{
-		id: 'iteration',
-		category: 'Make it yours',
-		heading: 'See it.',
-		accent: 'Shape it.',
-		body: 'Review previews and project files as Sprocket works. Ask for a simpler layout, another feature, or a fix. It makes the changes, and you keep the files.',
-		image: 'App preview + a request for changes + the updated app',
-		caption: 'Keep improving the result through conversation.',
+		id: 'web-context',
+		category: 'Context from the web',
+		heading: 'Build from',
+		accent: 'the source.',
+		body: 'Sprocket reads current documentation, datasheets, and supplier pages to inform its work. It extracts full page content, including dynamic websites, and keeps long results available instead of cutting them short.',
+		image: 'API documentation + datasheet + changes to the project',
+		caption: 'Current technical information put to use in your build.',
 		note: ''
 	},
 	{
 		id: 'project-inputs',
-		category: 'Use what you have',
-		heading: 'Bring your',
-		accent: 'starting point.',
-		body: 'Share a brief, a screenshot, a spreadsheet, or a technical document. Sprocket reads your materials and looks up current information online to help build what you asked for.',
-		image: 'A brief + a reference image + the project taking shape',
-		caption: 'Your materials help Sprocket understand what to make.',
+		category: 'Context from your files',
+		heading: 'Your documents.',
+		accent: 'Part of the build.',
+		body: 'Bring a product brief, a PDF datasheet, slides, or a spreadsheet. Sprocket converts documents into structured text it can work with, reads images, and uses the details in your project. No manual conversion needed.',
+		image: 'Product brief + PDF + spreadsheet → project changes',
+		caption: 'Requirements and specifications alongside the code and design.',
 		note: 'File formats and size limits apply. Documents that need online conversion or text extraction are sent to Firecrawl.'
 	},
 	{
 		id: 'purchasing',
-		category: 'Parts and subscriptions',
-		heading: 'Get what',
-		accent: 'you need.',
-		body: 'Need an online service for your app or electronics for a prototype? Ask Sprocket to find and buy them. You approve the seller and spending limit before it can pay.',
-		image: 'An online subscription + electronics + spending approval',
-		caption: 'Purchasing can be part of the same project conversation.',
-		note: 'A standing approval can allow later purchases within its limits. Store and payment support varies.'
+		category: 'Purchasing built in',
+		heading: 'Source it.',
+		accent: 'Buy it.',
+		body: 'Ask Sprocket to find and purchase electronics or a SaaS subscription. Approve the merchant and spending limit, then let it complete checkout with a single-use payment credential.',
+		image: 'Electronics + SaaS subscription + spending approval + checkout',
+		caption: 'From choosing what you need to paying for it.',
+		note: 'Standing approvals can allow later purchases within their limits. Merchant and payment-service support varies.'
 	}
 ] as const;
 ---
