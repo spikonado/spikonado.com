@@ -1,5 +1,4 @@
-import { createClient, type User } from '@workos-inc/authkit-js';
-import { ConvexClient, ConvexHttpClient } from 'convex/browser';
+import { ConvexHttpClient } from 'convex/browser';
 import {
 	api,
 	type AccessPhase,
@@ -10,9 +9,12 @@ import {
 } from '@/lib/convex/api';
 import { storeCheckoutAttempt } from '@/lib/pricing/pending';
 import { resolveCheckoutMode, type DodoCheckoutMode } from '@/lib/pricing/config';
-import { pricingAuthOptions } from '@/lib/pricing/auth-config';
-
-type AuthClient = Awaited<ReturnType<typeof createClient>>;
+import {
+	createPricingAuthClient,
+	signOutPricingSession,
+	type PricingAuthClient,
+	type PricingUser
+} from '@/lib/pricing/auth-client';
 
 export type {
 	AccessPhase,
@@ -50,17 +52,12 @@ export type CheckoutStatus = {
 };
 
 export type PricingBillingClient = {
-	convex: ConvexClient;
-	auth: AuthClient | null;
+	auth: PricingAuthClient | null;
 	isConfigured: boolean;
 	error: string | null;
 };
 
 let clientPromise: Promise<PricingBillingClient> | null = null;
-
-function pricingCallbackUri(): string {
-	return `${window.location.origin}/pricing/callback`;
-}
 
 function pricingHttpClient(url: string): ConvexHttpClient {
 	return new ConvexHttpClient(url, {
@@ -83,7 +80,7 @@ export function requireConvexUrl(): string {
  * client is built (sign-out, account replacement, token refresh), so callers
  * must never act on a stale cached user.
  */
-function liveUser(client: PricingBillingClient): User | null {
+function liveUser(client: PricingBillingClient): PricingUser | null {
 	if (!client.auth || !client.isConfigured) return null;
 	try {
 		return client.auth.getUser();
@@ -92,8 +89,23 @@ function liveUser(client: PricingBillingClient): User | null {
 	}
 }
 
-function accountIdFor(user: User): string {
-	return user.id ?? user.email ?? '';
+function accountIdFor(user: PricingUser): string {
+	return user.id;
+}
+
+async function authenticatedPricingHttpClient(
+	client: PricingBillingClient,
+	expectedAccountId: string
+): Promise<ConvexHttpClient> {
+	const token = await client.auth?.getAccessToken();
+	if (!token) throw new Error('Sign in to continue this billing action.');
+	const current = liveUser(client);
+	if (!current || accountIdFor(current) !== expectedAccountId) {
+		throw new Error('This billing action was cancelled.');
+	}
+	const http = pricingHttpClient(requireConvexUrl());
+	http.setAuth(token);
+	return http;
 }
 
 /** Unauthenticated catalog fetch for SSR/build and the pricing island. */
@@ -111,39 +123,10 @@ export async function initializePricingBilling(): Promise<PricingBillingClient> 
 	if (clientPromise) return clientPromise;
 
 	clientPromise = (async () => {
-		const convexUrl = requireConvexUrl();
-		// HTTP bootstrap so sign-in does not wait on the Convex websocket.
-		const bootstrap = await pricingHttpClient(convexUrl).query(
-			api.authBootstrap.getClientConfig,
-			{}
-		);
-		const clientId = bootstrap.workosClientId?.trim();
-		if (!clientId) {
-			return {
-				convex: new ConvexClient(convexUrl),
-				auth: null,
-				isConfigured: false,
-				error: 'Sign-in is not configured yet.'
-			};
-		}
-
-		const auth = await createClient(clientId, {
-			...pricingAuthOptions(),
-			redirectUri: pricingCallbackUri()
-		});
-
-		const convex = new ConvexClient(convexUrl);
-		convex.setAuth(async ({ forceRefreshToken }) => {
-			try {
-				const token = await auth.getAccessToken({ forceRefresh: forceRefreshToken });
-				return token ?? undefined;
-			} catch {
-				return undefined;
-			}
-		});
+		requireConvexUrl();
+		const auth = await createPricingAuthClient();
 
 		return {
-			convex,
 			auth,
 			isConfigured: true,
 			error: null
@@ -166,15 +149,14 @@ export async function signInForPricing(): Promise<void> {
 }
 
 export async function signOutOfPricing(): Promise<void> {
-	const client = await initializePricingBilling();
-	if (!client.auth) return;
-	await client.auth.signOut({
-		navigate: false,
-		returnTo: `${window.location.origin}/pricing`
-	});
-	void client.convex.close();
-	client.auth.dispose();
-	clientPromise = null;
+	const client = await clientPromise?.catch(() => null);
+	try {
+		if (client?.auth) await client.auth.signOut();
+		else await signOutPricingSession();
+	} finally {
+		client?.auth?.dispose();
+		clientPromise = null;
+	}
 }
 
 export async function fetchMySubscription(expectedAccountId?: string): Promise<MySubscription> {
@@ -187,14 +169,16 @@ export async function fetchMySubscription(expectedAccountId?: string): Promise<M
 			billingManaged: false
 		};
 	}
-	if (expectedAccountId && accountIdFor(initiator) !== expectedAccountId) {
+	const initiatorAccount = accountIdFor(initiator);
+	if (expectedAccountId && initiatorAccount !== expectedAccountId) {
 		throw new Error('This billing action was cancelled.');
 	}
-	const result = await client.convex.query(api.billing.getMySubscription, {});
+	const http = await authenticatedPricingHttpClient(client, initiatorAccount);
+	const result = await http.query(api.billing.getMySubscription, {});
 	// The query result is scoped to the authenticated account at request time;
 	// a sign-out or account switch during the query makes the result stale.
 	const current = liveUser(client);
-	if (!current || accountIdFor(current) !== accountIdFor(initiator)) {
+	if (!current || accountIdFor(current) !== initiatorAccount) {
 		throw new Error('This billing action was cancelled.');
 	}
 	return {
@@ -261,7 +245,9 @@ export async function createCheckout(
 	if (expectedAccountId && initiatorAccount !== expectedAccountId) {
 		throw new Error('This billing action was cancelled.');
 	}
-	const result = await client.convex.action(api.billing.checkout, {
+	const http = await authenticatedPricingHttpClient(client, initiatorAccount);
+	if (!isCurrent()) throw new Error('This billing action was cancelled.');
+	const result = await http.action(api.billing.checkout, {
 		tier: tierId,
 		interval
 	});
@@ -309,7 +295,8 @@ export async function fetchCheckoutStatus(
 	if (expectedAccountId && initiatorAccount !== expectedAccountId) {
 		throw new Error('This billing action was cancelled.');
 	}
-	const result = await client.convex.action(api.billing.getCheckoutStatus, { attemptId });
+	const http = await authenticatedPricingHttpClient(client, initiatorAccount);
+	const result = await http.action(api.billing.getCheckoutStatus, { attemptId });
 	const current = liveUser(client);
 	if (!current || accountIdFor(current) !== initiatorAccount) {
 		throw new Error('This billing action was cancelled.');
@@ -330,7 +317,8 @@ export async function openCustomerPortal(expectedAccountId?: string): Promise<st
 	if (expectedAccountId && initiatorAccount !== expectedAccountId) {
 		throw new Error('This billing action was cancelled.');
 	}
-	const result = await client.convex.action(api.billing.customerPortal, {});
+	const http = await authenticatedPricingHttpClient(client, initiatorAccount);
+	const result = await http.action(api.billing.customerPortal, {});
 	const current = liveUser(client);
 	if (!current || accountIdFor(current) !== initiatorAccount) {
 		throw new Error('This billing action was cancelled.');

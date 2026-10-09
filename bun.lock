@@ -15,7 +15,7 @@
         "@fontsource/ibm-plex-mono": "^5.3.0",
         "@fontsource/ibm-plex-sans": "^5.3.0",
         "@tailwindcss/vite": "^4.2.1",
-        "@workos-inc/authkit-js": "^0.20.2",
+        "@workos-inc/node": "^11.0.0",
         "astro": "7.1.0",
         "botid": "^1.5.11",
         "clsx": "^2.1.1",
@@ -554,7 +554,7 @@
 
     "@vscode/l10n": ["@vscode/l10n@0.0.18", "", {}, "sha512-KYSIHVmslkaCDyw013pphY+d7x1qV8IZupYfeIfzNA+nsaWHbn5uPuQRvdRFsa9zFzGeudPuoGoZ1Op4jrJXIQ=="],
 
-    "@workos-inc/authkit-js": ["@workos-inc/authkit-js@0.20.3", "", {}, "sha512-99VKaujgh9ECMjRtKij6KDYQu/XC4ElbpCV8I2vItTchI9hQ1GGfJOBJpeqa2C8AYPKdZqlj3vVlpIjS/YlM0A=="],
+    "@workos-inc/node": ["@workos-inc/node@11.0.0", "", {}, "sha512-swUT6CbkuVQXMOtUpI70LZ8usjSg8OXcKMjKdoYLeqCApRI0Oo97l+nZ0lKzZ5GxjxgcVZGGVK025h7z9WyCJg=="],
 
     "abbrev": ["abbrev@3.0.1", "", {}, "sha512-AO2ac6pjRB3SJmGJo+v5/aK6Omggp6fsLrs6wN9bd35ulu4cCwaAU9+7ZhXjeqHVkaHThLuzH0nZr0YpCDhygg=="],
 

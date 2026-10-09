@@ -10,7 +10,11 @@
 		void (async () => {
 			try {
 				const params = new URLSearchParams(window.location.search);
-				const callbackError = params.get('error_description') ?? params.get('error');
+				if (params.has('error')) {
+					message =
+						'Sign-in could not be completed. Return to pricing and try again. Your checkout choice was saved.';
+					return;
+				}
 				const client = await initializePricingBilling();
 				if (!active) return;
 				if (client.auth?.getUser()) {
@@ -28,7 +32,6 @@
 					return;
 				}
 				message =
-					callbackError ??
 					client.error ??
 					'Sign-in could not be completed. Return to pricing and try again. Your checkout choice was saved.';
 			} catch (error) {

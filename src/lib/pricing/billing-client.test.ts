@@ -1,11 +1,16 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { User } from '@workos-inc/authkit-js';
+import { getFunctionName } from 'convex/server';
+import type { PricingAuthClient, PricingUser } from '@/lib/pricing/auth-client';
 import {
 	createCheckout,
 	fetchCheckoutStatus,
 	fetchMySubscription,
+	fetchPublicPricingCatalog,
+	initializePricingBilling,
 	openCustomerPortal,
-	resetPricingBillingForTests
+	resetPricingBillingForTests,
+	signInForPricing,
+	signOutOfPricing
 } from '@/lib/pricing/billing-client';
 import { createBillingOperations } from '@/lib/pricing/operation';
 
@@ -47,9 +52,19 @@ function restoreStorage(): void {
 
 restoreStorage();
 
-let currentUser: User | null;
-let bootstrapBehavior: () => Promise<{ workosClientId: string }>;
-const convexCalls: { route: ConvexRoute; args: unknown }[] = [];
+let currentUser: PricingUser | null;
+let authCreationBehavior: () => Promise<PricingAuthClient>;
+const auth = {
+	getUser: () => currentUser,
+	getAccessToken: mock<PricingAuthClient['getAccessToken']>(async () => 'access-token'),
+	signIn: mock(async () => {}),
+	signOut: mock(async () => {}),
+	dispose: mock(() => {})
+} satisfies PricingAuthClient;
+const createAuth = mock(() => authCreationBehavior());
+const directSignOut = mock(async () => {});
+const httpClients: { url: string; token: string | undefined }[] = [];
+const convexCalls: { route: ConvexRoute; args: unknown; token: string | undefined }[] = [];
 let checkoutBehavior: () => Promise<{
 	checkout_url: string;
 	attemptId?: string;
@@ -75,47 +90,46 @@ let subscriptionBehavior: () => Promise<{
 const originalConvexUrl = process.env.PUBLIC_CONVEX_URL;
 const originalCheckoutMode = process.env.PUBLIC_DODO_CHECKOUT_MODE;
 
-mock.module('@workos-inc/authkit-js', () => ({
-	createClient: async () => {
-		return { getUser: () => currentUser, signIn: async () => {} };
-	}
+mock.module('@/lib/pricing/auth-client', () => ({
+	createPricingAuthClient: createAuth,
+	signOutPricingSession: directSignOut
 }));
 
 mock.module('convex/browser', () => ({
 	ConvexHttpClient: class {
-		constructor(public url: string) {}
-		async query() {
-			return bootstrapBehavior();
+		token: string | undefined;
+		constructor(public url: string) {
+			httpClients.push(this);
 		}
-		async action() {
-			return { plans: [] };
+		setAuth(token: string) {
+			this.token = token;
 		}
-	},
-	ConvexClient: class {
-		constructor(public url: string) {}
-		setAuth() {}
 		async query(ref: unknown, args: unknown) {
-			convexCalls.push({ route: 'getMySubscription', args });
+			convexCalls.push({ route: 'getMySubscription', args, token: this.token });
 			return subscriptionBehavior();
 		}
 		async action(ref: unknown, args: unknown) {
+			if (
+				getFunctionName(ref as Parameters<typeof getFunctionName>[0]) === 'pricing:getPublicCatalog'
+			) {
+				return { plans: [] };
+			}
 			const route = routeFor(args) ?? 'customerPortal';
-			convexCalls.push({ route, args });
+			convexCalls.push({ route, args, token: this.token });
 			if (route === 'getCheckoutStatus') return statusBehavior();
 			if (route === 'customerPortal') return portalBehavior();
 			if (route === 'checkout') return checkoutBehavior();
 			throw new Error(`Unexpected action route: ${route}`);
 		}
-		async close() {}
 	}
 }));
 
-function initiatingUser(): User {
-	return { id: 'user-a', email: 'a@example.com' } as User;
+function initiatingUser(): PricingUser {
+	return { id: 'user-a', email: 'a@example.com', firstName: null };
 }
 
-function userB(): User {
-	return { id: 'user-b', email: 'b@example.com' } as User;
+function userB(): PricingUser {
+	return { id: 'user-b', email: 'b@example.com', firstName: null };
 }
 
 function storedAttempt(): Record<string, unknown> | null {
@@ -129,8 +143,19 @@ beforeEach(() => {
 	process.env.PUBLIC_DODO_CHECKOUT_MODE = 'test';
 	currentUser = initiatingUser();
 	convexCalls.length = 0;
+	httpClients.length = 0;
 	sessionMemory.clear();
-	bootstrapBehavior = async () => ({ workosClientId: 'workos-test-client' });
+	authCreationBehavior = async () => auth;
+	createAuth.mockClear();
+	directSignOut.mockReset();
+	directSignOut.mockResolvedValue(undefined);
+	auth.getAccessToken.mockReset();
+	auth.getAccessToken.mockResolvedValue('access-token');
+	auth.signIn.mockReset();
+	auth.signIn.mockResolvedValue(undefined);
+	auth.signOut.mockReset();
+	auth.signOut.mockResolvedValue(undefined);
+	auth.dispose.mockClear();
 	subscriptionBehavior = async () => ({
 		tier: 'free',
 		tierLabel: 'Free',
@@ -155,15 +180,241 @@ afterEach(() => {
 	else process.env.PUBLIC_DODO_CHECKOUT_MODE = originalCheckoutMode;
 });
 
+describe('pricing billing authentication', () => {
+	test('concurrent initialization shares the configured auth adapter', async () => {
+		const creation = deferred<PricingAuthClient>();
+		authCreationBehavior = () => creation.promise;
+		const first = initializePricingBilling();
+		const second = initializePricingBilling();
+		creation.resolve(auth);
+
+		const client = await first;
+		expect(await second).toBe(client);
+		expect(await initializePricingBilling()).toBe(client);
+		expect(client.auth).toBe(auth);
+		expect(client.isConfigured).toBe(true);
+		expect(client.error).toBeNull();
+		expect(createAuth.mock.calls).toEqual([[]]);
+	});
+
+	test('initialization requires a Convex URL and retries once it is configured', async () => {
+		delete process.env.PUBLIC_CONVEX_URL;
+		await expect(initializePricingBilling()).rejects.toThrow('missing PUBLIC_CONVEX_URL');
+		process.env.PUBLIC_CONVEX_URL = ' https://billing-tests.convex.cloud ';
+
+		await fetchMySubscription('user-a');
+		expect(httpClients[0].url).toBe('https://billing-tests.convex.cloud');
+		expect(createAuth).toHaveBeenCalledTimes(1);
+	});
+
+	test('an adapter initialization failure propagates and permits a retry', async () => {
+		authCreationBehavior = async () => {
+			throw new Error('Session service is unavailable.');
+		};
+		await expect(initializePricingBilling()).rejects.toThrow('Session service is unavailable.');
+		authCreationBehavior = async () => auth;
+
+		expect((await initializePricingBilling()).auth).toBe(auth);
+		expect(createAuth).toHaveBeenCalledTimes(2);
+	});
+
+	test('each billing operation uses a fresh HTTP client with its own token', async () => {
+		auth.getAccessToken
+			.mockResolvedValueOnce('subscription-token')
+			.mockResolvedValueOnce('checkout-token')
+			.mockResolvedValueOnce('status-token')
+			.mockResolvedValueOnce('portal-token');
+
+		await fetchMySubscription('user-a');
+		await createCheckout('team', 'monthly', 'user-a');
+		await fetchCheckoutStatus('attempt-1', 'user-a');
+		await openCustomerPortal('user-a');
+
+		expect(convexCalls.map(({ route, token }) => ({ route, token }))).toEqual([
+			{ route: 'getMySubscription', token: 'subscription-token' },
+			{ route: 'checkout', token: 'checkout-token' },
+			{ route: 'getCheckoutStatus', token: 'status-token' },
+			{ route: 'customerPortal', token: 'portal-token' }
+		]);
+		expect(httpClients.map((http) => http.token)).toEqual([
+			'subscription-token',
+			'checkout-token',
+			'status-token',
+			'portal-token'
+		]);
+		expect(new Set(httpClients).size).toBe(4);
+		expect(auth.getAccessToken.mock.calls).toEqual([[], [], [], []]);
+	});
+
+	test('public catalog fetch uses unauthenticated HTTP without initializing auth', async () => {
+		expect(await fetchPublicPricingCatalog()).toEqual({ plans: [] });
+		expect(httpClients).toHaveLength(1);
+		expect(httpClients[0].token).toBeUndefined();
+		expect(createAuth).not.toHaveBeenCalled();
+	});
+
+	const billingOperations = [
+		['subscription', () => fetchMySubscription('user-a')],
+		['checkout', () => createCheckout('team', 'monthly', 'user-a')],
+		['status', () => fetchCheckoutStatus('attempt-1', 'user-a')],
+		['portal', () => openCustomerPortal('user-a')]
+	] as const;
+
+	for (const [name, run] of billingOperations) {
+		test(`${name} propagates token failures and succeeds on a later retry`, async () => {
+			auth.getAccessToken.mockRejectedValueOnce(new Error('Session temporarily unavailable.'));
+			await expect(run()).rejects.toThrow('Session temporarily unavailable.');
+			expect(convexCalls).toEqual([]);
+
+			await run();
+			expect(convexCalls).toHaveLength(1);
+			expect(convexCalls[0].token).toBe('access-token');
+			expect(createAuth).toHaveBeenCalledTimes(1);
+		});
+
+		test(`${name} requires an access token before issuing a request`, async () => {
+			auth.getAccessToken.mockResolvedValueOnce(undefined);
+			await expect(run()).rejects.toThrow('Sign in to continue this billing action.');
+			expect(convexCalls).toEqual([]);
+		});
+
+		test(`${name} cancels when token refresh switches the account`, async () => {
+			auth.getAccessToken.mockImplementationOnce(async () => {
+				currentUser = userB();
+				return 'user-b-token';
+			});
+			await expect(run()).rejects.toThrow('This billing action was cancelled.');
+			expect(convexCalls).toEqual([]);
+		});
+	}
+
+	test('subscription remains free when signed out without fetching a token', async () => {
+		currentUser = null;
+		expect(await fetchMySubscription()).toEqual({
+			tier: 'free',
+			tierLabel: 'Free',
+			billingManaged: false
+		});
+		expect(auth.getAccessToken).not.toHaveBeenCalled();
+	});
+
+	test('sign-in delegates to the adapter without SDK options', async () => {
+		await signInForPricing();
+		expect(auth.signIn.mock.calls).toEqual([[]]);
+	});
+
+	test('cold sign-out uses the server route without creating an adapter or requiring Convex', async () => {
+		delete process.env.PUBLIC_CONVEX_URL;
+		await signOutOfPricing();
+
+		expect(directSignOut.mock.calls).toEqual([[]]);
+		expect(createAuth).not.toHaveBeenCalled();
+	});
+
+	test('sign-out uses the server route after initialization has failed', async () => {
+		authCreationBehavior = async () => {
+			throw new Error('Session unavailable.');
+		};
+		await expect(initializePricingBilling()).rejects.toThrow('Session unavailable.');
+		await signOutOfPricing();
+
+		expect(directSignOut).toHaveBeenCalledTimes(1);
+		expect(createAuth).toHaveBeenCalledTimes(1);
+	});
+
+	test('sign-out waits for pending initialization before using the adapter', async () => {
+		const creation = deferred<PricingAuthClient>();
+		authCreationBehavior = () => creation.promise;
+		const initialization = initializePricingBilling();
+		const signOut = signOutOfPricing();
+		expect(auth.signOut).not.toHaveBeenCalled();
+		expect(directSignOut).not.toHaveBeenCalled();
+
+		creation.resolve(auth);
+		await initialization;
+		await signOut;
+		expect(auth.signOut).toHaveBeenCalledTimes(1);
+		expect(auth.dispose).toHaveBeenCalledTimes(1);
+		expect(directSignOut).not.toHaveBeenCalled();
+	});
+
+	test('sign-out waits for pending initialization to fail before using the server route', async () => {
+		const creation = deferred<PricingAuthClient>();
+		authCreationBehavior = () => creation.promise;
+		const initialization = initializePricingBilling().catch((error: Error) => error.message);
+		const signOut = signOutOfPricing();
+		expect(directSignOut).not.toHaveBeenCalled();
+
+		creation.reject(new Error('Session unavailable.'));
+		expect(await initialization).toBe('Session unavailable.');
+		await signOut;
+		expect(directSignOut).toHaveBeenCalledTimes(1);
+		expect(createAuth).toHaveBeenCalledTimes(1);
+	});
+
+	test('a direct server sign-out failure propagates and permits fresh initialization', async () => {
+		directSignOut.mockRejectedValueOnce(new Error('Sign-out unavailable.'));
+		await expect(signOutOfPricing()).rejects.toThrow('Sign-out unavailable.');
+
+		expect((await initializePricingBilling()).auth).toBe(auth);
+		expect(createAuth).toHaveBeenCalledTimes(1);
+	});
+
+	test('sign-out delegates without SDK options, disposes auth, then resets billing', async () => {
+		const client = await initializePricingBilling();
+		await signOutOfPricing();
+
+		expect(auth.signOut.mock.calls).toEqual([[]]);
+		expect(auth.dispose).toHaveBeenCalledTimes(1);
+		expect(directSignOut).not.toHaveBeenCalled();
+		expect(await initializePricingBilling()).not.toBe(client);
+		expect(createAuth).toHaveBeenCalledTimes(2);
+	});
+
+	test('billing can initialize a fresh session after a server sign-out failure', async () => {
+		const client = await initializePricingBilling();
+		auth.signOut.mockRejectedValueOnce(new Error('Sign-out unavailable.'));
+		await expect(signOutOfPricing()).rejects.toThrow('Sign-out unavailable.');
+
+		expect(auth.dispose).toHaveBeenCalledTimes(1);
+		expect(await initializePricingBilling()).not.toBe(client);
+		expect(createAuth).toHaveBeenCalledTimes(2);
+	});
+});
+
 describe('createCheckout account scoping', () => {
-	test('cancellation during initialization stops checkout before the provider action', async () => {
-		const bootstrap = deferred<{ workosClientId: string }>();
-		bootstrapBehavior = () => bootstrap.promise;
+	test('cancellation during token fetching stops checkout before the provider action', async () => {
+		const token = deferred<string>();
+		const tokenStarted = deferred<void>();
+		auth.getAccessToken.mockImplementationOnce(() => {
+			tokenStarted.resolve();
+			return token.promise;
+		});
 		const operations = createBillingOperations();
 		const guard = operations.begin('user-a');
 		const pending = createCheckout('team', 'monthly', 'user-a', guard.isCurrent);
+		await tokenStarted.promise;
 		operations.bumpGeneration();
-		bootstrap.resolve({ workosClientId: 'workos-test-client' });
+		token.resolve('access-token');
+
+		await expect(pending).rejects.toThrow('This billing action was cancelled.');
+		expect(convexCalls).toEqual([]);
+		expect(storedAttempt()).toBeNull();
+	});
+
+	test('cancellation during initialization stops checkout before the provider action', async () => {
+		const creation = deferred<PricingAuthClient>();
+		const creationStarted = deferred<void>();
+		authCreationBehavior = () => {
+			creationStarted.resolve();
+			return creation.promise;
+		};
+		const operations = createBillingOperations();
+		const guard = operations.begin('user-a');
+		const pending = createCheckout('team', 'monthly', 'user-a', guard.isCurrent);
+		await creationStarted.promise;
+		operations.bumpGeneration();
+		creation.resolve(auth);
 
 		await expect(pending).rejects.toThrow('This billing action was cancelled.');
 		expect(convexCalls).toEqual([]);
