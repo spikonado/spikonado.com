@@ -3,16 +3,11 @@ export interface BillingPlan {
 	title: string;
 	description: string;
 	highlight?: boolean;
-	currency?: string;
-	monthlyPrice: string;
-	monthlyCurrency?: string;
-	yearlyPrice: string;
-	yearlyCurrency?: string;
+	monthlyPrice: number | null;
+	monthlyCurrency: string;
+	yearlyPrice: number | null;
+	yearlyCurrency: string;
 	buttonText: string;
 	badge?: string;
-	features: Array<{
-		name: string;
-		icon: string;
-		iconColor?: string;
-	}>;
+	features: Array<{ name: string }>;
 }

@@ -5,7 +5,7 @@
  */
 import { useId, type ReactNode } from 'react';
 import type { BillingPlan } from '@/lib/billingsdk-config';
-import type { BillingInterval } from '@/lib/pricing/catalog';
+import { formatPrice, type BillingInterval } from '@/lib/pricing/catalog';
 import { cn } from '@/utils';
 
 export interface PricingTableOneProps {
@@ -20,11 +20,15 @@ export interface PricingTableOneProps {
 }
 
 function yearlyDiscount(plan: BillingPlan): number {
-	if (plan.monthlyCurrency && plan.yearlyCurrency && plan.monthlyCurrency !== plan.yearlyCurrency)
+	const monthly = plan.monthlyPrice;
+	const yearly = plan.yearlyPrice;
+	if (
+		monthly === null ||
+		yearly === null ||
+		monthly <= 0 ||
+		plan.monthlyCurrency !== plan.yearlyCurrency
+	)
 		return 0;
-	const monthly = Number.parseFloat(plan.monthlyPrice);
-	const yearly = Number.parseFloat(plan.yearlyPrice);
-	if (!Number.isFinite(monthly) || !Number.isFinite(yearly) || monthly <= 0) return 0;
 	return Math.max(0, Math.round(((monthly * 12 - yearly) / (monthly * 12)) * 100));
 }
 
@@ -72,7 +76,7 @@ export function PricingTableOne({
 							<span className="block rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition-colors peer-checked:bg-foreground peer-checked:text-background peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50 peer-focus-visible:outline-none">
 								{value === 'monthly' ? 'Monthly' : 'Yearly'}
 								{value === 'annual' && largestDiscount > 0 ? (
-									<span className="ml-2 text-xs">Save {largestDiscount}%</span>
+									<span className="ml-2 text-xs">Save up to {largestDiscount}%</span>
 								) : null}
 							</span>
 						</label>
@@ -84,7 +88,7 @@ export function PricingTableOne({
 			<div className="mt-12 grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-6">
 				{plans.map((plan) => {
 					const price = interval === 'annual' ? plan.yearlyPrice : plan.monthlyPrice;
-					const numericPrice = Number.parseFloat(price);
+					const currency = interval === 'annual' ? plan.yearlyCurrency : plan.monthlyCurrency;
 					const discount = yearlyDiscount(plan);
 					return (
 						<article
@@ -102,9 +106,9 @@ export function PricingTableOne({
 							<h2 className="font-brand text-xl font-semibold text-foreground">{plan.title}</h2>
 							<div className="mt-3 min-h-16">
 								<p className="font-brand text-3xl font-semibold tracking-tight text-foreground">
-									{Number.isFinite(numericPrice) ? `${plan.currency ?? ''}${price}` : price}
+									{price === null ? 'Unavailable' : formatPrice(price, currency)}
 								</p>
-								{Number.isFinite(numericPrice) ? (
+								{price !== null ? (
 									<p className="mt-1 text-sm text-muted-foreground">
 										per {interval === 'annual' ? 'year' : 'month'}
 										{interval === 'annual' && discount > 0 ? `, ${discount}% off` : ''}
@@ -142,7 +146,6 @@ export function PricingTableOne({
 								)}
 								onClick={() => onPlanSelect(plan.id)}
 								disabled={buttonDisabled?.(plan)}
-								aria-label={`Select ${plan.title} plan`}
 							>
 								{buttonLabel?.(plan) ?? plan.buttonText}
 							</button>

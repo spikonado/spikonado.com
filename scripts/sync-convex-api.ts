@@ -136,6 +136,9 @@ if (import.meta.main) {
 	const source = sourceValue ? resolve(sourceValue) : null;
 	let contract: Contract;
 	if (source) {
+		if (run(source, 'git', ['status', '--porcelain', '--untracked-files=normal'])) {
+			throw new Error('Commit backend changes before pinning the billing contract.');
+		}
 		const sourceRevision = run(source, 'git', ['rev-parse', 'HEAD']);
 		contract = parseContract(
 			run(join(source, 'apps/web'), 'bun', ['scripts/exportBillingContract.ts']),

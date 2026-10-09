@@ -1,48 +1,27 @@
 import { describe, expect, test } from 'bun:test';
-import { createBillingOperations, OperationStaleError } from './operation.ts';
+import { createBillingOperations } from './operation.ts';
 
-function fakeOverlay() {
-	const calls: string[] = [];
-	return {
-		calls,
-		overlay: {
-			open: () => 'overlay' as const,
-			close: () => {
-				calls.push('close');
-			}
-		}
-	};
-}
-
-describe('billing operations registry', () => {
-	test('an account switch supersedes the previous account operation', () => {
+describe('billing operations', () => {
+	test('a new same-account operation supersedes the previous one', () => {
 		const ops = createBillingOperations();
-		const first = ops.begin('checkout', 'user-a', null);
-		const second = ops.begin('checkout', 'user-b', null);
+		const first = ops.begin('user-a');
+		const second = ops.begin('user-a');
+		expect(second.context.accountId).toBe('user-a');
+		expect(second.context.generation).toBeGreaterThan(first.context.generation);
 		expect(first.isCurrent()).toBe(false);
 		expect(second.isCurrent()).toBe(true);
-		expect(() => first.assertCurrent()).toThrow(OperationStaleError);
+		expect(() => first.assertCurrent()).toThrow('This billing action was cancelled.');
+		second.assertCurrent();
 	});
 
-	test('a new same-account operation supersedes and closes the previous overlay', () => {
+	test('generation invalidation cancels the operation and a new account can begin', () => {
 		const ops = createBillingOperations();
-		const old = fakeOverlay();
-		const first = ops.begin('checkout', 'user-a', old.overlay);
-		const second = ops.begin('checkout', 'user-a', null);
-		expect(first.isCurrent()).toBe(false);
-		expect(second.isCurrent()).toBe(true);
-		expect(old.calls).toEqual(['close']);
-	});
-
-	test('bumping the generation invalidates everything and closes overlays', () => {
-		const ops = createBillingOperations();
-		const old = fakeOverlay();
-		const first = ops.begin('checkout', 'user-a', old.overlay);
-		const portal = ops.begin('portal', 'user-a', null);
+		const first = ops.begin('user-a');
 		ops.bumpGeneration();
+		expect(() => first.assertCurrent()).toThrow('This billing action was cancelled.');
+		const next = ops.begin('user-b');
+		expect(next.context.accountId).toBe('user-b');
 		expect(first.isCurrent()).toBe(false);
-		expect(portal.isCurrent()).toBe(false);
-		expect(old.calls).toEqual(['close']);
-		expect(() => first.assertCurrent()).toThrow(OperationStaleError);
+		expect(next.isCurrent()).toBe(true);
 	});
 });

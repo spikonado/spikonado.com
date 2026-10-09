@@ -2,28 +2,32 @@ import { describe, expect, test } from 'bun:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { BillingPlan } from '@/lib/billingsdk-config';
-import { PricingTableOne } from './pricing-table-one.tsx';
+import { PricingTableOne, type PricingTableOneProps } from './pricing-table-one.tsx';
 
 const basePlan: BillingPlan = {
 	id: 'team',
 	title: 'Team',
 	description: 'For engineering teams.',
-	currency: '$',
-	monthlyPrice: '20',
+	monthlyPrice: 20,
 	monthlyCurrency: 'USD',
-	yearlyPrice: '216',
+	yearlyPrice: 216,
 	yearlyCurrency: 'USD',
 	buttonText: 'Get Team',
-	features: [{ name: 'Shared projects', icon: 'check' }]
+	features: [{ name: 'Shared projects' }]
 };
 
-function render(plan: BillingPlan, interval: 'monthly' | 'annual' = 'annual'): string {
+function render(
+	plan: BillingPlan,
+	interval: 'monthly' | 'annual' = 'annual',
+	props: Partial<PricingTableOneProps> = {}
+): string {
 	return renderToStaticMarkup(
 		createElement(PricingTableOne, {
 			plans: [plan],
 			interval,
 			onIntervalChange: () => {},
-			onPlanSelect: () => {}
+			onPlanSelect: () => {},
+			...props
 		})
 	);
 }
@@ -44,16 +48,68 @@ describe('pricing table card rendering', () => {
 		expect(document.querySelector('article > p')?.textContent).toBe('For engineering teams.');
 	});
 
-	test('renders the yearly price with the selected interval currency', () => {
-		const markup = render({ ...basePlan, currency: '€' }, 'annual');
-		expect(markup).toContain('€216');
-		expect(markup).toContain('per year');
-		expect(markup).toContain('Save 10%');
+	test.each([
+		['monthly', 'CA$20', 'per month'],
+		['annual', 'A$216', 'per year']
+	] as const)('renders the %s price in its own currency', (interval, price, period) => {
+		const markup = render({ ...basePlan, monthlyCurrency: 'CAD', yearlyCurrency: 'AUD' }, interval);
+		expect(markup).toContain(price);
+		expect(markup).toContain(period);
 	});
 
-	test('omits discounts when interval prices use different currencies', () => {
-		const markup = render({ ...basePlan, monthlyCurrency: 'EUR' });
+	test('preserves fractional price precision', () => {
+		const markup = render({ ...basePlan, monthlyPrice: 19.5 }, 'monthly');
+		expect(markup).toContain('$19.50');
+	});
+
+	test('renders a zero price as available', () => {
+		const markup = render({ ...basePlan, monthlyPrice: 0 }, 'monthly');
+		expect(markup).toContain('$0');
+		expect(markup).toContain('per month');
+	});
+
+	test.each(['monthly', 'annual'] as const)('renders an unavailable %s price', (interval) => {
+		const plan = {
+			...basePlan,
+			...(interval === 'monthly' ? { monthlyPrice: null } : { yearlyPrice: null })
+		};
+		const markup = render(plan, interval);
+		expect(markup).toContain('Unavailable');
+		expect(markup).not.toContain('per month');
+		expect(markup).not.toContain('per year');
+	});
+
+	test('shows each annual discount and the largest potential saving', () => {
+		const markup = render(basePlan, 'annual', {
+			plans: [basePlan, { ...basePlan, id: 'pro', title: 'Pro', yearlyPrice: 192 }]
+		});
+		const document = new DOMParser().parseFromString(markup, 'text/html');
+		expect(document.querySelector('fieldset')?.textContent).toContain('Save up to 20%');
+		expect(
+			Array.from(document.querySelectorAll('article > div'), (card) => card.textContent)
+		).toEqual(['$216per year, 10% off', '$192per year, 20% off']);
+	});
+
+	test.each([
+		{ monthlyCurrency: 'EUR' },
+		{ monthlyPrice: null },
+		{ yearlyPrice: null },
+		{ monthlyPrice: 0 },
+		{ yearlyPrice: 240 },
+		{ yearlyPrice: 300 }
+	])('omits discounts without a lower comparable annual price: %p', (prices) => {
+		const markup = render({ ...basePlan, ...prices });
 		expect(markup).not.toContain('Save');
 		expect(markup).not.toContain('% off');
+	});
+
+	test('uses the actual action text as the button label', () => {
+		const document = new DOMParser().parseFromString(
+			render(basePlan, 'monthly', { buttonLabel: () => 'Manage billing' }),
+			'text/html'
+		);
+		const button = document.querySelector('article button')!;
+		expect(button.textContent).toBe('Manage billing');
+		expect(button.getAttribute('aria-label')).toBeNull();
 	});
 });

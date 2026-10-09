@@ -33,7 +33,7 @@ export const INTERVAL_SELECTED_EVENT = 'pricing_interval_selected';
 /** Authenticated paid-plan checkout session creation started. */
 export const CHECKOUT_STARTED_EVENT = 'pricing_checkout_started';
 
-/** Checkout lifecycle update (overlay, redirect, activation, error). No PII. */
+/** Checkout lifecycle update (redirect, activation, error). No PII. */
 export const CHECKOUT_STATUS_EVENT = 'pricing_checkout_status';
 
 export const NEWSLETTER_FORM = 'build_log' as const;

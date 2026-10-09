@@ -83,10 +83,6 @@ function subscription(overrides: Partial<MySubscription> = {}): MySubscription {
 	};
 }
 
-import type { DodoCheckoutEvent } from '@/lib/pricing/checkout-overlay';
-
-type OverlayEvent = DodoCheckoutEvent;
-
 type CheckoutStatusResult = {
 	attemptId: string;
 	status: string;
@@ -121,12 +117,15 @@ type PricingMocks = {
 	// When set, initializePricingBilling awaits this before resolving, letting a
 	// test change the account while initialization is genuinely in flight.
 	initializeDeferred: Deferred<void> | null;
+	catalogDeferred: Deferred<PublicPricingCatalog> | null;
 	initialAccount: { id: string; email: string } | null;
 	signOutError: Error | null;
+	signOutDeferred: Deferred<void> | null;
 	subscriptionResults: Array<MySubscription | Error>;
 	subscriptionDeferreds: Array<Deferred<MySubscription>>;
 	subscriptionExpectedAccounts: Array<string | undefined>;
 	checkoutCalls: { tier: string; interval: string }[];
+	checkoutExpectedAccounts: Array<string | undefined>;
 	checkoutDeferred: Deferred<{ checkoutUrl: string; attemptId: string }>;
 	portalDeferred: Deferred<string>;
 	portalCalls: number;
@@ -135,8 +134,6 @@ type PricingMocks = {
 	statusDeferred: Deferred<CheckoutStatusResult> | null;
 	statusResult: CheckoutStatusResult;
 	statusFailures: number;
-	overlayOpenings: { url: string; handler?: (event: OverlayEvent) => void }[];
-	overlayCloses: number;
 };
 
 // Module mocks below read through this handle; beforeEach installs a fresh
@@ -148,6 +145,13 @@ let root: Root;
 
 function signedIn(id = 'user-a') {
 	current.clientState.user = { id, email: `${id}@example.com` };
+}
+
+function seedAttempt(attemptId: string, userId = 'user-a') {
+	sessionMemory.set(
+		'spikonado_pricing_attempt',
+		JSON.stringify({ userId, attemptId, tierId: 'team', interval: 'monthly' })
+	);
 }
 
 function queueSubscriptions(...results: Array<MySubscription | Error>) {
@@ -184,7 +188,7 @@ mock.module('@/lib/pricing/billing-client', () => ({
 			error: null
 		};
 	},
-	fetchPublicPricingCatalog: async () => catalog,
+	fetchPublicPricingCatalog: async () => current.catalogDeferred?.promise ?? catalog,
 	fetchMySubscription: async (expectedAccountId?: string) => {
 		current.subscriptionExpectedAccounts.push(expectedAccountId);
 		const result = await nextSubscription();
@@ -192,25 +196,29 @@ mock.module('@/lib/pricing/billing-client', () => ({
 			throw new Error('This billing action was cancelled.');
 		return result;
 	},
-	createCheckout: async (tier: string, interval: string) => {
-		const checkout = current.checkoutCalls.find(
-			(call) => call.tier === tier && call.interval === interval
-		);
-		// Server-side revalidation replaces the client: it rejects any repeated
-		// or superseded creation for the same selection. The stored attempt
-		// reference is written only when creation succeeds, mirroring the real
-		// client persisting the attempt after a valid session response.
-		if (checkout) throw new Error('A checkout session was already created for this selection.');
+	createCheckout: async (
+		tier: string,
+		interval: string,
+		expectedAccountId?: string,
+		isCurrent: () => boolean = () => true
+	) => {
+		const accountId = current.clientState.user?.id;
+		if (!accountId || (expectedAccountId && accountId !== expectedAccountId) || !isCurrent()) {
+			throw new Error('This billing action was cancelled.');
+		}
 		current.checkoutCalls.push({ tier, interval });
+		current.checkoutExpectedAccounts.push(expectedAccountId);
 		const result = await current.checkoutDeferred.promise;
+		if (current.clientState.user?.id !== accountId || !isCurrent()) {
+			throw new Error('This billing action was cancelled.');
+		}
 		sessionMemory.set(
 			'spikonado_pricing_attempt',
 			JSON.stringify({
-				userId: current.clientState.user?.id,
+				userId: accountId,
 				attemptId: result.attemptId,
 				tierId: tier,
-				interval,
-				startedAt: Date.now()
+				interval
 			})
 		);
 		return result;
@@ -237,21 +245,10 @@ mock.module('@/lib/pricing/billing-client', () => ({
 	},
 	signInForPricing: async () => {},
 	signOutOfPricing: async () => {
+		if (current.signOutDeferred) await current.signOutDeferred.promise;
 		if (current.signOutError) throw current.signOutError;
 		current.clientState.user = null;
 	}
-}));
-
-mock.module('@/lib/pricing/checkout-overlay', () => ({
-	createCheckoutOverlay: () => ({
-		open: (url: string, handler?: (event: OverlayEvent) => void) => {
-			current.overlayOpenings.push({ url, handler });
-			return 'overlay' as const;
-		},
-		close: () => {
-			current.overlayCloses += 1;
-		}
-	})
 }));
 
 mock.module('@/lib/analytics/bootstrap', () => ({
@@ -274,6 +271,12 @@ function findButton(label: string | RegExp): HTMLButtonElement {
 	return match;
 }
 
+function expectPlanButtonsBusy() {
+	const buttons = Array.from(container.querySelectorAll<HTMLButtonElement>('article button'));
+	expect(buttons).toHaveLength(catalog.plans.length);
+	for (const button of buttons) expect(button.disabled).toBe(true);
+}
+
 async function click(button: HTMLButtonElement) {
 	await act(async () => {
 		button.click();
@@ -292,16 +295,28 @@ async function unmount() {
 	});
 }
 
+async function restoreFromBrowserBack() {
+	const event = new Event('pageshow');
+	Object.defineProperty(event, 'persisted', { value: true });
+	await act(async () => {
+		window.dispatchEvent(event);
+		await flushMicrotasks(40);
+	});
+}
+
 beforeEach(() => {
 	current = {
 		clientState: { user: null, isConfigured: true },
 		initializeDeferred: null,
+		catalogDeferred: null,
 		initialAccount: null,
 		signOutError: null,
+		signOutDeferred: null,
 		subscriptionResults: [subscription()],
 		subscriptionDeferreds: [],
 		subscriptionExpectedAccounts: [],
 		checkoutCalls: [],
+		checkoutExpectedAccounts: [],
 		checkoutDeferred: deferred(),
 		portalDeferred: deferred(),
 		portalCalls: 0,
@@ -309,9 +324,7 @@ beforeEach(() => {
 		statusExpectedAccounts: [],
 		statusDeferred: null,
 		statusResult: { attemptId: 'attempt-1', status: 'pending' },
-		statusFailures: 0,
-		overlayOpenings: [],
-		overlayCloses: 0
+		statusFailures: 0
 	};
 	portalAssigns = [];
 	sessionMemory.clear();
@@ -327,6 +340,7 @@ afterEach(async () => {
 		attemptId: 'z'
 	});
 	current.portalDeferred.resolve('https://portal.example/');
+	current.signOutDeferred?.resolve();
 	current.statusDeferred?.resolve({ attemptId: 'z', status: 'expired' });
 	try {
 		await unmount();
@@ -338,6 +352,60 @@ afterEach(async () => {
 });
 
 describe('pricing plans orchestration', () => {
+	test('a saved attempt remains recoverable when checkout validation fails', async () => {
+		signedIn();
+		await mount();
+		await click(findButton('Get Team'));
+		await act(async () => {
+			seedAttempt('attempt-invalid');
+			current.checkoutDeferred.reject(new Error('Checkout session was not created.'));
+		});
+		expect(text()).toContain('Checkout session was not created.');
+		expect(findButton('Check payment status').disabled).toBe(false);
+		expect(container.querySelector('a[href^="mailto:aarav@spikonado.com"]')).not.toBeNull();
+		expect(sessionMemory.has('spikonado_pricing_attempt')).toBe(true);
+		expect(portalAssigns).toEqual([]);
+		current.statusResult = { attemptId: 'attempt-invalid', status: 'awaiting_payment' };
+		await click(findButton('Check payment status'));
+		expect(current.statusCalls).toEqual(['attempt-invalid']);
+		expect(current.statusExpectedAccounts).toEqual(['user-a']);
+		expect(current.checkoutCalls).toHaveLength(1);
+	});
+
+	test('checkout disables repeated clicks while billing initializes', async () => {
+		signedIn();
+		await mount();
+		current.initializeDeferred = deferred();
+		await click(findButton('Get Team'));
+		expect(findButton('Starting checkout...').disabled).toBe(true);
+		expect(findButton('Start free').disabled).toBe(true);
+		await click(findButton('Starting checkout...'));
+		await click(findButton('Start free'));
+		expect(current.checkoutCalls).toEqual([]);
+		expect(portalAssigns).toEqual([]);
+		await act(async () => {
+			current.initializeDeferred!.resolve();
+			await flushMicrotasks(40);
+		});
+		expect(current.checkoutCalls).toEqual([{ tier: 'team', interval: 'monthly' }]);
+	});
+
+	test('live catalog refresh survives a billing action started from the build catalog', async () => {
+		signedIn();
+		current.catalogDeferred = deferred();
+		await mount();
+		await click(findButton('Get Team'));
+		await act(async () => {
+			current.catalogDeferred!.resolve({
+				plans: catalog.plans.map((plan) => ({
+					...plan,
+					label: plan.id === 'team' ? 'Updated team' : plan.label
+				}))
+			});
+		});
+		expect(container.querySelectorAll('article h2')[1]?.textContent).toBe('Updated team');
+	});
+
 	test('renders live tier prices and descriptions for each billing interval', async () => {
 		await mount();
 		const [free, team] = Array.from(container.querySelectorAll('article'));
@@ -353,13 +421,15 @@ describe('pricing plans orchestration', () => {
 		expect(team?.querySelector('div p')?.textContent).toBe('$200');
 	});
 
-	test('runs checkout for the signed-in account and confirms via server state only', async () => {
+	test('a plan click redirects to the hosted checkout for the signed-in account', async () => {
 		signedIn();
 		await mount();
-		expect(text()).toContain('dev@example.com'.replace('dev', 'user-a'));
+		expect(text()).toContain('user-a@example.com');
+		expect(portalAssigns).toEqual([]);
 
 		await click(findButton('Get Team'));
 		expect(current.checkoutCalls).toEqual([{ tier: 'team', interval: 'monthly' }]);
+		expect(current.checkoutExpectedAccounts).toEqual(['user-a']);
 
 		await act(async () => {
 			current.checkoutDeferred.resolve({
@@ -367,40 +437,35 @@ describe('pricing plans orchestration', () => {
 				attemptId: 'attempt-1'
 			});
 		});
-		expect(current.overlayOpenings.map((entry) => entry.url)).toEqual([
-			'https://checkout.example/session/cks_a'
-		]);
-		expect(text()).toContain('Complete checkout in the overlay');
-
-		queueSubscriptions(subscription({ tier: 'team', tierLabel: 'Team', billingManaged: true }));
-		current.statusResult = { attemptId: 'attempt-1', status: 'succeeded', activated: true };
-		await act(async () => {
-			current.overlayOpenings[0]?.handler?.({ event_type: 'checkout.closed' });
+		expect(portalAssigns).toEqual(['https://checkout.example/session/cks_a']);
+		expect(JSON.parse(sessionMemory.get('spikonado_pricing_attempt')!)).toEqual({
+			userId: 'user-a',
+			attemptId: 'attempt-1',
+			tierId: 'team',
+			interval: 'monthly'
 		});
-		// Let the activation poll observe the server-confirmed tier.
+		expect(current.statusCalls).toEqual([]);
+		expect(text()).not.toContain('Team is active');
+		expect(findButton('Redirecting to checkout...').disabled).toBe(true);
+		expectPlanButtonsBusy();
 		await act(async () => {
-			await new Promise((resolve) => setTimeout(resolve, 2_600));
+			container.querySelector<HTMLInputElement>('input[value="annual"]')!.click();
 		});
-		expect(text()).toContain('Team is active');
+		await click(findButton('Redirecting to checkout...'));
+		expect(current.checkoutCalls).toHaveLength(1);
+		expect(portalAssigns).toHaveLength(1);
 	});
 
-	test('closing an unconfirmed checkout retains status recovery after timeout', async () => {
+	test('mount recovery of an unconfirmed checkout retains status recovery after timeout', async () => {
 		let now = Date.now();
 		const clock = spyOn(Date, 'now').mockImplementation(() => now);
 		try {
 			signedIn();
+			seedAttempt('pending');
+			current.statusResult = { attemptId: 'pending', status: 'pending' };
 			await mount();
-			await click(findButton('Get Team'));
-			await act(async () => {
-				current.checkoutDeferred.resolve({
-					checkoutUrl: 'https://checkout.example/session/cks_pending',
-					attemptId: 'pending'
-				});
-			});
-			await act(async () => {
-				current.overlayOpenings[0]?.handler?.({ event_type: 'checkout.closed' });
-			});
-			expect(findButton('Check payment status').disabled).toBe(false);
+			expect(findButton('Checking…').disabled).toBe(true);
+			expect(current.statusCalls).toEqual(['pending']);
 			now += 31_000;
 			await act(async () => {
 				await new Promise((resolve) => setTimeout(resolve, 2_600));
@@ -408,13 +473,14 @@ describe('pricing plans orchestration', () => {
 			expect(text()).toContain('We could not confirm');
 			expect(findButton('Check payment status').disabled).toBe(false);
 			expect(sessionMemory.has('spikonado_pricing_attempt')).toBe(true);
-			expect(current.checkoutCalls).toEqual([{ tier: 'team', interval: 'monthly' }]);
+			expect(current.checkoutCalls).toEqual([]);
+			expect(portalAssigns).toEqual([]);
 		} finally {
 			clock.mockRestore();
 		}
 	}, 15_000);
 
-	test('closing an unpaid checkout offers same-link resume with no new create', async () => {
+	test('browser back recovers an unpaid checkout and resumes only after a click', async () => {
 		signedIn();
 		await mount();
 		await click(findButton('Get Team'));
@@ -429,27 +495,30 @@ describe('pricing plans orchestration', () => {
 			status: 'awaiting_payment',
 			checkout_url: 'https://checkout.example/session/cks_unpaid'
 		};
-		await act(async () => {
-			current.overlayOpenings[0]?.handler?.({ event_type: 'checkout.closed' });
-		});
+		await restoreFromBrowserBack();
+		expect(current.statusCalls).toEqual(['attempt-unpaid']);
+		expect(current.statusExpectedAccounts).toEqual(['user-a']);
 		expect(text()).toContain('We could not confirm');
 		expect(findButton('Continue checkout').disabled).toBe(false);
 		expect(findButton('Check payment status').disabled).toBe(false);
+		expect(portalAssigns).toEqual(['https://checkout.example/session/cks_unpaid']);
 
 		const storedAttempt = sessionMemory.get('spikonado_pricing_attempt');
 		await click(findButton('Continue checkout'));
 		expect(sessionMemory.get('spikonado_pricing_attempt')).toBe(storedAttempt);
-		expect(current.overlayOpenings.map((entry) => entry.url)).toEqual([
+		expect(portalAssigns).toEqual([
 			'https://checkout.example/session/cks_unpaid',
 			'https://checkout.example/session/cks_unpaid'
 		]);
 		expect(current.checkoutCalls).toEqual([{ tier: 'team', interval: 'monthly' }]);
+		expect(current.statusCalls).toEqual(['attempt-unpaid', 'attempt-unpaid']);
 
-		// Closing the resumed overlay keeps the same pending recovery available.
-		await act(async () => {
-			current.overlayOpenings[1]?.handler?.({ event_type: 'checkout.closed' });
-		});
+		await restoreFromBrowserBack();
 		expect(findButton('Continue checkout').disabled).toBe(false);
+		expect(current.statusCalls).toEqual(['attempt-unpaid', 'attempt-unpaid', 'attempt-unpaid']);
+		expect(current.statusExpectedAccounts).toEqual(['user-a', 'user-a', 'user-a']);
+		expect(portalAssigns).toHaveLength(2);
+		expect(current.checkoutCalls).toHaveLength(1);
 	}, 15_000);
 
 	test('reload recovery of an unpaid attempt offers the same checkout link', async () => {
@@ -472,14 +541,12 @@ describe('pricing plans orchestration', () => {
 		await mount();
 		expect(current.statusCalls).toEqual(['attempt-reload']);
 		expect(findButton('Continue checkout').disabled).toBe(false);
+		expect(portalAssigns).toEqual([]);
 
 		await click(findButton('Continue checkout'));
-		expect(current.overlayOpenings.map((entry) => entry.url)).toEqual([
-			'https://checkout.example/session/cks_reload'
-		]);
+		expect(portalAssigns).toEqual(['https://checkout.example/session/cks_reload']);
+		expect(current.statusCalls).toEqual(['attempt-reload', 'attempt-reload']);
 		expect(current.checkoutCalls).toEqual([]);
-		await click(findButton('Sign out'));
-		expect(current.overlayCloses).toBeGreaterThan(0);
 	}, 15_000);
 
 	test('resume refreshes billing when its stored attempt disappears', async () => {
@@ -505,11 +572,12 @@ describe('pricing plans orchestration', () => {
 
 		expect(text()).toContain('Your account billing status has been refreshed.');
 		expect(text()).not.toContain('Continue checkout');
-		expect(current.overlayOpenings).toEqual([]);
+		expect(current.subscriptionExpectedAccounts).toEqual(['user-a', 'user-a']);
+		expect(portalAssigns).toEqual([]);
 		expect(current.checkoutCalls).toEqual([]);
 	});
 
-	test('an account switch before resume never reopens the old account checkout', async () => {
+	test('an account switch before resume never redirects to the old account checkout', async () => {
 		sessionMemory.set(
 			'spikonado_pricing_attempt',
 			JSON.stringify({
@@ -532,35 +600,108 @@ describe('pricing plans orchestration', () => {
 		// user-b signs in after the resume UI was rendered for user-a.
 		signedIn('user-b');
 		await click(findButton('Continue checkout'));
-		expect(current.overlayOpenings).toEqual([]);
+		expect(portalAssigns).toEqual([]);
 		expect(current.checkoutCalls).toEqual([]);
 	}, 15_000);
 
-	test('an SDK error followed by close keeps status recovery, not a payment failure', async () => {
+	test('resume refreshes a changed server URL before an explicit redirect', async () => {
 		signedIn();
-		await mount();
-		await click(findButton('Get Team'));
-		await act(async () => {
-			current.checkoutDeferred.resolve({
-				checkoutUrl: 'https://checkout.example/session/cks_err',
-				attemptId: 'attempt-err'
-			});
-		});
+		seedAttempt('url-changed');
 		current.statusResult = {
-			attemptId: 'attempt-err',
+			attemptId: 'url-changed',
 			status: 'awaiting_payment',
-			checkout_url: 'https://checkout.example/session/cks_err'
+			checkout_url: 'https://checkout.example/session/old'
+		};
+		await mount();
+		current.statusResult = {
+			...current.statusResult,
+			checkout_url: 'https://checkout.example/session/new'
+		};
+		await click(findButton('Continue checkout'));
+		expect(portalAssigns).toEqual([]);
+		expect(findButton('Continue checkout').disabled).toBe(false);
+		await click(findButton('Continue checkout'));
+		expect(portalAssigns).toEqual(['https://checkout.example/session/new']);
+		expect(current.statusCalls).toEqual(['url-changed', 'url-changed', 'url-changed']);
+		expect(current.checkoutCalls).toEqual([]);
+		expectPlanButtonsBusy();
+	});
+
+	test('resume recovers a replaced stored attempt instead of redirecting the old one', async () => {
+		signedIn();
+		seedAttempt('old-attempt');
+		current.statusResult = {
+			attemptId: 'old-attempt',
+			status: 'awaiting_payment',
+			checkout_url: 'https://checkout.example/session/old'
+		};
+		await mount();
+		current.statusDeferred = deferred();
+		await click(findButton('Continue checkout'));
+		expectPlanButtonsBusy();
+		seedAttempt('new-attempt');
+		current.statusResult = {
+			attemptId: 'new-attempt',
+			status: 'awaiting_payment',
+			checkout_url: 'https://checkout.example/session/new'
 		};
 		await act(async () => {
-			current.overlayOpenings[0]?.handler?.({ event_type: 'checkout.error' });
-			current.overlayOpenings[0]?.handler?.({ event_type: 'checkout.closed' });
+			const pending = current.statusDeferred!;
+			current.statusDeferred = null;
+			pending.resolve({
+				attemptId: 'old-attempt',
+				status: 'awaiting_payment',
+				checkout_url: 'https://checkout.example/session/old'
+			});
+			await flushMicrotasks(40);
 		});
-		expect(text()).toContain('We could not confirm your Team payment yet');
+		expect(portalAssigns).toEqual([]);
+		expect(current.statusCalls).toEqual(['old-attempt', 'old-attempt', 'new-attempt']);
+		await click(findButton('Continue checkout'));
+		expect(portalAssigns).toEqual(['https://checkout.example/session/new']);
+		expect(current.checkoutCalls).toEqual([]);
+	});
+
+	test('an account switch during delayed resume cancels navigation', async () => {
+		signedIn();
+		seedAttempt('resume-switch');
+		current.statusResult = {
+			attemptId: 'resume-switch',
+			status: 'awaiting_payment',
+			checkout_url: 'https://checkout.example/session/resume-switch'
+		};
+		await mount();
+		current.statusDeferred = deferred();
+		await click(findButton('Continue checkout'));
+		expectPlanButtonsBusy();
+		signedIn('user-b');
+		await act(async () => {
+			current.statusDeferred!.resolve(current.statusResult);
+			await flushMicrotasks(40);
+		});
+		expect(portalAssigns).toEqual([]);
+		expect(current.checkoutCalls).toEqual([]);
+		expect(current.statusExpectedAccounts).toEqual(['user-a', 'user-a']);
+	});
+
+	test('a resume lookup failure keeps the saved attempt and recovery controls available', async () => {
+		signedIn();
+		seedAttempt('resume-error');
+		current.statusResult = {
+			attemptId: 'resume-error',
+			status: 'awaiting_payment',
+			checkout_url: 'https://checkout.example/session/resume-error'
+		};
+		await mount();
+		current.statusFailures = 1;
+		await click(findButton('Continue checkout'));
+		expect(text()).toContain('Temporary provider outage');
 		expect(findButton('Continue checkout').disabled).toBe(false);
 		expect(findButton('Check payment status').disabled).toBe(false);
 		expect(sessionMemory.has('spikonado_pricing_attempt')).toBe(true);
-		expect(current.checkoutCalls).toEqual([{ tier: 'team', interval: 'monthly' }]);
-	}, 15_000);
+		expect(portalAssigns).toEqual([]);
+		expect(current.checkoutCalls).toEqual([]);
+	});
 
 	test('a forged checkout=return URL never claims payment without server confirmation', async () => {
 		signedIn();
@@ -582,7 +723,6 @@ describe('pricing plans orchestration', () => {
 		expect(current.checkoutCalls).toHaveLength(1);
 
 		await click(findButton('Sign out'));
-		expect(current.overlayCloses).toBeGreaterThan(0);
 
 		await act(async () => {
 			current.checkoutDeferred.resolve({
@@ -590,50 +730,55 @@ describe('pricing plans orchestration', () => {
 				attemptId: 'attempt-1'
 			});
 		});
-		expect(current.overlayOpenings).toEqual([]);
+		expect(portalAssigns).toEqual([]);
+		expect(sessionMemory.has('spikonado_pricing_attempt')).toBe(false);
 		expect(text()).not.toContain('Signed in as');
 	});
 
-	test('selecting another interval while the overlay is open replaces the checkout', async () => {
+	test('an account switch during delayed checkout does not overwrite the new account attempt', async () => {
 		signedIn();
 		await mount();
-
 		await click(findButton('Get Team'));
+		expect(current.checkoutExpectedAccounts).toEqual(['user-a']);
+		signedIn('user-b');
+		seedAttempt('user-b-attempt', 'user-b');
+		const storedAttempt = sessionMemory.get('spikonado_pricing_attempt');
 		await act(async () => {
 			current.checkoutDeferred.resolve({
-				checkoutUrl: 'https://checkout.example/session/cks_a',
-				attemptId: 'attempt-1'
+				checkoutUrl: 'https://checkout.example/session/user-a',
+				attemptId: 'user-a-attempt'
 			});
+			await flushMicrotasks(40);
 		});
-		expect(current.overlayOpenings).toHaveLength(1);
-		expect(text()).toContain('Complete checkout in the overlay');
+		expect(portalAssigns).toEqual([]);
+		expect(sessionMemory.get('spikonado_pricing_attempt')).toBe(storedAttempt);
+		expect(text()).toContain('This billing action was cancelled.');
+	});
 
-		// The open overlay does not block a replacement selection. Picking the
-		// same plan under another interval re-runs checkout for that selection
-		// and closes the old overlay.
-		current.checkoutDeferred = deferred();
-		await act(async () => {
-			container.querySelector<HTMLInputElement>('input[value="annual"]')!.click();
-		});
-		await click(findButton('Checkout opened'));
-		expect(current.overlayCloses).toBeGreaterThan(0);
+	test('pending sign-out invalidates checkout before the account changes', async () => {
+		signedIn();
+		await mount();
+		await click(findButton('Get Team'));
+		current.signOutDeferred = deferred();
+		await click(findButton('Sign out'));
+		expect(current.clientState.user?.id).toBe('user-a');
 		await act(async () => {
 			current.checkoutDeferred.resolve({
-				checkoutUrl: 'https://checkout.example/session/cks_b',
-				attemptId: 'attempt-2'
+				checkoutUrl: 'https://checkout.example/session/stale',
+				attemptId: 'stale'
 			});
+			await flushMicrotasks(40);
 		});
-		expect(current.checkoutCalls).toEqual([
-			{ tier: 'team', interval: 'monthly' },
-			{ tier: 'team', interval: 'annual' }
-		]);
-		expect(current.overlayOpenings.map((entry) => entry.url)).toEqual([
-			'https://checkout.example/session/cks_a',
-			'https://checkout.example/session/cks_b'
-		]);
+		expect(portalAssigns).toEqual([]);
+		expect(sessionMemory.has('spikonado_pricing_attempt')).toBe(false);
+		await act(async () => {
+			current.signOutDeferred!.resolve();
+		});
+		expect(text()).not.toContain('Signed in as');
 	});
 
 	test('reload recovery consults the server attempt status, never the URL', async () => {
+		window.history.replaceState({}, '', '/pricing?checkout=return&tier=team');
 		sessionMemory.set(
 			'spikonado_pricing_attempt',
 			JSON.stringify({
@@ -716,44 +861,27 @@ describe('pricing plans orchestration', () => {
 	test('failed sign-out keeps the account and its recoverable checkout usable', async () => {
 		signedIn();
 		current.signOutError = new Error('Network unavailable');
+		seedAttempt('recoverable');
+		current.statusResult = { attemptId: 'recoverable', status: 'awaiting_payment' };
 		await mount();
-		sessionMemory.set(
-			'spikonado_pricing_attempt',
-			JSON.stringify({
-				userId: 'user-a',
-				attemptId: 'recoverable',
-				tierId: 'team',
-				interval: 'monthly',
-				startedAt: Date.now()
-			})
-		);
 		await click(findButton('Sign out'));
 		expect(text()).toContain('Could not sign out');
 		expect(text()).toContain('user-a@example.com');
 		expect(sessionMemory.has('spikonado_pricing_attempt')).toBe(true);
 		await click(findButton('Check payment status'));
-		expect(current.statusCalls).toEqual(['recoverable']);
+		expect(current.statusCalls).toEqual(['recoverable', 'recoverable']);
 		expect(current.checkoutCalls).toEqual([]);
 	});
 
 	test('manual status checking falls back to an account refresh when the stored attempt is gone', async () => {
 		signedIn();
-		await mount();
-		await click(findButton('Get Team'));
-		await act(async () => {
-			current.checkoutDeferred.resolve({
-				checkoutUrl: 'https://checkout.example/session/cks_gone',
-				attemptId: 'attempt-gone'
-			});
-		});
+		seedAttempt('attempt-gone');
 		current.statusResult = {
 			attemptId: 'attempt-gone',
 			status: 'awaiting_payment',
 			checkout_url: 'https://checkout.example/session/cks_gone'
 		};
-		await act(async () => {
-			current.overlayOpenings[0]?.handler?.({ event_type: 'checkout.closed' });
-		});
+		await mount();
 		expect(text()).toContain('We could not confirm');
 
 		// The stored attempt reference is gone (session eviction): the manual
@@ -763,7 +891,8 @@ describe('pricing plans orchestration', () => {
 		await click(findButton('Check payment status'));
 		expect(current.subscriptionExpectedAccounts).toEqual(['user-a', 'user-a']);
 		expect(current.statusCalls).toEqual(['attempt-gone']);
-		expect(current.checkoutCalls).toEqual([{ tier: 'team', interval: 'monthly' }]);
+		expect(current.checkoutCalls).toEqual([]);
+		expect(portalAssigns).toEqual([]);
 	}, 15_000);
 
 	test('recovery of an expired attempt invites a new checkout', async () => {
@@ -832,6 +961,7 @@ describe('pricing plans orchestration', () => {
 
 		await click(findButton('Manage billing'));
 		expect(current.portalCalls).toBe(1);
+		expectPlanButtonsBusy();
 
 		await click(findButton('Sign out'));
 
@@ -843,7 +973,22 @@ describe('pricing plans orchestration', () => {
 		expect(text()).not.toContain('Signed in as');
 	});
 
-	test('a checkout network failure surfaces an error and no overlay opens', async () => {
+	test('a portal network failure restores plan actions without navigating', async () => {
+		signedIn();
+		queueSubscriptions(subscription({ tier: 'team', tierLabel: 'Team', billingManaged: true }));
+		await mount();
+		await click(findButton('Manage billing'));
+		expectPlanButtonsBusy();
+		await act(async () => {
+			current.portalDeferred.reject(new Error('Portal unavailable'));
+		});
+		expect(text()).toContain('Portal unavailable');
+		expect(findButton('Manage billing').disabled).toBe(false);
+		expect(findButton('Start free').disabled).toBe(false);
+		expect(portalAssigns).toEqual([]);
+	});
+
+	test('a checkout network failure surfaces an error without navigation', async () => {
 		signedIn();
 		await mount();
 
@@ -854,11 +999,12 @@ describe('pricing plans orchestration', () => {
 			current.checkoutDeferred.reject(new Error('Network request failed'));
 			await Promise.resolve();
 		});
-		expect(current.overlayOpenings).toEqual([]);
+		expect(portalAssigns).toEqual([]);
 		expect(text()).toContain('Network request failed');
+		expect(findButton('Get Team').disabled).toBe(false);
 	});
 
-	test('unmounting during checkout closes the overlay and ignores the result', async () => {
+	test('unmounting during checkout ignores the result without storing or navigating', async () => {
 		signedIn();
 		await mount();
 
@@ -866,7 +1012,6 @@ describe('pricing plans orchestration', () => {
 		expect(current.checkoutCalls).toHaveLength(1);
 
 		await unmount();
-		expect(current.overlayCloses).toBeGreaterThan(0);
 
 		await act(async () => {
 			current.checkoutDeferred.resolve({
@@ -875,10 +1020,11 @@ describe('pricing plans orchestration', () => {
 			});
 			await Promise.resolve();
 		});
-		expect(current.overlayOpenings).toEqual([]);
+		expect(portalAssigns).toEqual([]);
+		expect(sessionMemory.has('spikonado_pricing_attempt')).toBe(false);
 	});
 
-	test('an account switch during initialization never opens the old account checkout', async () => {
+	test('an account switch during initialization never creates the old account checkout', async () => {
 		signedIn('user-a');
 		await mount();
 
@@ -901,7 +1047,7 @@ describe('pricing plans orchestration', () => {
 			await flushMicrotasks(6);
 		});
 		expect(current.checkoutCalls).toEqual([]);
-		expect(current.overlayOpenings).toEqual([]);
+		expect(portalAssigns).toEqual([]);
 	});
 
 	test('an account switch during a delayed subscription query drops the stale result', async () => {
@@ -942,6 +1088,7 @@ describe('pricing plans orchestration', () => {
 		await mount();
 		expect(current.statusCalls).toEqual(['attempt-1']);
 		expect(current.statusExpectedAccounts).toEqual(['user-a']);
+		expectPlanButtonsBusy();
 
 		// user-b signs in while the check is in flight.
 		signedIn('user-b');
@@ -955,7 +1102,7 @@ describe('pricing plans orchestration', () => {
 		});
 		expect(text()).not.toContain('Team is active');
 
-		expect(current.overlayOpenings).toEqual([]);
+		expect(portalAssigns).toEqual([]);
 	});
 
 	test('an account switch during a delayed portal open never navigates', async () => {

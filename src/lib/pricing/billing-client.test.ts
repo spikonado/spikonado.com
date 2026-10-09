@@ -7,6 +7,7 @@ import {
 	openCustomerPortal,
 	resetPricingBillingForTests
 } from '@/lib/pricing/billing-client';
+import { createBillingOperations } from '@/lib/pricing/operation';
 
 type ConvexRoute = 'getMySubscription' | 'getCheckoutStatus' | 'customerPortal' | 'checkout';
 
@@ -31,16 +32,23 @@ function deferred<T>() {
 }
 
 const sessionMemory = new Map<string, string>();
-Object.defineProperty(globalThis, 'sessionStorage', {
-	value: {
-		getItem: (key: string) => sessionMemory.get(key) ?? null,
-		setItem: (key: string, value: string) => void sessionMemory.set(key, value),
-		removeItem: (key: string) => void sessionMemory.delete(key)
-	},
-	configurable: true
-});
+const sessionStorageMock = {
+	getItem: (key: string) => sessionMemory.get(key) ?? null,
+	setItem: (key: string, value: string) => void sessionMemory.set(key, value),
+	removeItem: (key: string) => void sessionMemory.delete(key)
+};
+
+function restoreStorage(): void {
+	Object.defineProperty(globalThis, 'sessionStorage', {
+		value: sessionStorageMock,
+		configurable: true
+	});
+}
+
+restoreStorage();
 
 let currentUser: User | null;
+let bootstrapBehavior: () => Promise<{ workosClientId: string }>;
 const convexCalls: { route: ConvexRoute; args: unknown }[] = [];
 let checkoutBehavior: () => Promise<{
 	checkout_url: string;
@@ -77,7 +85,7 @@ mock.module('convex/browser', () => ({
 	ConvexHttpClient: class {
 		constructor(public url: string) {}
 		async query() {
-			return { workosClientId: 'workos-test-client' };
+			return bootstrapBehavior();
 		}
 		async action() {
 			return { plans: [] };
@@ -116,11 +124,13 @@ function storedAttempt(): Record<string, unknown> | null {
 }
 
 beforeEach(() => {
+	restoreStorage();
 	process.env.PUBLIC_CONVEX_URL = 'https://billing-tests.convex.cloud';
 	process.env.PUBLIC_DODO_CHECKOUT_MODE = 'test';
 	currentUser = initiatingUser();
 	convexCalls.length = 0;
 	sessionMemory.clear();
+	bootstrapBehavior = async () => ({ workosClientId: 'workos-test-client' });
 	subscriptionBehavior = async () => ({
 		tier: 'free',
 		tierLabel: 'Free',
@@ -129,7 +139,7 @@ beforeEach(() => {
 	statusBehavior = async () => ({ attemptId: 'attempt-1', status: 'pending' });
 	portalBehavior = async () => ({ portal_url: 'https://portal.example/session' });
 	checkoutBehavior = async () => ({
-		checkout_url: 'https://checkout.example/session/cks_a',
+		checkout_url: 'https://test.checkout.dodopayments.com/session/cks_a',
 		attemptId: 'attempt-1',
 		mode: 'test'
 	});
@@ -137,6 +147,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+	restoreStorage();
 	resetPricingBillingForTests();
 	if (originalConvexUrl === undefined) delete process.env.PUBLIC_CONVEX_URL;
 	else process.env.PUBLIC_CONVEX_URL = originalConvexUrl;
@@ -145,6 +156,75 @@ afterEach(() => {
 });
 
 describe('createCheckout account scoping', () => {
+	test('cancellation during initialization stops checkout before the provider action', async () => {
+		const bootstrap = deferred<{ workosClientId: string }>();
+		bootstrapBehavior = () => bootstrap.promise;
+		const operations = createBillingOperations();
+		const guard = operations.begin('user-a');
+		const pending = createCheckout('team', 'monthly', 'user-a', guard.isCurrent);
+		operations.bumpGeneration();
+		bootstrap.resolve({ workosClientId: 'workos-test-client' });
+
+		await expect(pending).rejects.toThrow('This billing action was cancelled.');
+		expect(convexCalls).toEqual([]);
+	});
+
+	test('an out-of-order same-account response preserves the current recovery attempt', async () => {
+		const oldResult = deferred<Awaited<ReturnType<typeof checkoutBehavior>>>();
+		const oldActionStarted = deferred<void>();
+		checkoutBehavior = () => {
+			oldActionStarted.resolve();
+			return oldResult.promise;
+		};
+		const operations = createBillingOperations();
+		const oldGuard = operations.begin('user-a');
+		const oldCheckout = createCheckout('team', 'monthly', 'user-a', oldGuard.isCurrent);
+		await oldActionStarted.promise;
+
+		const currentGuard = operations.begin('user-a');
+		checkoutBehavior = async () => ({
+			checkout_url: 'https://test.checkout.dodopayments.com/session/cks_current',
+			attemptId: 'attempt-current',
+			mode: 'test'
+		});
+		const current = await createCheckout('team', 'annual', 'user-a', currentGuard.isCurrent);
+		const currentAttempt = {
+			userId: 'user-a',
+			attemptId: 'attempt-current',
+			tierId: 'team',
+			interval: 'annual'
+		};
+		expect(current.attemptId).toBe('attempt-current');
+		expect(storedAttempt()).toEqual(currentAttempt);
+
+		oldResult.resolve({
+			checkout_url: 'https://test.checkout.dodopayments.com/session/cks_old',
+			attemptId: 'attempt-old',
+			mode: 'test'
+		});
+		await expect(oldCheckout).rejects.toThrow('This billing action was cancelled.');
+		expect(storedAttempt()).toEqual(currentAttempt);
+		expect(convexCalls.map((call) => call.args)).toEqual([
+			{ tier: 'team', interval: 'monthly' },
+			{ tier: 'team', interval: 'annual' }
+		]);
+	});
+
+	test('a recovery write failure reports storage configuration instead of returning a payment link', async () => {
+		Object.defineProperty(globalThis, 'sessionStorage', {
+			value: {
+				...sessionStorageMock,
+				setItem: () => {
+					throw new DOMException('Storage quota exceeded', 'QuotaExceededError');
+				}
+			},
+			configurable: true
+		});
+		await expect(createCheckout('team', 'monthly', 'user-a')).rejects.toThrow(
+			'Browser storage is unavailable. Enable site storage before starting checkout.'
+		);
+	});
+
 	test('an account switch during the provider action cancels: no URL returns and nothing is stored', async () => {
 		const action = deferred<{ checkout_url: string; attemptId?: string }>();
 		checkoutBehavior = async () => {
@@ -184,7 +264,7 @@ describe('createCheckout account scoping', () => {
 
 	test('a successful checkout stores the attempt for the initiating account only', async () => {
 		const result = await createCheckout('team', 'monthly', 'user-a');
-		expect(result.checkoutUrl).toBe('https://checkout.example/session/cks_a');
+		expect(result.checkoutUrl).toBe('https://test.checkout.dodopayments.com/session/cks_a');
 		expect(result.attemptId).toBe('attempt-1');
 		expect(storedAttempt()).toMatchObject({ userId: 'user-a', attemptId: 'attempt-1' });
 	});
@@ -240,12 +320,26 @@ describe('checkout mode agreement on returned payloads', () => {
 		statusBehavior = async () => ({
 			attemptId: 'attempt-1',
 			status: 'awaiting_payment',
-			checkout_url: 'https://checkout.example/session/cks_a',
+			checkout_url: 'https://test.checkout.dodopayments.com/session/cks_a',
 			mode: 'test'
 		});
 		const status = await fetchCheckoutStatus('attempt-1', 'user-a');
 		expect(status.status).toBe('awaiting_payment');
-		expect(status.checkout_url).toBe('https://checkout.example/session/cks_a');
+		expect(status.checkout_url).toBe('https://test.checkout.dodopayments.com/session/cks_a');
+	});
+
+	test('redirects only to the expected Dodo origin while preserving recovery', async () => {
+		for (const checkout_url of [
+			'https://checkout.example/session/cks_untrusted',
+			'https://checkout.dodopayments.com/session/cks_live',
+			'javascript:alert(1)'
+		]) {
+			checkoutBehavior = async () => ({ checkout_url, attemptId: 'invalid-origin', mode: 'test' });
+			await expect(createCheckout('team', 'monthly', 'user-a')).rejects.toThrow(
+				'invalid hosted URL'
+			);
+			expect(storedAttempt()).toMatchObject({ attemptId: 'invalid-origin', userId: 'user-a' });
+		}
 	});
 });
 

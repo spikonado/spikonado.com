@@ -13,31 +13,46 @@ export type PendingCheckoutAttempt = {
 	attemptId: string;
 	tierId: string;
 	interval: BillingInterval;
-	startedAt: number;
 };
 
 function readJson(key: string): Record<string, unknown> | null {
-	if (typeof sessionStorage === 'undefined') return null;
-	const raw = sessionStorage.getItem(key);
-	if (!raw) return null;
 	try {
+		const raw = globalThis.sessionStorage?.getItem(key);
+		if (!raw) return null;
 		const parsed = JSON.parse(raw) as unknown;
 		if (parsed && typeof parsed === 'object') return parsed as Record<string, unknown>;
 	} catch {
-		// Corrupt session state is cleared below.
+		clearStoredValue(key);
+		return null;
 	}
-	sessionStorage.removeItem(key);
+	clearStoredValue(key);
 	return null;
 }
 
+function storeJson(key: string, value: unknown): void {
+	try {
+		globalThis.sessionStorage.setItem(key, JSON.stringify(value));
+	} catch {
+		throw new Error(
+			'Browser storage is unavailable. Enable site storage before starting checkout.'
+		);
+	}
+}
+
+function clearStoredValue(key: string): void {
+	try {
+		globalThis.sessionStorage?.removeItem(key);
+	} catch {
+		return;
+	}
+}
+
 export function storePendingPricingAction(action: PendingPricingAction): void {
-	if (typeof sessionStorage === 'undefined') return;
-	sessionStorage.setItem(PENDING_KEY, JSON.stringify(action));
+	storeJson(PENDING_KEY, action);
 }
 
 export function clearPendingPricingAction(): void {
-	if (typeof sessionStorage === 'undefined') return;
-	sessionStorage.removeItem(PENDING_KEY);
+	clearStoredValue(PENDING_KEY);
 }
 
 export function readPendingPricingAction(): PendingPricingAction | null {
@@ -62,10 +77,9 @@ export function readPendingPricingAction(): PendingPricingAction | null {
  * that created it; it never proves payment by itself.
  */
 export function storeCheckoutAttempt(accountId: string, attempt: PendingCheckoutAttempt): void {
-	if (typeof sessionStorage === 'undefined') return;
 	const userId = accountId.trim();
 	if (!userId || !attempt.attemptId.trim()) return;
-	sessionStorage.setItem(ATTEMPT_KEY, JSON.stringify({ userId, ...attempt }));
+	storeJson(ATTEMPT_KEY, { userId, ...attempt });
 }
 
 export function readCheckoutAttempt(accountId: string | null): PendingCheckoutAttempt | null {
@@ -75,20 +89,12 @@ export function readCheckoutAttempt(accountId: string | null): PendingCheckoutAt
 	const interval = typeof parsed.interval === 'string' ? parsed.interval : null;
 	const attemptId = typeof parsed.attemptId === 'string' ? parsed.attemptId.trim() : '';
 	const tierId = typeof parsed.tierId === 'string' ? parsed.tierId.trim() : '';
-	const startedAt = typeof parsed.startedAt === 'number' ? parsed.startedAt : NaN;
-	if (
-		parsed.userId !== accountId ||
-		!attemptId ||
-		!tierId ||
-		!isBillingInterval(interval) ||
-		!Number.isFinite(startedAt)
-	) {
+	if (parsed.userId !== accountId || !attemptId || !tierId || !isBillingInterval(interval)) {
 		return null;
 	}
-	return { attemptId, tierId, interval, startedAt };
+	return { attemptId, tierId, interval };
 }
 
 export function clearCheckoutAttempt(): void {
-	if (typeof sessionStorage === 'undefined') return;
-	sessionStorage.removeItem(ATTEMPT_KEY);
+	clearStoredValue(ATTEMPT_KEY);
 }

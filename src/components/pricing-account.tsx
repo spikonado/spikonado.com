@@ -39,8 +39,8 @@ export function PricingAccount({
 			{paymentPending ? (
 				<div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm">
 					<p className="w-full text-muted-foreground">
-						Your payment is not confirmed yet. This can take a moment — your plan updates
-						automatically once the payment is confirmed. If you are stuck, email{' '}
+						Your payment is not confirmed yet. Select "Check payment status" to refresh it. If you
+						are stuck, email{' '}
 						<a
 							className="font-medium text-accent-strong underline decoration-accent-strong/30 underline-offset-4"
 							href={`mailto:${BILLING_SUPPORT_EMAIL}?subject=Sprocket%20billing%20support`}

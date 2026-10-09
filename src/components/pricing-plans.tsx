@@ -22,13 +22,10 @@ import {
 } from '@/lib/pricing/billing-client';
 import {
 	buildPricingPlans,
-	currencySymbol,
-	priceLabel,
+	majorFromMinor,
 	pricingFaqs,
-	pricesForPlan,
 	type BillingInterval
 } from '@/lib/pricing/catalog';
-import { createCheckoutOverlay, type CheckoutOverlay } from '@/lib/pricing/checkout-overlay';
 import {
 	createInitialPricingState,
 	canStartCheckout,
@@ -49,7 +46,6 @@ import {
 } from '@/lib/pricing/pending';
 import {
 	checkoutRequestFromSearch,
-	PRICING_CHECKOUT_PROGRESS_EVENT,
 	pricingUrlWithoutCheckoutCommand,
 	runCheckout,
 	type CheckoutProgress
@@ -71,36 +67,35 @@ function accountIdFrom(user: { id?: unknown; email?: unknown } | null): string |
 	return email || null;
 }
 
-function planPrice(planId: string, price: number | undefined): string {
-	if (planId === 'free') return '0';
-	return price === undefined ? 'Unavailable' : String(price);
-}
-
-function billingPlans(catalog: PublicPricingCatalog, interval: BillingInterval): BillingPlan[] {
+function billingPlans(catalog: PublicPricingCatalog): BillingPlan[] {
 	const plans = buildPricingPlans(catalog);
 
 	return plans.map((plan) => {
 		const source = catalog.plans.find((candidate) => candidate.id === plan.id);
 		if (!source) throw new Error(`Pricing plan "${plan.id}" is missing from the catalog.`);
-		const prices = pricesForPlan(source);
-		const monthly = priceLabel('monthly', prices);
-		const annual = priceLabel('annual', prices);
-		const selected = priceLabel(interval, prices);
+		const { monthly, annual } = source.prices;
 		return {
 			id: plan.id,
 			title: plan.name,
 			description: plan.description,
 			highlight: plan.highlighted,
 			badge: plan.highlighted ? 'Most popular' : undefined,
-			currency: currencySymbol(
-				selected?.currency ?? monthly?.currency ?? annual?.currency ?? 'USD'
-			),
-			monthlyPrice: planPrice(plan.id, monthly?.periodMajor),
-			monthlyCurrency: monthly?.currency,
-			yearlyPrice: planPrice(plan.id, annual?.periodMajor),
-			yearlyCurrency: annual?.currency,
+			monthlyPrice:
+				plan.id === 'free'
+					? 0
+					: monthly
+						? majorFromMinor(monthly.amountMinor, monthly.currency)
+						: null,
+			monthlyCurrency: monthly?.currency ?? 'USD',
+			yearlyPrice:
+				plan.id === 'free'
+					? 0
+					: annual
+						? majorFromMinor(annual.amountMinor, annual.currency)
+						: null,
+			yearlyCurrency: annual?.currency ?? 'USD',
 			buttonText: plan.id === 'free' ? 'Start free' : `Get ${plan.name}`,
-			features: plan.features.map((feature) => ({ name: feature, icon: 'check' }))
+			features: plan.features.map((feature) => ({ name: feature }))
 		};
 	});
 }
@@ -112,12 +107,12 @@ function planIsAvailable(
 ): boolean {
 	if (!catalog) return false;
 	const plan = catalog.plans.find((candidate) => candidate.id === planId);
-	return Boolean(plan && pricesForPlan(plan)[interval]);
+	return Boolean(plan?.prices[interval]);
 }
 
 function planIsPaid(catalog: PublicPricingCatalog | null, planId: string): boolean {
 	const plan = catalog?.plans.find((candidate) => candidate.id === planId);
-	return Boolean(plan && (pricesForPlan(plan).monthly || pricesForPlan(plan).annual));
+	return Boolean(plan && (plan.prices.monthly || plan.prices.annual));
 }
 
 export default function PricingPlans({ initialCatalog = null }: PricingPlansProps) {
@@ -125,28 +120,39 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 	const [interval, setInterval] = useState<BillingInterval>('monthly');
 	const [catalog, setCatalog] = useState<PublicPricingCatalog | null>(initialCatalog);
 	const [checkoutTierId, setCheckoutTierId] = useState<string | null>(null);
-	const overlayRef = useRef<CheckoutOverlay | null>(null);
 	const operationsRef = useRef<ReturnType<typeof createBillingOperations> | null>(null);
 	const catalogRef = useRef<PublicPricingCatalog | null>(initialCatalog);
 	const accountRef = useRef<string | null>(null);
 	catalogRef.current = catalog;
-	const plans = useMemo(
-		() => (catalog ? billingPlans(catalog, interval) : []),
-		[catalog, interval]
-	);
-	// Creation and processing block new selections; an open overlay does not —
-	// the user may replace it with another plan or interval.
-	const checkoutInFlight =
-		state.busy && state.status !== 'checkout_open' && state.status !== 'idle';
-
-	function getOverlay(): CheckoutOverlay {
-		overlayRef.current ??= createCheckoutOverlay();
-		return overlayRef.current;
-	}
-
+	const plans = useMemo(() => (catalog ? billingPlans(catalog) : []), [catalog]);
 	function getOperations() {
 		operationsRef.current ??= createBillingOperations();
 		return operationsRef.current;
+	}
+
+	async function beginAccountOperation() {
+		const operations = getOperations();
+		const expectedAccount = accountRef.current;
+		const probe = operations.begin(expectedAccount ?? 'signed-out');
+		try {
+			const client = await initializePricingBilling();
+			if (!probe.isCurrent()) return null;
+			const account = accountIdFrom(client.auth?.getUser() ?? null);
+			if (account !== expectedAccount || accountRef.current !== expectedAccount) {
+				throw new Error('Your account changed. Reload pricing before continuing.');
+			}
+			return probe;
+		} catch (error) {
+			setState((current) =>
+				probe.isCurrent()
+					? withError(
+							current,
+							error instanceof Error ? error.message : 'Could not reach billing. Try again.'
+						)
+					: current
+			);
+			return null;
+		}
 	}
 
 	const refreshSession = useCallback(
@@ -155,9 +161,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			if (!isCurrent()) return null;
 			const client = await initializePricingBilling();
 			if (!isCurrent()) return null;
-			// client.user is a snapshot from initialization time; the auth client
-			// holds the live account after any sign-out or switch above.
-			const user = (client.auth?.getUser() ?? null) || null;
+			const user = client.auth?.getUser() ?? null;
 			const accountId = accountIdFrom(user);
 			let subscription: MySubscription = {
 				tier: 'free',
@@ -177,8 +181,6 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 					tier: subscription.tier,
 					tierLabel: subscription.tierLabel,
 					billingManaged: subscription.billingManaged,
-					accessPhase:
-						typeof subscription.accessPhase === 'string' ? subscription.accessPhase : undefined,
 					userLabel: user?.email ?? user?.firstName ?? null,
 					message
 				});
@@ -195,11 +197,6 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		[]
 	);
 
-	/**
-	 * Apply one attempt status lookup: settle awaiting-payment resume,
-	 * terminal-state recovery, and activation. Returns true when the lookup
-	 * fully settled the attempt so polling can stop.
-	 */
 	const applyAttemptStatus = useCallback(
 		async (
 			status: Awaited<ReturnType<typeof fetchCheckoutStatus>>,
@@ -246,38 +243,26 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		[refreshSession]
 	);
 
-	/**
-	 * Poll for activation of a specific account-owned checkout attempt. Activation
-	 * is only claimed when the backend confirms that exact attempt activated
-	 * (`getCheckoutStatus` activated flag) and the subscription projection
-	 * reflects the purchased tier. A matching tier from any other purchase, an
-	 * unsigned URL parameter, or a provider status alone never proves activation.
-	 * An attempt still awaiting payment surfaces the server-authorized checkout
-	 * URL so the user can explicitly resume the same session; a new checkout is
-	 * never created for it.
-	 */
+	// Payment success alone is not entitlement. Confirm the exact attempt and its projected tier.
 	const waitForTierActivation = useCallback(
 		async (
 			tierId: string,
 			tierLabel: string,
 			guard: OperationGuard,
 			attemptId: string,
-			accountId: string,
-			showPendingState = true
+			accountId: string
 		) => {
 			const isCurrent = guard.isCurrent;
 			if (!isCurrent()) return;
-			if (showPendingState) {
-				setState((current) =>
-					isCurrent()
-						? withBusyStatus(current, 'activating', `Confirming your ${tierLabel} subscription...`)
-						: current
-				);
-			} else {
-				setState((current) =>
-					isCurrent() ? withPaymentPending(current, tierLabel, attemptId, null) : current
-				);
-			}
+			setState((current) =>
+				isCurrent()
+					? withBusyStatus(
+							withPaymentPending(current, tierLabel, attemptId, null),
+							'activating',
+							`Confirming your ${tierLabel} subscription...`
+						)
+					: current
+			);
 			const started = Date.now();
 			while (isCurrent() && Date.now() - started < ACTIVATION_TIMEOUT_MS) {
 				try {
@@ -313,10 +298,48 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		[waitForTierActivation]
 	);
 
+	const onCheckoutProgress = useCallback((progress: CheckoutProgress, guard: OperationGuard) => {
+		const progressCurrent = guard.isCurrent;
+		if (!progressCurrent()) return;
+		setInterval(progress.interval);
+		setCheckoutTierId(progress.tierId);
+		if (progress.status === 'error') {
+			const attempt = readCheckoutAttempt(guard.context.accountId);
+			const tierLabel =
+				catalogRef.current?.plans.find((plan) => plan.id === attempt?.tierId)?.label ??
+				attempt?.tierId;
+			setState((current) =>
+				progressCurrent()
+					? withError(
+							attempt && tierLabel
+								? withPaymentPending(current, tierLabel, attempt.attemptId, null)
+								: current,
+							progress.message
+						)
+					: current
+			);
+			captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'error', location });
+			return;
+		}
+		if (!progressCurrent()) return;
+		const status =
+			progress.status === 'signing_in'
+				? 'signing_in'
+				: progress.status === 'redirecting'
+					? 'redirecting'
+					: 'starting_checkout';
+		setState((current) =>
+			progressCurrent() ? withBusyStatus(current, status, progress.message) : current
+		);
+		if (progress.status === 'redirecting') {
+			captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'redirecting', location });
+		}
+	}, []);
+
 	useEffect(() => {
 		let active = true;
 		const operations = getOperations();
-		const mountGuard = operations.begin('portal', 'mount', null);
+		const mountGuard = operations.begin('mount');
 		const isCurrent = () => active && mountGuard.isCurrent();
 		const searchParams = new URLSearchParams(window.location.search);
 		const checkout = searchParams.get('checkout');
@@ -328,67 +351,12 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			setCheckoutTierId(checkoutFromUrl.tierId);
 		}
 
-		const onCheckoutProgress = (event: Event) => {
-			if (!(event instanceof CustomEvent)) return;
-			const progress = event.detail as CheckoutProgress;
-			// Apply only progress from the operation that started the checkout. A
-			// delayed event from a superseded operation (sign-out, account switch,
-			// unmount, newer click) carries a stale generation and is dropped.
-			if (!active) return;
-			if (progress.generation !== operations.currentGeneration()) return;
-			setInterval(progress.interval);
-			setCheckoutTierId(progress.tierId);
-			const progressCurrent = () => progress.generation === operations.currentGeneration();
-			if (progress.status === 'error') {
-				setState((current) => (progressCurrent() ? withError(current, progress.message) : current));
-				captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'error', location });
-				return;
-			}
-			if (progress.status === 'checkout_closed') {
-				setState((current) =>
-					progressCurrent() ? withReadyStatus(current, progress.message) : current
-				);
-				captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'overlay_closed', location });
-				// Poll for activation of the exact account-owned attempt that just
-				// closed, under a fresh guard bound to the current operation.
-				if (progress.attemptId && progress.accountId) {
-					const planLabel =
-						catalogRef.current?.plans.find((plan) => plan.id === progress.tierId)?.label ??
-						progress.tierId;
-					const activationGuard = operations.begin('portal', progress.accountId, null);
-					void waitForTierActivation(
-						progress.tierId,
-						planLabel,
-						activationGuard,
-						progress.attemptId,
-						progress.accountId,
-						false
-					).catch(() => {});
-				}
-				return;
-			}
-			if (!progressCurrent()) return;
-			const status =
-				progress.status === 'signing_in'
-					? 'signing_in'
-					: progress.status === 'checkout_open'
-						? 'checkout_open'
-						: 'starting_checkout';
-			setState((current) =>
-				progressCurrent() ? withBusyStatus(current, status, progress.message) : current
-			);
-			if (progress.status === 'checkout_open') {
-				captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'overlay_opened', location });
-			}
-		};
-		document.addEventListener(PRICING_CHECKOUT_PROGRESS_EVENT, onCheckoutProgress);
-
 		void (async () => {
 			try {
 				let liveCatalog = initialCatalog;
 				if (initialCatalog && !checkoutFromUrl) {
 					void fetchPublicPricingCatalog()
-						.then((next) => isCurrent() && setCatalog(next))
+						.then((next) => active && setCatalog(next))
 						.catch(() => {});
 				} else {
 					liveCatalog = await fetchPublicPricingCatalog();
@@ -414,11 +382,10 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 						'',
 						pricingUrlWithoutCheckoutCommand(window.location.href)
 					);
-					const overlay = getOverlay();
-					const guard = operations.begin('checkout', session.accountId ?? 'unknown', overlay);
+					const guard = operations.begin(session.accountId ?? 'signed-out');
 					await runCheckout(checkoutFromUrl.tierId, checkoutFromUrl.interval, {
-						overlay,
-						guard
+						guard,
+						emit: (progress) => onCheckoutProgress(progress, guard)
 					});
 					return;
 				}
@@ -461,9 +428,32 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		return () => {
 			active = false;
 			operations.bumpGeneration();
-			document.removeEventListener(PRICING_CHECKOUT_PROGRESS_EVENT, onCheckoutProgress);
 		};
-	}, [initialCatalog, refreshSession, waitForTierActivation, recoverStoredAttempt]);
+	}, [initialCatalog, refreshSession, recoverStoredAttempt, onCheckoutProgress]);
+
+	useEffect(() => {
+		const onPageShow = (event: PageTransitionEvent) => {
+			if (!event.persisted) return;
+			const guard = getOperations().begin('restored');
+			void (async () => {
+				try {
+					const session = await refreshSession(null, guard);
+					if (session && guard.isCurrent()) await recoverStoredAttempt(guard);
+				} catch (error) {
+					setState((current) =>
+						guard.isCurrent()
+							? withError(
+									current,
+									error instanceof Error ? error.message : 'Could not refresh billing.'
+								)
+							: current
+					);
+				}
+			})();
+		};
+		window.addEventListener('pageshow', onPageShow);
+		return () => window.removeEventListener('pageshow', onPageShow);
+	}, [refreshSession, recoverStoredAttempt]);
 
 	function selectInterval(next: BillingInterval) {
 		setInterval(next);
@@ -480,10 +470,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			window.location.assign('/#sprocket');
 			return;
 		}
-		// An open overlay must not trap the user: picking another plan or
-		// interval supersedes it and closes it below. Only in-flight work blocks
-		// a new selection; the provider rejects a second active subscription.
-		if (!canStartCheckout(state) && state.status !== 'checkout_open') {
+		if (!canStartCheckout(state)) {
 			setState((current) =>
 				withError(current, 'Another billing action is in progress. Try again in a moment.')
 			);
@@ -494,50 +481,33 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			return;
 		}
 		setCheckoutTierId(planId);
-		const operations = getOperations();
-		// Capture the generation and account before any await so a sign-out or
-		// account switch during initialization aborts this operation.
-		operations.bumpGeneration();
+		setState((current) =>
+			withBusyStatus(current, 'starting_checkout', 'Preparing secure checkout…')
+		);
 		captureAnalyticsEvent(CHECKOUT_STARTED_EVENT, {
 			interval: planInterval,
 			location,
 			plan: planId
 		});
-		const overlay = getOverlay();
-		const expectedAccount = accountRef.current;
-		const probe = operations.begin('checkout', 'pending', null);
-		const client = await initializePricingBilling().catch(() => null);
-		const sessionAccount = accountIdFrom(client?.auth?.getUser() ?? null);
-		if (
-			!probe.isCurrent() ||
-			sessionAccount !== expectedAccount ||
-			expectedAccount !== accountRef.current
-		)
-			return;
-		const guard = operations.begin('checkout', sessionAccount ?? 'unknown', overlay);
-		await runCheckout(planId, planInterval, { overlay, guard });
+		const guard = getOperations().begin(accountRef.current ?? 'signed-out');
+		await runCheckout(planId, planInterval, {
+			guard,
+			emit: (progress) => onCheckoutProgress(progress, guard)
+		});
 	}
 
 	async function manageBilling() {
-		const operations = getOperations();
-		// Capture the generation and account before any await so a sign-out or
-		// account switch during initialization aborts this operation.
-		operations.bumpGeneration();
+		setState((current) => withBusyStatus(current, 'managing_billing', 'Opening billing portal...'));
 		captureAnalyticsEvent(CTA_CLICKED_EVENT, { cta: 'pricing_manage_billing', location });
-		const expectedAccount = accountRef.current;
-		const probe = operations.begin('portal', 'pending', null);
-		const client = await initializePricingBilling().catch(() => null);
-		const account = accountIdFrom(client?.auth?.getUser() ?? null);
-		if (!probe.isCurrent() || account !== expectedAccount || expectedAccount !== accountRef.current)
-			return;
-		const guard = operations.begin('portal', account ?? 'unknown', null);
+		const guard = await beginAccountOperation();
+		if (!guard) return;
 		try {
 			setState((current) =>
 				guard.isCurrent()
 					? withBusyStatus(current, 'managing_billing', 'Opening billing portal...')
 					: current
 			);
-			const portalUrl = await openCustomerPortal(account ?? undefined);
+			const portalUrl = await openCustomerPortal(guard.context.accountId);
 			guard.assertCurrent();
 			window.location.assign(portalUrl);
 		} catch (error) {
@@ -553,17 +523,9 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 	}
 
 	async function checkPaymentStatus() {
-		const operations = getOperations();
-		// Capture the generation and account before any await so a sign-out or
-		// account switch during initialization aborts this operation.
-		operations.bumpGeneration();
-		const expectedAccount = accountRef.current;
-		const probe = operations.begin('portal', 'pending', null);
-		const client = await initializePricingBilling().catch(() => null);
-		const account = accountIdFrom(client?.auth?.getUser() ?? null);
-		if (!probe.isCurrent() || account !== expectedAccount || expectedAccount !== accountRef.current)
-			return;
-		const guard = operations.begin('portal', account ?? 'unknown', null);
+		setState((current) => withBusyStatus(current, 'activating', 'Checking payment status...'));
+		const guard = await beginAccountOperation();
+		if (!guard) return;
 		try {
 			if (!(await recoverStoredAttempt(guard))) {
 				await refreshSession('Your account billing status has been refreshed.', guard);
@@ -580,26 +542,16 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		}
 	}
 
-	/**
-	 * Explicit resume of an attempt the server still reports awaiting payment:
-	 * reopens the server-authorized checkout URL for that exact attempt. No new
-	 * checkout session is ever created here. A delayed account switch supersedes
-	 * the stored reference before the URL can be opened.
-	 */
+	// Resume only the account-owned, freshly checked attempt. Never create a replacement purchase.
 	async function continueCheckout() {
 		const attemptId = state.pendingAttemptId;
 		if (!attemptId || !state.pendingCheckoutUrl) return;
-		const operations = getOperations();
-		operations.bumpGeneration();
-		const expectedAccount = accountRef.current;
-		const probe = operations.begin('checkout', 'pending', null);
-		const client = await initializePricingBilling().catch(() => null);
-		const account = accountIdFrom(client?.auth?.getUser() ?? null);
-		if (!probe.isCurrent() || account !== expectedAccount || expectedAccount !== accountRef.current)
-			return;
-		if (!account) return;
-		const overlay = getOverlay();
-		const guard = operations.begin('checkout', account, overlay);
+		setState((current) =>
+			withBusyStatus(current, 'starting_checkout', 'Preparing secure checkout…')
+		);
+		const guard = await beginAccountOperation();
+		if (!guard) return;
+		const account = guard.context.accountId;
 		try {
 			const status = await fetchCheckoutStatus(attemptId, account);
 			guard.assertCurrent();
@@ -625,33 +577,11 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 			}
 			setState((current) =>
 				guard.isCurrent()
-					? withBusyStatus(current, 'checkout_open', 'Complete checkout in the overlay…')
+					? withBusyStatus(current, 'redirecting', 'Redirecting to secure checkout…')
 					: current
 			);
-			overlay.open(status.checkout_url, (event) => {
-				if (!guard.isCurrent()) return;
-				if (event.event_type === 'checkout.error') {
-					setState((current) =>
-						guard.isCurrent()
-							? withError(
-									current,
-									'Checkout hit a problem before closing. If you paid, your plan will activate shortly — check the payment status instead of starting a new purchase.'
-								)
-							: current
-					);
-					return;
-				}
-				if (event.event_type === 'checkout.closed') {
-					void waitForTierActivation(
-						attempt.tierId,
-						tierLabel,
-						guard,
-						attemptId,
-						account,
-						false
-					).catch(() => {});
-				}
-			});
+			guard.assertCurrent();
+			window.location.assign(status.checkout_url);
 		} catch (error) {
 			setState((current) =>
 				guard.isCurrent()
@@ -668,12 +598,9 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		captureAnalyticsEvent(CTA_CLICKED_EVENT, { cta: 'pricing_sign_out', location });
 		clearPendingPricingAction();
 		const operations = getOperations();
-		// Invalidate every in-flight operation and close overlays immediately,
-		// before awaiting the network sign-out below.
-		operations.bumpGeneration();
 		accountRef.current = null;
 		setState((current) => ({ ...current, busy: false }));
-		const probe = operations.begin('portal', 'signed-out', null);
+		const probe = operations.begin('signed-out');
 		try {
 			await signOutOfPricing();
 		} catch {
@@ -720,7 +647,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		if (checkoutTierId === plan.id) {
 			if (state.status === 'signing_in') return 'Redirecting to sign in...';
 			if (state.status === 'starting_checkout') return 'Starting checkout...';
-			if (state.status === 'checkout_open') return 'Checkout opened';
+			if (state.status === 'redirecting') return 'Redirecting to checkout...';
 			if (state.status === 'activating') return `Confirming ${plan.title}...`;
 		}
 		if (isCurrentTier && showsManageBilling(state)) return 'Manage billing';
@@ -753,10 +680,9 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 					}
 					buttonLabel={planButtonLabel}
 					buttonDisabled={(plan) => {
-						if (checkoutInFlight) return true;
+						if (state.busy) return true;
 						if (plan.id === 'free') return false;
 						if (plan.id === state.tier) return !showsManageBilling(state);
-						if (state.status === 'checkout_open') return false;
 						return !planIsAvailable(catalog, plan.id, interval);
 					}}
 					headerFooter={account}

@@ -1,4 +1,4 @@
-import type { DodoPublicPrice, PublicPricingCatalog, PublicPricingPlan } from '@/lib/convex/api';
+import type { PublicPricingCatalog } from '@/lib/convex/api';
 
 /** Marketing catalog for Sprocket plans. Entitlement copy is built from live Convex data. */
 
@@ -18,22 +18,8 @@ export type PricingFaq = {
 	answer: string;
 };
 
-export type PriceDisplay = {
-	/** Compact card price like "$20/mo." or "$216/yr." */
-	cardPrice: string;
-	perMonthLabel: string;
-	billed: string;
-	currency: string;
-	/** Major units for the full billing period (e.g. 20 monthly, 216 annual). */
-	periodMajor: number;
-	/** Formatted full-period amount, e.g. "$216". */
-	periodLabel: string;
-	/** Monthly × 12, struck through on the yearly card when it is higher than annual. */
-	compareAt: string | null;
-};
-
 function usageFeature(amount: number): string {
-	return `${formatCompactMoney(amount, 'USD')} of AI usage each month`;
+	return `${formatPrice(amount, 'USD')} of AI usage each month`;
 }
 
 /**
@@ -143,102 +129,14 @@ export function majorFromMinor(amountMinor: number, currency: string): number {
 	return amountMinor / 10 ** currencyMinorExponent(currency);
 }
 
-function formatMoney(amountMajor: number, currency: string): string {
+export function formatPrice(amountMajor: number, currency: string): string {
 	const exponent = currencyMinorExponent(currency);
 	return new Intl.NumberFormat('en-US', {
 		style: 'currency',
-		currency,
-		minimumFractionDigits: exponent,
-		maximumFractionDigits: exponent
-	}).format(amountMajor);
-}
-
-/**
- * Compact copy (e.g. usage feature lines) omits fractional digits for whole
- * major-unit amounts so cards read "$15" rather than "$15.00". Non-whole
- * amounts keep the currency's exact exponent.
- */
-function formatCompactMoney(amountMajor: number, currency: string): string {
-	const exponent = currencyMinorExponent(currency);
-	return new Intl.NumberFormat('en-US', {
-		style: 'currency',
-		currency,
+		currency: currency.trim().toUpperCase(),
 		minimumFractionDigits: Number.isInteger(amountMajor) ? 0 : exponent,
 		maximumFractionDigits: exponent
 	}).format(amountMajor);
-}
-
-export function currencySymbol(currency: string): string {
-	const exponent = currencyMinorExponent(currency);
-	const normalized = currency.trim().toUpperCase();
-	const parts = new Intl.NumberFormat('en-US', {
-		style: 'currency',
-		currency: normalized,
-		currencyDisplay: 'narrowSymbol',
-		maximumFractionDigits: exponent,
-		minimumFractionDigits: exponent
-	}).formatToParts(0);
-	return parts.find((part) => part.type === 'currency')?.value ?? currency;
-}
-
-/** Normalize a Dodo recurring price into a monthly-equivalent major-unit amount. */
-export function monthlyEquivalentMajor(price: DodoPublicPrice): number {
-	const total = majorFromMinor(price.amountMinor, price.currency);
-	const count = Math.max(1, price.paymentFrequencyCount);
-	switch (price.paymentFrequencyInterval) {
-		case 'Year':
-			return total / (12 * count);
-		case 'Month':
-			return total / count;
-		case 'Week':
-			return (total * (52 / 12)) / count;
-		case 'Day':
-			return (total * (365 / 12)) / count;
-		default:
-			return total;
-	}
-}
-
-type TierPrices = PublicPricingPlan['prices'];
-
-export function pricesForPlan(plan: PublicPricingPlan): TierPrices {
-	return plan.prices;
-}
-
-export function priceLabel(interval: BillingInterval, prices: TierPrices): PriceDisplay | null {
-	const price = prices[interval];
-	if (!price) return null;
-	const perMonth = monthlyEquivalentMajor(price);
-	const periodMajor = majorFromMinor(price.amountMinor, price.currency);
-	const money = formatMoney(perMonth, price.currency);
-	const periodLabel = formatMoney(periodMajor, price.currency);
-	if (interval === 'annual') {
-		const monthly = prices.monthly;
-		const monthlyTimes12 =
-			monthly && monthly.currency === price.currency ? monthlyEquivalentMajor(monthly) * 12 : null;
-		const compareAt =
-			monthlyTimes12 !== null && monthlyTimes12 > periodMajor
-				? formatMoney(monthlyTimes12, price.currency)
-				: null;
-		return {
-			cardPrice: `${periodLabel}/yr.`,
-			perMonthLabel: money,
-			billed: 'Billed annually',
-			currency: price.currency,
-			periodMajor,
-			periodLabel,
-			compareAt
-		};
-	}
-	return {
-		cardPrice: `${money}/mo.`,
-		perMonthLabel: money,
-		billed: 'Billed monthly',
-		currency: price.currency,
-		periodMajor,
-		periodLabel,
-		compareAt: null
-	};
 }
 
 export function buildPricingPlans(catalog: PublicPricingCatalog): PricingPlan[] {

@@ -30,7 +30,7 @@ export type MySubscription = {
 
 export type CheckoutResult = {
 	checkoutUrl: string;
-	attemptId?: string;
+	attemptId: string;
 	sessionId?: string;
 };
 
@@ -51,8 +51,6 @@ export type CheckoutStatus = {
 export type PricingBillingClient = {
 	convex: ConvexClient;
 	auth: AuthClient | null;
-	user: User | null;
-	isReady: boolean;
 	isConfigured: boolean;
 	error: string | null;
 };
@@ -61,6 +59,13 @@ let clientPromise: Promise<PricingBillingClient> | null = null;
 
 function pricingCallbackUri(): string {
 	return `${window.location.origin}/pricing/callback`;
+}
+
+function pricingHttpClient(url: string): ConvexHttpClient {
+	return new ConvexHttpClient(url, {
+		fetch: ((input, init) =>
+			fetch(input, { ...init, signal: AbortSignal.timeout(12_000) })) as typeof fetch
+	});
 }
 
 export function requireConvexUrl(): string {
@@ -94,15 +99,11 @@ function accountIdFor(user: User): string {
 export async function fetchPublicPricingCatalog(
 	convexUrl: string = requireConvexUrl()
 ): Promise<PublicPricingCatalog> {
-	const client = new ConvexHttpClient(convexUrl);
+	const client = pricingHttpClient(convexUrl);
 	return await client.action(api.pricing.getPublicCatalog, {});
 }
 
-export async function initializePricingBilling(
-	options: {
-		onRedirectCallback?: () => void;
-	} = {}
-): Promise<PricingBillingClient> {
+export async function initializePricingBilling(): Promise<PricingBillingClient> {
 	if (typeof window === 'undefined') {
 		throw new Error('Pricing billing is browser-only.');
 	}
@@ -111,7 +112,7 @@ export async function initializePricingBilling(
 	clientPromise = (async () => {
 		const convexUrl = requireConvexUrl();
 		// HTTP bootstrap so sign-in does not wait on the Convex websocket.
-		const bootstrap = await new ConvexHttpClient(convexUrl).query(
+		const bootstrap = await pricingHttpClient(convexUrl).query(
 			api.authBootstrap.getClientConfig,
 			{}
 		);
@@ -121,8 +122,6 @@ export async function initializePricingBilling(
 			return {
 				convex,
 				auth: null,
-				user: null,
-				isReady: true,
 				isConfigured: false,
 				error: 'Sign-in is not configured yet.'
 			};
@@ -130,9 +129,7 @@ export async function initializePricingBilling(
 
 		const auth = await createClient(clientId, {
 			redirectUri: pricingCallbackUri(),
-			onRedirectCallback: () => {
-				options.onRedirectCallback?.();
-			}
+			onRedirectCallback: () => {}
 		});
 
 		convex.setAuth(async ({ forceRefreshToken }) => {
@@ -147,8 +144,6 @@ export async function initializePricingBilling(
 		return {
 			convex,
 			auth,
-			user: auth.getUser(),
-			isReady: true,
 			isConfigured: true,
 			error: null
 		};
@@ -177,6 +172,7 @@ export async function signOutOfPricing(): Promise<void> {
 		returnTo: `${window.location.origin}/pricing`
 	});
 	void client.convex.close();
+	client.auth.dispose();
 	clientPromise = null;
 }
 
@@ -220,7 +216,7 @@ function normalizeBackendMode(value: unknown): DodoCheckoutMode | undefined {
 }
 
 /**
- * Throws unless the frontend overlay mode agrees with the backend-confirmed
+ * Throws unless the frontend checkout mode agrees with the backend-confirmed
  * Dodo mode carried by a checkout or status payload. An absent mode fails
  * closed: the hosted URL is never opened against an unconfirmed environment.
  */
@@ -238,12 +234,26 @@ function assertReturnedCheckoutMode(backendMode: DodoCheckoutMode | undefined): 
 	}
 }
 
+function assertCheckoutUrl(url: string, mode: DodoCheckoutMode | undefined): void {
+	assertReturnedCheckoutMode(mode);
+	const parsed = new URL(url);
+	const origin =
+		mode === 'live'
+			? 'https://checkout.dodopayments.com'
+			: 'https://test.checkout.dodopayments.com';
+	if (parsed.origin !== origin || parsed.username || parsed.password) {
+		throw new Error('Checkout returned an invalid hosted URL. Contact billing support.');
+	}
+}
+
 export async function createCheckout(
 	tierId: string,
 	interval: BillingInterval,
-	expectedAccountId?: string
+	expectedAccountId?: string,
+	isCurrent: () => boolean = () => true
 ): Promise<CheckoutResult> {
 	const client = await initializePricingBilling();
+	if (!isCurrent()) throw new Error('This billing action was cancelled.');
 	const initiator = liveUser(client);
 	if (!initiator) throw new Error('Sign in to choose a paid plan.');
 	const initiatorAccount = accountIdFor(initiator);
@@ -254,6 +264,7 @@ export async function createCheckout(
 		tier: tierId,
 		interval
 	});
+	if (!isCurrent()) throw new Error('This billing action was cancelled.');
 	// Persist the attempt only while the initiating account still owns the
 	// session: a switched account throws instead of receiving a checkout URL
 	// it must not open.
@@ -270,11 +281,10 @@ export async function createCheckout(
 	storeCheckoutAttempt(accountIdFor(current), {
 		attemptId: result.attemptId,
 		tierId,
-		interval,
-		startedAt: Date.now()
+		interval
 	});
-	assertReturnedCheckoutMode(normalizeBackendMode(result.mode));
 	if (!result.checkout_url) throw new Error('Checkout session was not created.');
+	assertCheckoutUrl(result.checkout_url, normalizeBackendMode(result.mode));
 	return {
 		checkoutUrl: result.checkout_url,
 		attemptId: result.attemptId,
@@ -304,9 +314,9 @@ export async function fetchCheckoutStatus(
 		throw new Error('This billing action was cancelled.');
 	}
 	// A resumable URL is only handed out when its provider environment agrees
-	// with the overlay; anything else fails closed before it can be opened.
+	// with the frontend; anything else fails closed before it can be opened.
 	if (typeof result.checkout_url === 'string' && result.checkout_url.trim()) {
-		assertReturnedCheckoutMode(normalizeBackendMode(result.mode));
+		assertCheckoutUrl(result.checkout_url, normalizeBackendMode(result.mode));
 	}
 	return result;
 }

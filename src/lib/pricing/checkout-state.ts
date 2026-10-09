@@ -1,4 +1,3 @@
-import type { AccessPhase } from '@/lib/convex/api';
 import type { SubscriptionTier } from '@/lib/pricing/billing-client';
 
 export type PricingUiStatus =
@@ -6,7 +5,7 @@ export type PricingUiStatus =
 	| 'loading'
 	| 'signing_in'
 	| 'starting_checkout'
-	| 'checkout_open'
+	| 'redirecting'
 	| 'activating'
 	| 'managing_billing'
 	| 'error';
@@ -16,7 +15,6 @@ export type PricingUiState = {
 	tier: SubscriptionTier;
 	tierLabel: string;
 	billingManaged: boolean;
-	accessPhase: AccessPhase | null;
 	authenticated: boolean;
 	userLabel: string | null;
 	message: string | null;
@@ -27,19 +25,12 @@ export type PricingUiState = {
 	pendingCheckoutUrl: string | null;
 };
 
-export function isAccessPhase(value: unknown): value is AccessPhase {
-	return (
-		value === 'active' || value === 'scheduled_cancel' || value === 'ended' || value === 'none'
-	);
-}
-
 export function createInitialPricingState(): PricingUiState {
 	return {
 		status: 'loading',
 		tier: 'free',
 		tierLabel: 'Free',
 		billingManaged: false,
-		accessPhase: null,
 		authenticated: false,
 		userLabel: null,
 		message: null,
@@ -56,7 +47,6 @@ export function withReadySession(
 		tier: SubscriptionTier;
 		tierLabel: string;
 		billingManaged: boolean;
-		accessPhase?: AccessPhase;
 		userLabel: string | null;
 		message?: string | null;
 	}
@@ -68,7 +58,6 @@ export function withReadySession(
 		tier: input.tier,
 		tierLabel: input.tierLabel,
 		billingManaged: input.billingManaged,
-		accessPhase: input.accessPhase ?? null,
 		userLabel: input.userLabel,
 		message: input.message ?? null,
 		busy: false,
@@ -123,7 +112,6 @@ export function withActivatedTier(
 		tier,
 		tierLabel,
 		billingManaged: true,
-		accessPhase: null,
 		message: `${tierLabel} is active. You can manage billing anytime from this page.`,
 		busy: false,
 		pendingAttemptId: null,

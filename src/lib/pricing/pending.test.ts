@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import {
 	clearCheckoutAttempt,
 	clearPendingPricingAction,
@@ -20,13 +20,20 @@ const sessionStorageMock = {
 	}
 };
 
-Object.defineProperty(globalThis, 'sessionStorage', {
-	value: sessionStorageMock,
-	configurable: true
-});
+function restoreStorage(): void {
+	Object.defineProperty(globalThis, 'sessionStorage', {
+		value: sessionStorageMock,
+		configurable: true
+	});
+}
+
+restoreStorage();
+
+afterEach(restoreStorage);
 
 describe('pending pricing actions', () => {
 	beforeEach(() => {
+		restoreStorage();
 		memory.clear();
 		clearPendingPricingAction();
 	});
@@ -54,16 +61,74 @@ describe('pending pricing actions', () => {
 		expect(sessionStorage.getItem('spikonado_pricing_pending')).toBeNull();
 	});
 
+	test.each(['missing', 'blocked getter', 'throwing operations'])(
+		'reads and cleanup tolerate %s storage while required writes report the problem',
+		(failure) => {
+			const blocked = () => {
+				throw new DOMException('Storage blocked', 'SecurityError');
+			};
+			Object.defineProperty(
+				globalThis,
+				'sessionStorage',
+				failure === 'blocked getter'
+					? { get: blocked, configurable: true }
+					: {
+							value:
+								failure === 'missing'
+									? undefined
+									: { getItem: blocked, setItem: blocked, removeItem: blocked },
+							configurable: true
+						}
+			);
+
+			expect(readPendingPricingAction()).toBeNull();
+			expect(readCheckoutAttempt('user-a')).toBeNull();
+			clearPendingPricingAction();
+			clearCheckoutAttempt();
+			expect(() =>
+				storePendingPricingAction({ type: 'checkout', tierId: 'team', interval: 'annual' })
+			).toThrow('Browser storage is unavailable. Enable site storage before starting checkout.');
+			expect(() =>
+				storeCheckoutAttempt('user-a', {
+					attemptId: 'attempt-1',
+					tierId: 'team',
+					interval: 'annual'
+				})
+			).toThrow('Browser storage is unavailable. Enable site storage before starting checkout.');
+		}
+	);
+
+	test('reads discard corrupt state even when cleanup is blocked', () => {
+		Object.defineProperty(globalThis, 'sessionStorage', {
+			value: {
+				getItem: () => '{not json',
+				removeItem: () => {
+					throw new DOMException('Storage blocked', 'SecurityError');
+				}
+			},
+			configurable: true
+		});
+		expect(readPendingPricingAction()).toBeNull();
+		expect(readCheckoutAttempt('user-a')).toBeNull();
+	});
+
 	describe('checkout attempt references', () => {
 		const attempt = {
 			attemptId: 'attempt-1',
 			tierId: 'team',
-			interval: 'monthly' as const,
-			startedAt: 1_700_000_000_000
+			interval: 'monthly' as const
 		};
 
 		test('reads back an attempt for the account that started it', () => {
 			storeCheckoutAttempt('user-a', attempt);
+			expect(readCheckoutAttempt('user-a')).toEqual(attempt);
+		});
+
+		test('reads previous attempts without depending on their extra timestamp', () => {
+			sessionStorage.setItem(
+				'spikonado_pricing_attempt',
+				JSON.stringify({ userId: 'user-a', ...attempt, startedAt: 1_700_000_000_000 })
+			);
 			expect(readCheckoutAttempt('user-a')).toEqual(attempt);
 		});
 
@@ -84,7 +149,7 @@ describe('pending pricing actions', () => {
 			storeCheckoutAttempt('user-a', attempt);
 			sessionStorage.setItem(
 				'spikonado_pricing_attempt',
-				'{"userId":"user-a","attemptId":"x","tierId":"team","interval":"weekly","startedAt":1}'
+				'{"userId":"user-a","attemptId":"x","tierId":"team","interval":"weekly"}'
 			);
 			expect(readCheckoutAttempt('user-a')).toBeNull();
 

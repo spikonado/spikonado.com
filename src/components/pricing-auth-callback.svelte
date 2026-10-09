@@ -6,16 +6,14 @@
 	let message = $state('Finishing sign-in…');
 
 	$effect(() => {
+		let active = true;
 		void (async () => {
 			try {
 				const params = new URLSearchParams(window.location.search);
 				const callbackError = params.get('error_description') ?? params.get('error');
-				const client = await initializePricingBilling({
-					// AuthKit invokes this before createClient resolves. Wait for the
-					// initialized client below so we can verify that a user exists.
-					onRedirectCallback: () => {}
-				});
-				if (client.user) {
+				const client = await initializePricingBilling();
+				if (!active) return;
+				if (client.auth?.getUser()) {
 					const pending = readPendingPricingAction();
 					if (!pending) {
 						window.location.replace('/pricing');
@@ -33,12 +31,16 @@
 					callbackError ??
 					'Sign-in could not be completed. Return to pricing and try again. Your checkout choice was saved.';
 			} catch (error) {
+				if (!active) return;
 				message =
 					error instanceof Error
 						? error.message
 						: 'Sign-in could not be completed. Return to pricing and try again.';
 			}
 		})();
+		return () => {
+			active = false;
+		};
 	});
 </script>
 

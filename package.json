@@ -29,7 +29,6 @@
 		"botid": "^1.5.11",
 		"clsx": "^2.1.1",
 		"convex": "^1.43.0",
-		"dodopayments-checkout": "^1.9.5",
 		"posthog-js": "^1.360.0",
 		"posthog-node": "^5.41.0",
 		"react": "^19.2.4",

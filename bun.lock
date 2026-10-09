@@ -20,7 +20,6 @@
         "botid": "^1.5.11",
         "clsx": "^2.1.1",
         "convex": "^1.43.0",
-        "dodopayments-checkout": "^1.9.5",
         "posthog-js": "^1.360.0",
         "posthog-node": "^5.41.0",
         "react": "^19.2.4",
@@ -746,8 +745,6 @@
     "devlop": ["devlop@1.1.0", "", { "dependencies": { "dequal": "^2.0.0" } }, "sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA=="],
 
     "diff": ["diff@8.0.4", "", {}, "sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw=="],
-
-    "dodopayments-checkout": ["dodopayments-checkout@1.9.9", "", {}, "sha512-AgaAcer4x8gCWUK2waeTESIJc3/WiejogbCPbwkh5CIMWxLkAPIIAFy64q3qFYO/FNQ5xlM9uvLDNwJgXG/A4g=="],
 
     "dom-serializer": ["dom-serializer@2.0.0", "", { "dependencies": { "domelementtype": "^2.3.0", "domhandler": "^5.0.2", "entities": "^4.2.0" } }, "sha512-wIkAryiqt/nV5EQKqQpo3SToSOV9J0DnbJqwK7Wv/Trc92zIAYZ4FlMu+JPFW1DfGFt81ZTCGgDEabffXeLyJg=="],
 

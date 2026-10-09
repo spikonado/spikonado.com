@@ -1,11 +1,5 @@
 export type DodoCheckoutMode = 'test' | 'live';
 
-/**
- * The Dodo checkout overlay mode. Unset outside local development: production
- * billing must opt in explicitly instead of silently defaulting to test mode.
- * The backend enforces its own readiness; this only governs which overlay the
- * browser loads.
- */
 export function resolveCheckoutMode(
 	raw: string | undefined = import.meta.env.PUBLIC_DODO_CHECKOUT_MODE,
 	hostname: string | null = typeof window === 'undefined' ? null : window.location.hostname

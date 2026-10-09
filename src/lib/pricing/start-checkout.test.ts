@@ -1,33 +1,12 @@
-import { afterEach, describe, expect, mock, test } from 'bun:test';
-import type { CheckoutOverlay, DodoCheckoutEvent } from './checkout-overlay.ts';
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import { createBillingOperations } from './operation.ts';
+import { readPendingPricingAction } from './pending.ts';
 import {
 	checkoutRequestFromSearch,
 	pricingUrlWithoutCheckoutCommand,
 	runCheckout,
 	type CheckoutProgress
 } from './start-checkout.ts';
-import { clearPendingPricingAction } from './pending.ts';
-
-type OverlayOpen = {
-	url: string;
-	handler?: (event: DodoCheckoutEvent) => void;
-};
-
-function fakeOverlay(throwsOnOpen = false): { openings: OverlayOpen[]; overlay: CheckoutOverlay } {
-	const openings: OverlayOpen[] = [];
-	return {
-		openings,
-		overlay: {
-			open: (url: string, handler?: (event: DodoCheckoutEvent) => void) => {
-				if (throwsOnOpen) throw new Error('overlay unavailable');
-				openings.push({ url, handler });
-				return 'overlay' as const;
-			},
-			close: () => {}
-		}
-	};
-}
 
 function deferred<T>() {
 	let resolve!: (value: T) => void;
@@ -39,255 +18,228 @@ function deferred<T>() {
 	return { promise, resolve, reject };
 }
 
-const sessionMemory = new Map<string, string>();
-Object.defineProperty(globalThis, 'sessionStorage', {
-	value: {
-		getItem: (key: string) => sessionMemory.get(key) ?? null,
-		setItem: (key: string, value: string) => void sessionMemory.set(key, value),
-		removeItem: (key: string) => void sessionMemory.delete(key)
-	},
+type Checkout = { checkoutUrl: string; attemptId: string };
+const checkout: Checkout = {
+	checkoutUrl: 'https://checkout.example/session/cks_a',
+	attemptId: 'attempt-a'
+};
+const user = { id: 'user-a', email: 'a@example.com' };
+const client = {
+	auth: { getUser: () => user as typeof user | null },
+	isConfigured: true,
+	error: null as string | null
+};
+let initializeBehavior: () => Promise<typeof client>;
+let createBehavior: () => Promise<Checkout>;
+let signInBehavior: () => Promise<void>;
+
+const initialize = mock(() => initializeBehavior());
+const create = mock(() => createBehavior());
+const signIn = mock(() => signInBehavior());
+mock.module('@/lib/pricing/billing-client', () => ({
+	initializePricingBilling: initialize,
+	createCheckout: create,
+	signInForPricing: signIn
+}));
+
+const redirects: string[] = [];
+Object.defineProperty(window.location, 'assign', {
+	value: (url: string) => redirects.push(url),
 	configurable: true
 });
+const sessionMemory = new Map<string, string>();
+const storage = {
+	getItem: (key: string) => sessionMemory.get(key) ?? null,
+	setItem: (key: string, value: string) => void sessionMemory.set(key, value),
+	removeItem: (key: string) => void sessionMemory.delete(key)
+};
 
-function signedInClient(
-	user: { id: string; email: string } | null = { id: 'user-a', email: 'a@example.com' }
-) {
-	return {
-		convex: {},
-		auth: { getUser: () => user },
-		user,
-		isReady: true,
-		isConfigured: true,
-		error: null
-	};
+function restoreStorage(): void {
+	Object.defineProperty(globalThis, 'sessionStorage', { value: storage, configurable: true });
 }
 
-function mockBillingModule({
-	client = signedInClient(),
-	checkout
-}: {
-	client?: ReturnType<typeof signedInClient> | Promise<ReturnType<typeof signedInClient>>;
-	checkout: ReturnType<typeof deferred<{ checkoutUrl: string; attemptId: string }>>;
-}) {
-	mock.module('@/lib/pricing/billing-client', () => ({
-		initializePricingBilling: () => client,
-		signInForPricing: async () => {},
-		createCheckout: () => checkout.promise
-	}));
-}
-
-function collectProgress(events: CheckoutProgress[]) {
-	return (progress: CheckoutProgress) => events.push(progress);
-}
-
-afterEach(() => {
-	mock.restore();
+beforeEach(() => {
+	restoreStorage();
 	sessionMemory.clear();
-	clearPendingPricingAction();
+	redirects.length = 0;
+	initialize.mockClear();
+	create.mockClear();
+	signIn.mockClear();
+	initializeBehavior = async () => client;
+	createBehavior = async () => checkout;
+	signInBehavior = async () => {};
 });
 
-describe('checkoutRequestFromSearch', () => {
-	test('reads tier and interval from checkout deep links', () => {
-		expect(checkoutRequestFromSearch('?checkout=start&tier=team&interval=monthly')).toEqual({
-			tierId: 'team',
-			interval: 'monthly'
-		});
-		expect(checkoutRequestFromSearch('checkout=start&tier=team%2Fplus&interval=annual')).toEqual({
+afterEach(restoreStorage);
+
+describe('checkout navigation', () => {
+	test('parses checkout commands and consumes only their URL parameters', () => {
+		expect(checkoutRequestFromSearch('?checkout=start&tier=team%2Fplus&interval=annual')).toEqual({
 			tierId: 'team/plus',
 			interval: 'annual'
 		});
-	});
-
-	test('rejects malformed checkout links and unrelated commands', () => {
-		expect(checkoutRequestFromSearch('?checkout=start')).toBeNull();
-		expect(checkoutRequestFromSearch('?checkout=start&tier=&interval=monthly')).toBeNull();
-		expect(checkoutRequestFromSearch('?checkout=start&tier=team&interval=weekly')).toBeNull();
-		expect(checkoutRequestFromSearch('?checkout=return')).toBeNull();
-		expect(checkoutRequestFromSearch('')).toBeNull();
-	});
-});
-
-describe('pricingUrlWithoutCheckoutCommand', () => {
-	test('consumes checkout parameters without removing unrelated state', () => {
+		for (const search of [
+			'?checkout=start',
+			'?checkout=start&tier=&interval=monthly',
+			'?checkout=start&tier=team&interval=weekly',
+			'?checkout=return'
+		]) {
+			expect(checkoutRequestFromSearch(search)).toBeNull();
+		}
 		expect(
 			pricingUrlWithoutCheckoutCommand(
 				'https://spikonado.com/pricing?campaign=launch&checkout=start&tier=team&interval=annual#plans'
 			)
 		).toBe('/pricing?campaign=launch#plans');
 	});
-});
 
-describe('runCheckout orchestration', () => {
-	test('opens the overlay and reports progress for the owning account', async () => {
-		const checkout = deferred<{ checkoutUrl: string; attemptId: string }>();
-		mockBillingModule({ checkout });
-		const { overlay, openings } = fakeOverlay();
-		const ops = createBillingOperations();
-		const guard = ops.begin('checkout', 'user-a', overlay);
+	test('redirects to hosted checkout with the exact operation guard', async () => {
+		const guard = createBillingOperations().begin('user-a');
 		const events: CheckoutProgress[] = [];
+		await runCheckout('team', 'monthly', { guard, emit: (event) => events.push(event) });
 
-		const run = runCheckout('team', 'monthly', {
-			overlay,
-			guard,
-			emit: collectProgress(events)
+		expect(create).toHaveBeenCalledWith('team', 'monthly', 'user-a', guard.isCurrent);
+		expect(redirects).toEqual([checkout.checkoutUrl]);
+		expect(events.map((event) => event.status)).toEqual(['starting', 'starting', 'redirecting']);
+		expect(events.at(-1)).toMatchObject({
+			status: 'redirecting',
+			tierId: 'team',
+			interval: 'monthly',
+			attemptId: checkout.attemptId
 		});
-		checkout.resolve({ checkoutUrl: 'https://checkout.example/session/cks_a', attemptId: 'a1' });
-		await run;
-
-		expect(openings.map((entry) => entry.url)).toEqual(['https://checkout.example/session/cks_a']);
-		expect(events.map((event) => event.status)).toEqual(['starting', 'starting', 'checkout_open']);
-		expect(events.every((event) => event.accountId === 'user-a')).toBe(true);
 	});
 
-	test('a stale operation never opens the checkout URL and reports nothing', async () => {
-		const checkout = deferred<{ checkoutUrl: string; attemptId: string }>();
-		mockBillingModule({ checkout });
-		const { overlay, openings } = fakeOverlay();
-		const ops = createBillingOperations();
-		const guard = ops.begin('checkout', 'user-a', overlay);
+	test('saves the choice and starts sign-in for a signed-out user', async () => {
+		initializeBehavior = async () => ({ ...client, auth: { getUser: () => null } });
 		const events: CheckoutProgress[] = [];
-
-		const run = runCheckout('team', 'monthly', {
-			overlay,
-			guard,
-			emit: collectProgress(events)
+		await runCheckout('team', 'annual', {
+			guard: createBillingOperations().begin('signed-out'),
+			emit: (event) => events.push(event)
 		});
-		ops.bumpGeneration();
-		checkout.resolve({ checkoutUrl: 'https://checkout.example/session/cks_a', attemptId: 'a1' });
-		await run;
 
-		expect(openings).toEqual([]);
+		expect(signIn).toHaveBeenCalledTimes(1);
+		expect(create).toHaveBeenCalledTimes(0);
+		expect(redirects).toEqual([]);
+		expect(events.map((event) => event.status)).toEqual(['starting', 'signing_in']);
+		expect(readPendingPricingAction()).toEqual({
+			type: 'checkout',
+			tierId: 'team',
+			interval: 'annual'
+		});
+	});
+
+	test.each(['initialization', 'creation', 'sign-in'])(
+		'%s failures reach the owning callback',
+		async (stage) => {
+			const fail = async () => {
+				throw new Error(`${stage} unavailable`);
+			};
+			if (stage === 'initialization') initializeBehavior = fail;
+			if (stage === 'creation') createBehavior = fail;
+			if (stage === 'sign-in') {
+				initializeBehavior = async () => ({ ...client, auth: { getUser: () => null } });
+				signInBehavior = fail;
+			}
+			const events: CheckoutProgress[] = [];
+			await runCheckout('team', 'monthly', {
+				guard: createBillingOperations().begin('user-a'),
+				emit: (event) => events.push(event)
+			});
+			expect(events.at(-1)).toMatchObject({ status: 'error', message: `${stage} unavailable` });
+			expect(redirects).toEqual([]);
+		}
+	);
+
+	test('a required storage write failure reports how to fix storage before billing starts', async () => {
+		Object.defineProperty(globalThis, 'sessionStorage', {
+			value: {
+				...storage,
+				setItem: () => {
+					throw new DOMException('Quota exceeded', 'QuotaExceededError');
+				}
+			},
+			configurable: true
+		});
+		const events: CheckoutProgress[] = [];
+		await runCheckout('team', 'monthly', {
+			guard: createBillingOperations().begin('user-a'),
+			emit: (event) => events.push(event)
+		});
+		expect(events.map((event) => [event.status, event.message])).toEqual([
+			['error', 'Browser storage is unavailable. Enable site storage before starting checkout.']
+		]);
+		expect(initialize).toHaveBeenCalledTimes(0);
+		expect(create).toHaveBeenCalledTimes(0);
+	});
+
+	test('cancellation while initializing prevents checkout creation', async () => {
+		const pending = deferred<typeof client>();
+		const started = deferred<void>();
+		initializeBehavior = () => {
+			started.resolve();
+			return pending.promise;
+		};
+		const operations = createBillingOperations();
+		const events: CheckoutProgress[] = [];
+		const run = runCheckout('team', 'monthly', {
+			guard: operations.begin('user-a'),
+			emit: (event) => events.push(event)
+		});
+		await started.promise;
+		operations.bumpGeneration();
+		pending.resolve(client);
+		await run;
+		expect(create).toHaveBeenCalledTimes(0);
+		expect(redirects).toEqual([]);
 		expect(events.map((event) => event.status)).toEqual(['starting']);
 	});
 
-	test('overlay events from a stale operation are ignored', async () => {
-		const checkout = deferred<{ checkoutUrl: string; attemptId: string }>();
-		mockBillingModule({ checkout });
-		const { overlay, openings } = fakeOverlay();
-		const ops = createBillingOperations();
-		const guard = ops.begin('checkout', 'user-a', overlay);
-		const events: CheckoutProgress[] = [];
-
-		const run = runCheckout('team', 'monthly', {
-			overlay,
-			guard,
-			emit: collectProgress(events)
-		});
-		checkout.resolve({ checkoutUrl: 'https://checkout.example/session/cks_a', attemptId: 'a1' });
-		await run;
-
-		ops.bumpGeneration();
-		openings[0]?.handler?.({ event_type: 'checkout.closed' });
-		expect(events.map((event) => event.status)).not.toContain('checkout_closed');
-	});
-
-	test('checkout creation failures surface as operation-bound errors', async () => {
-		const checkout = deferred<{ checkoutUrl: string; attemptId: string }>();
-		mockBillingModule({ checkout });
-		const { overlay, openings } = fakeOverlay();
-		const ops = createBillingOperations();
-		const guard = ops.begin('checkout', 'user-a', overlay);
-		const events: CheckoutProgress[] = [];
-
-		const run = runCheckout('team', 'monthly', {
-			overlay,
-			guard,
-			emit: collectProgress(events)
-		});
-		checkout.reject(new Error('Checkout is temporarily disabled.'));
-		await run;
-
-		expect(openings).toEqual([]);
-		expect(events.at(-1)).toMatchObject({
-			status: 'error',
-			message: 'Checkout is temporarily disabled.',
-			accountId: 'user-a'
-		});
-	});
-
-	test('an SDK error does not fail the payment: close still reports the attempt for recovery', async () => {
-		const checkout = deferred<{ checkoutUrl: string; attemptId: string }>();
-		mockBillingModule({ checkout });
-		const { overlay, openings } = fakeOverlay();
-		const ops = createBillingOperations();
-		const guard = ops.begin('checkout', 'user-a', overlay);
-		const events: CheckoutProgress[] = [];
-
-		const run = runCheckout('team', 'monthly', {
-			overlay,
-			guard,
-			emit: collectProgress(events)
-		});
-		checkout.resolve({ checkoutUrl: 'https://checkout.example/session/cks_a', attemptId: 'a1' });
-		await run;
-
-		openings[0]?.handler?.({ event_type: 'checkout.error' });
-		openings[0]?.handler?.({ event_type: 'checkout.closed' });
-
-		expect(events.map((event) => event.status)).toEqual([
-			'starting',
-			'starting',
-			'checkout_open',
-			'error',
-			'checkout_closed'
-		]);
-		// The SDK error is not an authoritative payment failure: recovery still
-		// keys off the account-owned attempt reference.
-		expect(events.at(-2)).toMatchObject({ status: 'error', attemptId: 'a1' });
-		expect(events.at(-1)).toMatchObject({ status: 'checkout_closed', attemptId: 'a1' });
-		expect(events.at(-1)!.message).toContain('check the payment status');
-	});
-
-	test('a signed-out live auth user routes to sign-in even when the client snapshot has a user', async () => {
-		const checkout = deferred<{ checkoutUrl: string; attemptId: string }>();
-		// The snapshot still shows a user, but the live auth read does not.
-		const client = {
-			...signedInClient(),
-			auth: { getUser: () => null }
+	test('out-of-order same-account creation results redirect only the current checkout', async () => {
+		const oldResult = deferred<Checkout>();
+		const started = deferred<void>();
+		createBehavior = () => {
+			started.resolve();
+			return oldResult.promise;
 		};
-		mockBillingModule({ client, checkout });
-		const { overlay, openings } = fakeOverlay();
-		const ops = createBillingOperations();
-		const guard = ops.begin('checkout', 'user-a', overlay);
-		const events: CheckoutProgress[] = [];
-
-		await runCheckout('team', 'monthly', {
-			overlay,
-			guard,
-			emit: collectProgress(events)
+		const operations = createBillingOperations();
+		const oldEvents: CheckoutProgress[] = [];
+		const oldRun = runCheckout('team', 'monthly', {
+			guard: operations.begin('user-a'),
+			emit: (event) => oldEvents.push(event)
 		});
+		await started.promise;
+		const currentCheckout = {
+			checkoutUrl: 'https://checkout.example/current',
+			attemptId: 'current'
+		};
+		createBehavior = async () => currentCheckout;
+		const currentEvents: CheckoutProgress[] = [];
+		await runCheckout('team', 'annual', {
+			guard: operations.begin('user-a'),
+			emit: (event) => currentEvents.push(event)
+		});
+		oldResult.resolve(checkout);
+		await oldRun;
 
-		expect(openings).toEqual([]);
-		expect(events.map((event) => event.status)).toEqual(['starting', 'signing_in']);
+		expect(redirects).toEqual([currentCheckout.checkoutUrl]);
+		expect(oldEvents.map((event) => event.status)).toEqual(['starting', 'starting']);
+		expect(currentEvents.at(-1)).toMatchObject({ status: 'redirecting', attemptId: 'current' });
 	});
 
-	test('checkout remains bound to its initiating account while billing initializes', async () => {
-		const client = deferred<ReturnType<typeof signedInClient>>();
-		const create = mock(async () => ({
-			checkoutUrl: 'https://checkout.example/session/cks_b',
-			attemptId: 'b1'
-		}));
-		mock.module('@/lib/pricing/billing-client', () => ({
-			initializePricingBilling: () => client.promise,
-			signInForPricing: async () => {},
-			createCheckout: create
-		}));
-		const { overlay } = fakeOverlay();
-		const guard = createBillingOperations().begin('checkout', 'user-a', overlay);
-		const events: CheckoutProgress[] = [];
-		const run = runCheckout('team', 'monthly', {
-			overlay,
-			guard,
-			emit: collectProgress(events)
+	test('a changed live account reports cancellation before checkout creation', async () => {
+		initializeBehavior = async () => ({
+			...client,
+			auth: { getUser: () => ({ id: 'user-b', email: 'b@example.com' }) }
 		});
-		client.resolve(signedInClient({ id: 'user-b', email: 'b@example.com' }));
-		await run;
-
-		expect(create.mock.calls).toEqual([]);
+		const events: CheckoutProgress[] = [];
+		await runCheckout('team', 'monthly', {
+			guard: createBillingOperations().begin('user-a'),
+			emit: (event) => events.push(event)
+		});
+		expect(create).toHaveBeenCalledTimes(0);
 		expect(events.at(-1)).toMatchObject({
 			status: 'error',
-			message: 'This billing action was cancelled.',
-			accountId: 'user-a'
+			message: 'This billing action was cancelled.'
 		});
 	});
 });

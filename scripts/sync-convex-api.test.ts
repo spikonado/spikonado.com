@@ -1,7 +1,47 @@
 import { describe, expect, test } from 'bun:test';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { parseContract, renderContract, validatorType } from './sync-convex-api';
 
 describe('billing contract generation', () => {
+	test('requires a committed backend before exporting its contract', () => {
+		const source = mkdtempSync(join(tmpdir(), 'billing-contract-'));
+		try {
+			const git = (...args: string[]) => spawnSync('git', args, { cwd: source, encoding: 'utf8' });
+			expect(git('init').status).toBe(0);
+			const web = join(source, 'apps/web');
+			mkdirSync(web, { recursive: true });
+			const backend = join(web, 'package.json');
+			writeFileSync(backend, '{"name":"billing-backend"}\n');
+			expect(git('add', '.').status).toBe(0);
+			expect(
+				git(
+					'-c',
+					'user.name=Billing test',
+					'-c',
+					'user.email=billing@example.com',
+					'-c',
+					'commit.gpgsign=false',
+					'commit',
+					'-m',
+					'Initial backend'
+				).status
+			).toBe(0);
+			writeFileSync(backend, '{"name":"changed-backend"}\n');
+			const entry = join(import.meta.dir, 'sync-convex-api.ts');
+			const command = spawnSync(process.execPath, [entry, '--check', '--source', source], {
+				encoding: 'utf8'
+			});
+			expect(command.status).not.toBe(0);
+			expect(command.stderr).toContain(
+				'Commit backend changes before pinning the billing contract.'
+			);
+		} finally {
+			rmSync(source, { recursive: true, force: true });
+		}
+	});
 	test('retains nested fields, optionality, unions, and empty arguments', () => {
 		expect(
 			validatorType({
