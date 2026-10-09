@@ -24,16 +24,16 @@ const sprocketRelease = await fetchLatestSprocketRelease();
 
 const capabilityItems = [
 	{
-		title: 'Electronics and software, together',
-		body: 'Design the circuit, write the firmware, and build the app that controls it. Keep the whole system in one project.'
+		title: 'Web context beyond search results',
+		body: 'Read full pages as Markdown, including dynamic sites. Long results stay available in saved files.'
 	},
 	{
-		title: 'Research the parts you will actually use',
-		body: "Work from datasheets, current documentation, and supplier information instead of relying on a model's memory."
+		title: 'Documents become context',
+		body: 'Built-in parsing turns PDFs, Office documents, and spreadsheets into Markdown, with hosted OCR when needed.'
 	},
 	{
-		title: 'Buy what the build needs',
-		body: 'Ask Sprocket to source and purchase hardware parts or services, with payment kept within spending limits you approve.'
+		title: 'Purchasing, with limits you approve',
+		body: 'Buy SaaS subscriptions or electronics with single-use payment credentials and approved spending limits.'
 	}
 ] as const;
 
@@ -132,12 +132,14 @@ const softwareLd = {
 					<h2 class={cn(marketingProductHeadingClass, 'mt-3')}>Sprocket</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
 						An AI engineering agent for{' '}
-						<span class="mark-verb">hardware</span> and{' '}
-						<span class="mark-verb">software</span>.
+						<span class="mark-verb">software</span> and{' '}
+						<span class="mark-verb">hardware</span>.
 					</p>
 					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
-						<span class="mark-verb">Design the electronics</span>, write the software, and{' '}
-						<span class="mark-verb">buy the parts</span>. Work on the whole build with one agent.
+						Work from <span class="mark-verb">rich web context</span>, bring your documents, and{
+							' '
+						}
+						<span class="mark-verb">buy the services or components</span> your project needs.
 					</p>
 					<div class="mt-8 flex w-full max-w-md flex-col gap-3">
 						<div class="flex flex-col gap-3 sm:flex-row sm:items-start">
@@ -189,15 +191,14 @@ const softwareLd = {
 			>
 				<div>
 					<h2 class={marketingSectionHeadingClass}>
-						Beyond <span class="mark-accent">the code.</span>
+						Less <span class="mark-accent">busywork.</span>
 					</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						A robot needs more than software. Sprocket works across{' '}
-						<span class="mark-verb">circuits, code, and components</span> to help you build the complete
-						system.
+						An app, a device, or both. Sprocket handles the{' '}
+						<span class="mark-verb">research, documents, and purchasing</span> that sit around development.
 					</p>
 					<p class="mt-8 font-brand text-xl font-semibold text-foreground">
-						From a schematic to the parts on your bench.
+						Built in, without a separate tool setup.
 					</p>
 					<a
 						href="/#sprocket"

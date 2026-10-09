@@ -5,34 +5,44 @@ import { cn } from '@/utils';
 
 const capabilities = [
 	{
-		id: 'hardware',
-		category: 'Hardware + software',
-		heading: 'The circuit.',
-		accent: 'And the code.',
-		body: 'Create schematics, pin maps, a bill of materials, and assembly guides. Write the firmware and the app alongside them.',
-		image: 'Schematic + firmware + bill of materials',
-		caption: 'A hardware design and its software, side by side.',
-		note: 'Review and validate hardware designs before building.'
-	},
-	{
-		id: 'research',
-		category: 'Component research',
-		heading: 'Build from',
-		accent: 'the datasheet.',
-		body: "Read technical documents, compare components, and check current supplier information. Follow Sprocket's browser work live or take over yourself.",
-		image: 'Datasheet + component comparison',
-		caption: 'From component specifications to a choice for your design.',
+		id: 'web-context',
+		category: 'Rich web context',
+		heading: 'Read the page.',
+		accent: 'Not just the snippet.',
+		body: "Work from current API docs, technical guides, and supplier pages. Sprocket prefers a site's Markdown, uses Firecrawl to read dynamic pages, and saves long results instead of cutting them short.",
+		image: 'API documentation + supplier page → web context',
+		caption: 'The source content stays available for the agent to read.',
 		note: ''
 	},
 	{
+		id: 'file-context',
+		category: 'Built-in document parsing',
+		heading: 'Your files.',
+		accent: 'Usable context.',
+		body: 'Turn PDFs, Word documents, slides, and spreadsheets into Markdown the agent can work from. Bring in a product brief, a test report, or a datasheet without converting it yourself.',
+		image: 'Product brief + spreadsheet + datasheet → Markdown',
+		caption: 'One parsing tool, across document formats and model choices.',
+		note: 'Supported formats and size limits apply. Documents that need hosted parsing or OCR are sent to Firecrawl.'
+	},
+	{
 		id: 'purchasing',
-		category: 'Parts + services',
-		heading: 'From parts list',
-		accent: 'to purchase.',
-		body: 'Ask Sprocket to source parts and complete a purchase. Approve a spending mandate, then let it pay within those limits.',
-		image: 'Parts list + spending approval + checkout',
-		caption: 'Source the components and services your project needs.',
-		note: 'Approved mandates can allow later charges without a new approval. Merchant and payment-service support varies.'
+		category: 'Agentic purchasing',
+		heading: 'Approve it.',
+		accent: 'Let Sprocket buy it.',
+		body: 'Ask Sprocket to buy a SaaS subscription or electronics. Approve a merchant and spending limit, then let the agent complete checkout using a single-use payment credential.',
+		image: 'SaaS subscription + electronics → spending approval + checkout',
+		caption: 'Buy the services and components your project needs.',
+		note: 'Standing mandates can allow later charges without another approval. Merchant and payment-service support varies.'
+	},
+	{
+		id: 'project-artifacts',
+		category: 'Live project artifacts',
+		heading: 'Live files.',
+		accent: 'Shared context.',
+		body: 'Publish interactive HTML or React previews and Markdown reports from real project files. Keep edits synced and open the same artifacts from any thread in the project.',
+		image: 'Interactive app mockup + design report → shared project artifacts',
+		caption: 'A live preview backed by a file you can keep working on.',
+		note: ''
 	}
 ] as const;
 ---
