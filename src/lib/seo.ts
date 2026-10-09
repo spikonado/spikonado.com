@@ -10,7 +10,7 @@ export const DEFAULT_DESCRIPTION =
 	'Spikonado helps anyone build apps, robots, devices, and the systems that glue them together.';
 
 export const SPROCKET_DESCRIPTION =
-	'Sprocket is an AI engineering agent for hardware and software. Research, design, code, and test in your project folder, with subagents working in parallel.';
+	'Sprocket is an AI engineering agent for hardware and software. Research components, create schematics and firmware, and purchase parts with approved spending limits.';
 
 export const ORGANIZATION_SAME_AS = [
 	'https://github.com/spikonado',

@@ -1,6 +1,7 @@
 ---
 import CopyCommand from '@/components/copy-command.svelte';
 import ProductImagePlaceholder from '@/components/product-image-placeholder.astro';
+import SprocketCapabilities from '@/components/sprocket-capabilities.astro';
 import SprocketDownload from '@/components/sprocket-download.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
 import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
@@ -73,8 +74,8 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 						</svg>
 					</span>
 					<p class={featureTextClass}>
-						<span class="mark-verb">Research, design, code, and test</span> in your project folder. Create
-						schematics, BOMs, and assembly guides alongside your software.
+						<span class="mark-verb">Design the electronics and the software</span>. Schematics,
+						BOMs, assembly guides, firmware, and apps in one project.
 					</p>
 				</li>
 				<li class="flex gap-4 py-5">
@@ -89,8 +90,8 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 						</svg>
 					</span>
 					<p class={featureTextClass}>
-						<span class="mark-verb">Delegate to subagents</span>, follow their progress in the
-						inbox, and review shared documents, images, and rendered previews.
+						<span class="mark-verb">Research real components</span> using datasheets, current docs, and
+						supplier websites. Watch browser work live and take over when needed.
 					</p>
 				</li>
 				<li class="flex gap-4 py-5">
@@ -105,8 +106,8 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 						</svg>
 					</span>
 					<p class={featureTextClass}>
-						<span class="mark-verb">Choose your model</span> and reasoning effort. Connect your ChatGPT
-						subscription or use your own OpenAI API key.
+						<span class="mark-verb">Purchase parts and services</span> with spending limits you approve.
+						Go from a parts list to sourcing what your build needs.
 					</p>
 				</li>
 			</ul>
@@ -162,5 +163,8 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 				</a>
 			</div>
 		</article>
+		<div class="-mx-4 mt-20 sm:-mx-6 lg:-mx-8">
+			<SprocketCapabilities />
+		</div>
 	</main>
 </BaseLayout>

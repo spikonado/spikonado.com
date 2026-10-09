@@ -5,6 +5,7 @@ import CopyCommand from '@/components/copy-command.svelte';
 import GetStarted from '@/components/get-started.svelte';
 import SprocketDownload from '@/components/sprocket-download.svelte';
 import ProductImagePlaceholder from '@/components/product-image-placeholder.astro';
+import SprocketCapabilities from '@/components/sprocket-capabilities.astro';
 import BaseLayout from '@/layouts/base-layout.astro';
 import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
 import { fetchLatestSprocketRelease, SPROCKET_NPM_COMMAND } from '@/lib/sprocket-releases';
@@ -23,16 +24,16 @@ const sprocketRelease = await fetchLatestSprocketRelease();
 
 const capabilityItems = [
 	{
-		title: 'Your models, your choice',
-		body: 'Choose your model and reasoning effort. Connect your ChatGPT subscription or use your own OpenAI API key.'
+		title: 'Electronics and software, together',
+		body: 'Design the circuit, write the firmware, and build the app that controls it. Keep the whole system in one project.'
 	},
 	{
-		title: 'Bring your project context',
-		body: 'Reference files with @, attach documents, and research the web. Reuse your instructions and skills across tasks.'
+		title: 'Research the parts you will actually use',
+		body: "Work from datasheets, current documentation, and supplier information instead of relying on a model's memory."
 	},
 	{
-		title: 'Outputs you can inspect',
-		body: 'Review code, schematics, BOMs, and rendered previews. Keep artifacts shared across every thread in your project.'
+		title: 'Buy what the build needs',
+		body: 'Ask Sprocket to source and purchase hardware parts or services, with payment kept within spending limits you approve.'
 	}
 ] as const;
 
@@ -135,8 +136,8 @@ const softwareLd = {
 						<span class="mark-verb">software</span>.
 					</p>
 					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
-						<span class="mark-verb">Research, design, code, and test</span> in your project folder. Let
-						<span class="mark-verb">subagents work in parallel</span> while you follow the results.
+						<span class="mark-verb">Design the electronics</span>, write the software, and{' '}
+						<span class="mark-verb">buy the parts</span>. Work on the whole build with one agent.
 					</p>
 					<div class="mt-8 flex w-full max-w-md flex-col gap-3">
 						<div class="flex flex-col gap-3 sm:flex-row sm:items-start">
@@ -188,14 +189,15 @@ const softwareLd = {
 			>
 				<div>
 					<h2 class={marketingSectionHeadingClass}>
-						Build <span class="mark-accent">together.</span>
+						Beyond <span class="mark-accent">the code.</span>
 					</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						One project, <span class="mark-verb">multiple agents</span>. Delegate tasks, answer
-						questions, and follow their progress in one inbox.
+						A robot needs more than software. Sprocket works across{' '}
+						<span class="mark-verb">circuits, code, and components</span> to help you build the complete
+						system.
 					</p>
 					<p class="mt-8 font-brand text-xl font-semibold text-foreground">
-						Desktop, browser, or terminal. Your workflow.
+						From a schematic to the parts on your bench.
 					</p>
 					<a
 						href="/#sprocket"
@@ -240,6 +242,8 @@ const softwareLd = {
 				</ul>
 			</div>
 		</section>
+
+		<SprocketCapabilities />
 
 		<!-- Vario -->
 		<section id="vario" class="border-t border-border/50 bg-background" data-ph-section="vario">

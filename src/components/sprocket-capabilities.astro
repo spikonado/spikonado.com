@@ -1,0 +1,74 @@
+---
+import ProductImagePlaceholder from '@/components/product-image-placeholder.astro';
+import { marketingSectionBodyClass, marketingSectionHeadingClass } from '@/styles/marketing';
+import { cn } from '@/utils';
+
+const capabilities = [
+	{
+		id: 'hardware',
+		category: 'Hardware + software',
+		heading: 'The circuit.',
+		accent: 'And the code.',
+		body: 'Create schematics, pin maps, a bill of materials, and assembly guides. Write the firmware and the app alongside them.',
+		image: 'Schematic + firmware + bill of materials',
+		caption: 'A hardware design and its software, side by side.',
+		note: 'Review and validate hardware designs before building.'
+	},
+	{
+		id: 'research',
+		category: 'Component research',
+		heading: 'Build from',
+		accent: 'the datasheet.',
+		body: "Read technical documents, compare components, and check current supplier information. Follow Sprocket's browser work live or take over yourself.",
+		image: 'Datasheet + component comparison',
+		caption: 'From component specifications to a choice for your design.',
+		note: ''
+	},
+	{
+		id: 'purchasing',
+		category: 'Parts + services',
+		heading: 'From parts list',
+		accent: 'to purchase.',
+		body: 'Ask Sprocket to source parts and complete a purchase. Approve a spending mandate, then let it pay within those limits.',
+		image: 'Parts list + spending approval + checkout',
+		caption: 'Source the components and services your project needs.',
+		note: 'Approved mandates can allow later charges without a new approval. Merchant and payment-service support varies.'
+	}
+] as const;
+---
+
+{
+	capabilities.map((capability, index) => (
+		<section
+			id={capability.id}
+			class={cn('border-t border-border/50', index % 2 === 0 ? 'bg-background' : 'bg-surface')}
+			aria-labelledby={`${capability.id}-heading`}
+			data-ph-section={`sprocket_${capability.id}`}
+		>
+			<div class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28">
+				<div class={index % 2 === 1 ? 'lg:order-2' : ''}>
+					<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
+						{capability.category}
+					</p>
+					<h2 id={`${capability.id}-heading`} class={cn(marketingSectionHeadingClass, 'mt-3')}>
+						{capability.heading} <span class="mark-accent">{capability.accent}</span>
+					</h2>
+					<p class={cn(marketingSectionBodyClass, 'mt-6')}>{capability.body}</p>
+					{capability.note && (
+						<p class="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
+							{capability.note}
+						</p>
+					)}
+				</div>
+				<figure class={cn('min-w-0', index % 2 === 1 && 'lg:order-1')}>
+					<div class="overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]">
+						<ProductImagePlaceholder label={capability.image} />
+					</div>
+					<figcaption class="mt-4 text-sm leading-relaxed text-muted-foreground">
+						{capability.caption}
+					</figcaption>
+				</figure>
+			</div>
+		</section>
+	))
+}
