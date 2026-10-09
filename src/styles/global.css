@@ -70,19 +70,6 @@
 }
 
 @layer utilities {
-	/* Marker sits in the mid-line so line boxes don't clip neighboring descenders. */
-	.mark-accent {
-		color: var(--accent-strong);
-		padding-inline: 0.2em;
-		border-radius: 0.25rem;
-		background-image: linear-gradient(var(--accent-soft), var(--accent-soft));
-		background-repeat: no-repeat;
-		background-size: 100% 0.72em;
-		background-position: 0 0.78em;
-		box-decoration-break: clone;
-		-webkit-box-decoration-break: clone;
-	}
-
 	.mark-verb {
 		background-color: var(--mark);
 		border-radius: 0.15rem;
