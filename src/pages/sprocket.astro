@@ -1,5 +1,6 @@
 ---
 import CopyCommand from '@/components/copy-command.svelte';
+import ProductImagePlaceholder from '@/components/product-image-placeholder.astro';
 import SprocketDownload from '@/components/sprocket-download.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
 import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
@@ -10,7 +11,7 @@ import {
 	SPROCKET_NPM_URL,
 	SPROCKET_RELEASES_LATEST_URL
 } from '@/lib/sprocket-releases';
-import { SITE_URL, titleWithBrand } from '@/lib/seo';
+import { SITE_URL, SPROCKET_DESCRIPTION, titleWithBrand } from '@/lib/seo';
 import {
 	marketingButtonPrimaryClass,
 	marketingCopyCommandSurfaceClass,
@@ -22,9 +23,8 @@ import { cn } from '@/utils';
 
 const release = await fetchLatestSprocketRelease();
 
-const title = titleWithBrand('Sprocket - The Engineering Agent');
-const description =
-	'Sprocket is the best and only AI agent for developing both hardware and software.';
+const title = titleWithBrand('Sprocket - Build software and hardware with AI');
+const description = SPROCKET_DESCRIPTION;
 
 const softwareLd = {
 	'@type': 'SoftwareApplication',
@@ -35,11 +35,6 @@ const softwareLd = {
 	description,
 	downloadUrl: release?.htmlUrl ?? SPROCKET_RELEASES_LATEST_URL,
 	installUrl: SPROCKET_NPM_URL,
-	offers: {
-		'@type': 'Offer',
-		price: '0',
-		priceCurrency: 'USD'
-	},
 	publisher: { '@id': `${SITE_URL}/#organization` }
 };
 
@@ -56,10 +51,14 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 			</p>
 			<h1 class={cn(marketingProductHeadingClass, 'mt-3')}>Sprocket</h1>
 			<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-				The best and only AI agent for developing both{' '}
-				<span class="mark-verb">hardware</span> and{' '}
-				<span class="mark-verb">software</span>.
+				An AI engineering partner for <span class="mark-verb">software</span> and{' '}
+				<span class="mark-verb">hardware</span>.
 			</p>
+			<figure
+				class="mt-8 overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]"
+			>
+				<ProductImagePlaceholder label="Sprocket working on code and a hardware design" />
+			</figure>
 			<ul class="mt-6 divide-y divide-border/60 border-y border-border/60">
 				<li class="flex gap-4 py-5">
 					<span class={featureIconClass} aria-hidden="true">
@@ -73,8 +72,8 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 						</svg>
 					</span>
 					<p class={featureTextClass}>
-						Retrieves best-in-class <span class="mark-verb">context from the web</span> for everything
-						it does, so it stays <span class="mark-verb">incredibly reliable</span>.
+						<span class="mark-verb">Build software and design electronics</span>. Sprocket writes
+						and tests code, creates schematics, and prepares parts lists and assembly guides.
 					</p>
 				</li>
 				<li class="flex gap-4 py-5">
@@ -89,8 +88,9 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 						</svg>
 					</span>
 					<p class={featureTextClass}>
-						<span class="mark-verb">Buys anything from any website</span> when you ask, from hardware
-						parts to SaaS subscriptions.
+						<span class="mark-verb">Put rich technical context to work</span>. Full web pages,
+						current docs, PDFs, spreadsheets, and images guide the build, without manual copying or
+						conversion.
 					</p>
 				</li>
 				<li class="flex gap-4 py-5">
@@ -105,9 +105,8 @@ const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:tex
 						</svg>
 					</span>
 					<p class={featureTextClass}>
-						Makes <span class="mark-verb">beautifully detailed schematics</span>, creates your{' '}
-						<span class="mark-verb">BOM</span>, and writes{' '}
-						<span class="mark-verb">assembly instructions</span>.
+						<span class="mark-verb">Buy electronics and SaaS subscriptions</span>. Sprocket sources
+						what you need and pays within merchant and spending limits you approve.
 					</p>
 				</li>
 			</ul>

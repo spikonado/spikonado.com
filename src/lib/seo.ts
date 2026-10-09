@@ -9,6 +9,9 @@ export const DEFAULT_TITLE = 'Spikonado | Build any kind of technology, faster';
 export const DEFAULT_DESCRIPTION =
 	'Spikonado helps anyone build apps, robots, devices, and the systems that glue them together.';
 
+export const SPROCKET_DESCRIPTION =
+	'Sprocket builds software and designs hardware with AI. Write and test code, create schematics, use rich web and file context, and buy parts or subscriptions within approved limits.';
+
 export const ORGANIZATION_SAME_AS = [
 	'https://github.com/spikonado',
 	'https://x.com/spikonado',

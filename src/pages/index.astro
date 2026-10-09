@@ -4,11 +4,11 @@ import BuildLogForm from '@/components/build-log-form.svelte';
 import CopyCommand from '@/components/copy-command.svelte';
 import GetStarted from '@/components/get-started.svelte';
 import SprocketDownload from '@/components/sprocket-download.svelte';
-import SprocketScreenshot from '@/components/sprocket-screenshot.svelte';
+import ProductImagePlaceholder from '@/components/product-image-placeholder.astro';
 import BaseLayout from '@/layouts/base-layout.astro';
 import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
 import { fetchLatestSprocketRelease, SPROCKET_NPM_COMMAND } from '@/lib/sprocket-releases';
-import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_URL } from '@/lib/seo';
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_URL, SPROCKET_DESCRIPTION } from '@/lib/seo';
 import {
 	marketingButtonPrimaryClass,
 	marketingCopyCommandSurfaceClass,
@@ -42,12 +42,7 @@ const softwareLd = {
 	applicationCategory: 'DeveloperApplication',
 	operatingSystem: 'Windows, macOS, Linux',
 	url: `${SITE_URL}/sprocket`,
-	description: 'Sprocket is the best and only AI agent for developing both hardware and software.',
-	offers: {
-		'@type': 'Offer',
-		price: '0',
-		priceCurrency: 'USD'
-	},
+	description: SPROCKET_DESCRIPTION,
 	publisher: { '@id': `${SITE_URL}/#organization` }
 };
 ---
@@ -70,10 +65,14 @@ const softwareLd = {
 					<h1
 						class="max-w-xl font-brand text-3xl leading-[1.1] font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl"
 					>
-						A way for anyone to build{' '}
-						<span class="mark-accent">any kind of technology</span>
+						<span class="text-accent-strong">Your imagination</span> is the limit to what <span
+							class="text-accent-strong">you can build</span
+						>
 					</h1>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
+						A way for anyone to build <span class="mark-accent">any kind of technology</span>
+					</p>
+					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
 						<span class="mark-verb">Our goal is simple</span>: give everyone the{' '}
 						<span class="mark-verb">tools to invent apps, robots, devices</span>, and the{' '}
 						<span class="mark-verb">systems</span> that glue them together.
@@ -87,14 +86,14 @@ const softwareLd = {
 							class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground"
 						>
 							<a
-								href="https://github.com/spikonado"
+								href="https://github.com/spikonado/sprocket"
 								class={marketingTextLinkClass}
 								data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
-								data-ph-destination="github_org"
+								data-ph-destination="github_sprocket"
 								data-ph-location="home_hero"
-								data-ph-cta="open_source"
+								data-ph-cta="source_available"
 							>
-								Open source
+								Source available
 							</a>
 							<a
 								href="/#build-log"
@@ -135,15 +134,13 @@ const softwareLd = {
 					</p>
 					<h2 class={cn(marketingProductHeadingClass, 'mt-3')}>Sprocket</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						The best and only AI agent for developing both{' '}
-						<span class="mark-verb">hardware</span> and{' '}
-						<span class="mark-verb">software</span>.
+						An AI engineering partner for <span class="mark-verb">software</span> and{' '}
+						<span class="mark-verb">hardware</span>.
 					</p>
 					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
-						Sprocket retrieves best-in-class{' '}
-						<span class="mark-verb">context from the web</span> and is able to{' '}
-						<span class="mark-verb">buy</span> parts and subscriptions{' '}
-						<span class="mark-verb">from any site</span>.
+						Sprocket <span class="mark-verb">designs electronics</span>,{' '}
+						<span class="mark-verb">tests code end-to-end</span>, and{' '}
+						<span class="mark-verb">buys parts or subscriptions</span> for your project when asked.
 					</p>
 					<div class="mt-8 flex w-full max-w-md flex-col gap-3">
 						<div class="flex flex-col gap-3 sm:flex-row sm:items-start">
@@ -182,7 +179,7 @@ const softwareLd = {
 					<figure
 						class="relative overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]"
 					>
-						<SprocketScreenshot client:visible />
+						<ProductImagePlaceholder label="Sprocket working on code and a hardware design" />
 					</figure>
 				</div>
 			</div>
@@ -282,9 +279,7 @@ const softwareLd = {
 				class="mx-auto grid max-w-6xl items-start gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28"
 			>
 				<div>
-					<h2 class={marketingSectionHeadingClass}>
-						Stay in the <span class="mark-accent">loop</span>
-					</h2>
+					<h2 class={marketingSectionHeadingClass}>Stay in the loop</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
 						Product launches, architecture notes, and what we're building next, written for people
 						who actually ship.
