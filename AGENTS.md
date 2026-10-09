@@ -2,12 +2,12 @@
 
 ## Project overview
 
-- This is the website for Spikonado, a company building products to simplify every step of robotics development.
-- The goal is to make it easier for customers to understand and use our products.
+- This is the website for Spikonado, a company whose goal is to give everyone the tools to invent apps, robots, devices, and the systems that glue them together.
+- The goal of the project is to make it easier for customers to understand and use our products.
 
 ## Available testing commands
 
-- Only run `prek run -a` and other small tests locally. Don't run any rust compilations or checks.
+- Only run `prek run -a` and other small tests locally.
 - Prek covers formatting and linting.
 - Aside from these, look at the CI on GitHub when you open a PR.
 
