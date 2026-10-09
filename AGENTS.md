@@ -7,10 +7,9 @@
 
 ## Available testing commands
 
-- `prek run -a` covers formatting, linting, and Astro checks.
-- `bun run build` checks the production build.
-- Run only the checks relevant to your changes unless instructed otherwise.
-- Check GitHub CI after opening a PR.
+- Only run `prek run -a` and other small tests locally. Don't run any rust compilations or checks.
+- Prek covers formatting and linting.
+- Aside from these, look at the CI on GitHub when you open a PR.
 
 ### Nix environment
 
