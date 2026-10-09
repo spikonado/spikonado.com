@@ -70,6 +70,15 @@
 }
 
 @layer utilities {
+	.mark-accent {
+		color: var(--accent-strong);
+		background-color: var(--accent-soft);
+		border-radius: 0.25rem;
+		padding-inline: 0.2em;
+		box-decoration-break: clone;
+		-webkit-box-decoration-break: clone;
+	}
+
 	.mark-verb {
 		background-color: var(--mark);
 		border-radius: 0.15rem;
