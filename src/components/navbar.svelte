@@ -104,7 +104,7 @@
 				<span>GitHub</span>
 			</a>
 			<a
-				href="/sprocket#install"
+				href="/#sprocket"
 				class={cn(marketingButtonPrimaryClass, 'hidden text-sm whitespace-nowrap md:inline-flex')}
 				data-ph-capture={CTA_CLICKED_EVENT}
 				data-ph-cta="start_building"
@@ -192,7 +192,7 @@
 						<span>GitHub</span>
 					</a>
 					<a
-						href="/sprocket#install"
+						href="/#sprocket"
 						class={cn(marketingButtonPrimaryClass, 'w-full py-3 text-base')}
 						onclick={closeMenu}
 						data-ph-capture={CTA_CLICKED_EVENT}

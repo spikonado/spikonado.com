@@ -15,6 +15,9 @@ export const EXTERNAL_LINK_CLICKED_EVENT = 'external_link_clicked';
 /** Key homepage/product section entered the viewport (once per page load). */
 export const SECTION_VIEWED_EVENT = 'section_viewed';
 
+/** Product screenshot lightbox opened. */
+export const PRODUCT_MEDIA_OPENED_EVENT = 'product_media_opened';
+
 /** Newsletter / build-log subscription form submitted (before server response). */
 export const NEWSLETTER_SUBSCRIBE_SUBMITTED_EVENT = 'newsletter_subscribe_submitted';
 

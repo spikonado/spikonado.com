@@ -1,8 +1,7 @@
 ---
 import CopyCommand from '@/components/copy-command.svelte';
-import Footer from '@/components/footer.svelte';
+import ProductImagePlaceholder from '@/components/product-image-placeholder.astro';
 import SprocketDownload from '@/components/sprocket-download.svelte';
-import SprocketWorkflows from '@/components/sprocket-workflows.astro';
 import BaseLayout from '@/layouts/base-layout.astro';
 import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
 import {
@@ -16,73 +15,16 @@ import { SITE_URL, SPROCKET_DESCRIPTION, titleWithBrand } from '@/lib/seo';
 import {
 	marketingButtonPrimaryClass,
 	marketingCopyCommandSurfaceClass,
+	marketingProductHeadingClass,
 	marketingSectionBodyClass,
 	marketingTextLinkClass
 } from '@/styles/marketing';
 import { cn } from '@/utils';
 
 const release = await fetchLatestSprocketRelease();
-const title = titleWithBrand('Sprocket - AI engineering agent for hardware and software');
 
-const features = [
-	{
-		title: 'Delegate without losing track',
-		body: 'Let Sprocket assign bounded tasks to subagents in the same workspace. Follow their threads in the inbox, send follow-ups, and answer their questions.'
-	},
-	{
-		title: 'Bring files, documents, and current research',
-		body: 'Drag in attachments and use @ to reference project files and directories. Ask Sprocket to read documents and consult current documentation and component information on the web.'
-	},
-	{
-		title: 'Review more than a chat reply',
-		body: 'Inspect images, schematics, technical documents, and rendered HTML or React previews. Share artifacts across every thread in the project.'
-	},
-	{
-		title: 'Keep development work running',
-		body: 'Run commands in your project and see active sessions above the composer. Later agent runs can check or control those commands on the same machine while the Sprocket server stays running.'
-	},
-	{
-		title: 'Reuse your working rules',
-		body: 'Keep project instructions in AGENTS.md and user-wide instructions in ~/.agents/AGENTS.md. Add skills for repeatable workflows, or use the built-in $cleanup skill to simplify code.'
-	},
-	{
-		title: 'Follow browser work live',
-		body: 'Ask Sprocket to research or work on a website. Watch its browser session, take over when you need to, and stop the session from the app.'
-	}
-] as const;
-
-const faqs = [
-	{
-		question: 'Does Sprocket work on my existing project?',
-		answer:
-			'Yes. Choose a project folder or launch Sprocket from your project directory. It can read and change files and run commands there. Review changes and test results as you would any other engineering work.'
-	},
-	{
-		question: 'Is the browser version a hosted development environment?',
-		answer:
-			'No. The browser connects to Sprocket running on your machine. Access from another device requires authenticated HTTPS access to that machine, such as a reverse proxy. It does not move your workspace into a hosted IDE.'
-	},
-	{
-		question: 'Are generated hardware designs ready to manufacture?',
-		answer:
-			'Treat them as designs for review. Check component choices, electrical connections, ratings, and mechanical constraints, and validate the hardware before assembly or manufacturing.'
-	},
-	{
-		question: 'Can Sprocket help purchase parts or services?',
-		answer:
-			'Sprocket supports purchasing workflows with approved spending mandates. You approve the spending limits before payment credentials are issued. An active mandate can allow later charges within those limits without a new approval for each charge. Availability depends on the merchant and payment service; checkout is not guaranteed on every website.'
-	},
-	{
-		question: 'Does working in my folder mean all processing stays local?',
-		answer:
-			'No. Sprocket uses cloud services for AI requests and project data. Web browsing and some document-processing workflows also use external services, and project content may be sent to them as part of a task. Do not assume local execution means offline or local-only processing. Contact privacy@spikonado.com with questions about sensitive project data.'
-	},
-	{
-		question: 'Is Sprocket open source?',
-		answer:
-			'Sprocket is source available under FSL-1.1-ALv2. The license permits use and modification subject to its terms, restricts commercial competing uses, and grants an Apache 2.0 license for each version after two years.'
-	}
-] as const;
+const title = titleWithBrand('Sprocket - The Engineering Agent');
+const description = SPROCKET_DESCRIPTION;
 
 const softwareLd = {
 	'@type': 'SoftwareApplication',
@@ -90,269 +32,135 @@ const softwareLd = {
 	applicationCategory: 'DeveloperApplication',
 	operatingSystem: 'Windows, macOS, Linux',
 	url: `${SITE_URL}/sprocket`,
-	description: SPROCKET_DESCRIPTION,
+	description,
 	downloadUrl: release?.htmlUrl ?? SPROCKET_RELEASES_LATEST_URL,
 	installUrl: SPROCKET_NPM_URL,
-	license: `${SPROCKET_GITHUB_URL}/blob/main/LICENSE.md`,
 	publisher: { '@id': `${SITE_URL}/#organization` }
 };
+
+const featureIconClass =
+	'mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-strong';
+const featureTextClass = 'text-base leading-relaxed text-muted-foreground md:text-lg';
 ---
 
-<BaseLayout title={title} description={SPROCKET_DESCRIPTION} jsonLd={softwareLd}>
-	<main id="main">
-		<section
-			class="atmosphere px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8 lg:pb-20"
-			aria-labelledby="product-heading"
-		>
-			<div
-				class="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] lg:gap-14"
+<BaseLayout title={title} description={description} jsonLd={softwareLd}>
+	<main id="main" class="atmosphere min-h-svh px-4 pt-28 pb-20 sm:px-6 sm:pt-32 lg:px-8">
+		<article class="mx-auto max-w-3xl">
+			<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
+				Product
+			</p>
+			<h1 class={cn(marketingProductHeadingClass, 'mt-3')}>Sprocket</h1>
+			<p class={cn(marketingSectionBodyClass, 'mt-6')}>
+				An AI engineering agent for{' '}
+				<span class="mark-verb">hardware</span> and{' '}
+				<span class="mark-verb">software</span>.
+			</p>
+			<figure
+				class="mt-8 overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]"
 			>
-				<div>
-					<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
-						Sprocket
+				<ProductImagePlaceholder />
+			</figure>
+			<ul class="mt-6 divide-y divide-border/60 border-y border-border/60">
+				<li class="flex gap-4 py-5">
+					<span class={featureIconClass} aria-hidden="true">
+						<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none">
+							<path
+								d="M3.5 8.5 6.5 11.5 12.5 4.5"
+								stroke="currentColor"
+								stroke-width="1.8"
+								stroke-linecap="round"
+								stroke-linejoin="round"></path>
+						</svg>
+					</span>
+					<p class={featureTextClass}>
+						<span class="mark-verb">Research, design, code, and test</span> in your project folder. Create
+						schematics, BOMs, and assembly guides alongside your software.
 					</p>
-					<h1
-						id="product-heading"
-						class="mt-4 font-brand text-4xl leading-[1.08] font-semibold tracking-tight sm:text-5xl lg:text-6xl"
-					>
-						An engineering agent for <span class="mark-accent">hardware and software</span>
-					</h1>
-					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						Work in your project folder, from research and design to code changes and build
-						documents. Delegate tasks to subagents and review what they produce.
+				</li>
+				<li class="flex gap-4 py-5">
+					<span class={featureIconClass} aria-hidden="true">
+						<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none">
+							<path
+								d="M3.5 8.5 6.5 11.5 12.5 4.5"
+								stroke="currentColor"
+								stroke-width="1.8"
+								stroke-linecap="round"
+								stroke-linejoin="round"></path>
+						</svg>
+					</span>
+					<p class={featureTextClass}>
+						<span class="mark-verb">Delegate to subagents</span>, follow their progress in the
+						inbox, and review shared documents, images, and rendered previews.
 					</p>
-					<div class="mt-8 flex flex-wrap gap-4">
-						<a
-							href="#examples"
-							class={marketingButtonPrimaryClass}
-							data-ph-capture={CTA_CLICKED_EVENT}
-							data-ph-cta="explore_example_tasks"
-							data-ph-location="sprocket_page">Explore example tasks</a
-						>
-						<a
-							href={`${SPROCKET_GITHUB_URL}/releases`}
-							class={cn(marketingTextLinkClass, 'inline-flex items-center text-sm')}
-							data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
-							data-ph-destination="sprocket_releases"
-							data-ph-cta="release_notes"
-							data-ph-location="sprocket_page">Read the release notes ↗</a
-						>
+				</li>
+				<li class="flex gap-4 py-5">
+					<span class={featureIconClass} aria-hidden="true">
+						<svg viewBox="0 0 16 16" class="h-4 w-4" fill="none">
+							<path
+								d="M3.5 8.5 6.5 11.5 12.5 4.5"
+								stroke="currentColor"
+								stroke-width="1.8"
+								stroke-linecap="round"
+								stroke-linejoin="round"></path>
+						</svg>
+					</span>
+					<p class={featureTextClass}>
+						<span class="mark-verb">Choose your model</span> and reasoning effort. Connect your ChatGPT
+						subscription or use your own OpenAI API key.
+					</p>
+				</li>
+			</ul>
+
+			<section
+				class="mt-10"
+				aria-labelledby="sprocket-install-heading"
+				data-ph-section="sprocket_install"
+			>
+				<h2 id="sprocket-install-heading" class="font-brand text-xl font-semibold text-foreground">
+					Install
+				</h2>
+
+				<div class="mt-6 max-w-md space-y-5">
+					<SprocketDownload client:idle release={release} location="sprocket_page" />
+
+					<div class="relative flex items-center gap-3" aria-hidden="true">
+						<div class="h-px flex-1 bg-border/80"></div>
+						<span class="font-sans text-xs tracking-wide text-muted-foreground uppercase">or</span>
+						<div class="h-px flex-1 bg-border/80"></div>
 					</div>
-				</div>
-				<div class="rounded-2xl border border-border/70 bg-surface p-6 sm:p-8">
-					<h2 class="font-brand text-xl font-semibold">Start with your project</h2>
-					<p class="mt-3 text-base leading-relaxed text-muted-foreground">
-						Install Sprocket, sign in, and choose a folder. Tell it what you want to build or
-						change.
-					</p>
-					<SprocketDownload
+
+					<CopyCommand
 						client:idle
-						{release}
-						showAlternates={false}
+						command={SPROCKET_NPM_COMMAND}
 						location="sprocket_page"
-						class="mt-6"
+						class={cn('w-full', marketingCopyCommandSurfaceClass)}
 					/>
-					<a
-						href="#install"
-						class={cn(marketingTextLinkClass, 'mt-5 inline-flex text-sm')}
-						data-ph-capture={CTA_CLICKED_EVENT}
-						data-ph-cta="installation_options"
-						data-ph-location="sprocket_page">Browser and terminal options →</a
-					>
 				</div>
-			</div>
-		</section>
+			</section>
 
-		<section
-			id="examples"
-			class="border-t border-border/50 bg-background"
-			aria-labelledby="examples-heading"
-			data-ph-section="sprocket_examples"
-		>
-			<div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-				<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
-					Example tasks
-				</p>
-				<h2
-					id="examples-heading"
-					class="mt-4 font-brand text-3xl font-semibold tracking-tight sm:text-4xl"
-				>
-					Start with a problem you want to solve
-				</h2>
-				<p class={cn(marketingSectionBodyClass, 'mt-4 mb-8')}>
-					Use these prompts as starting points. Bring your requirements and review the results with
-					Sprocket.
-				</p>
-				<SprocketWorkflows showPrompts />
-			</div>
-		</section>
-
-		<section
-			class="border-t border-border/50 bg-surface"
-			aria-labelledby="features-heading"
-			data-ph-section="sprocket_features"
-		>
-			<div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-				<h2
-					id="features-heading"
-					class="font-brand text-3xl font-semibold tracking-tight sm:text-4xl"
-				>
-					Guide the work. Inspect the outputs.
-				</h2>
-				<div class="mt-10 grid gap-x-12 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
-					{
-						features.map((feature) => (
-							<div class="border-t border-border/70 pt-5">
-								<h3 class="font-brand text-xl font-semibold">{feature.title}</h3>
-								<p class="mt-3 text-base leading-relaxed text-muted-foreground">{feature.body}</p>
-							</div>
-						))
-					}
-				</div>
-			</div>
-		</section>
-
-		<section
-			id="models"
-			class="border-t border-border/50 bg-background"
-			aria-labelledby="models-heading"
-			data-ph-section="sprocket_models"
-		>
-			<div class="mx-auto grid max-w-6xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8">
-				<div>
-					<h2
-						id="models-heading"
-						class="font-brand text-3xl font-semibold tracking-tight sm:text-4xl"
-					>
-						Choose how you use AI
-					</h2>
-					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
-						Select a model, adjust its reasoning effort, and use Fast mode where supported.
-					</p>
-				</div>
-				<div>
-					<ul class="space-y-4 text-base leading-relaxed text-muted-foreground">
-						<li>
-							<span class="font-medium text-foreground">Sprocket's model choices.</span> Choose from the
-							models available to your account in the app.
-						</li>
-						<li>
-							<span class="font-medium text-foreground">Your OpenAI API key.</span> Use your own API access
-							with provider billing and limits.
-						</li>
-						<li>
-							<span class="font-medium text-foreground">Your ChatGPT subscription.</span> Connect through
-							local Sign in with ChatGPT. Supported models and usage depend on your subscription.
-						</li>
-					</ul>
-					<p
-						class="mt-6 border-t border-border/70 pt-4 text-sm leading-relaxed text-muted-foreground"
-					>
-						Check the app for current model availability and Sprocket usage limits. API access and
-						subscription usage are subject to the provider's terms and limits.
-					</p>
-				</div>
-			</div>
-		</section>
-
-		<section
-			id="install"
-			class="border-t border-border/50 bg-surface"
-			aria-labelledby="install-heading"
-			data-ph-section="sprocket_install"
-		>
-			<div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-				<h2
-					id="install-heading"
-					class="font-brand text-3xl font-semibold tracking-tight sm:text-4xl"
-				>
-					Get started your way
-				</h2>
-				<div class="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-16">
-					<div>
-						<h3 class="font-brand text-xl font-semibold">Desktop app</h3>
-						<p class="mt-3 text-base leading-relaxed text-muted-foreground">
-							Download the installer for your operating system. Open Sprocket, sign in, and choose a
-							project folder.
-						</p>
-						<SprocketDownload client:visible {release} location="sprocket_page" class="mt-5" />
-					</div>
-					<div class="min-w-0">
-						<h3 class="font-brand text-xl font-semibold">Browser or terminal</h3>
-						<p class="mt-3 text-base leading-relaxed text-muted-foreground">
-							With Node.js 20.11 or newer, run:
-						</p>
-						<CopyCommand
-							client:visible
-							command={SPROCKET_NPM_COMMAND}
-							location="sprocket_page"
-							class={cn('mt-5 w-full', marketingCopyCommandSurfaceClass)}
-						/>
-						<p class="mt-4 text-sm leading-relaxed text-muted-foreground">
-							This opens the desktop app if installed, or your browser. Add <code class="font-mono"
-								>--web</code
-							> to always use the browser.
-						</p>
-						<p class="mt-6 text-base text-muted-foreground">
-							To run a task directly in your project directory:
-						</p>
-						<pre
-							class="mt-4 overflow-x-auto rounded-xl border border-border/70 bg-background p-4 font-mono text-sm leading-relaxed"><code>npm install -g @spikonado/sprocket
-sprocket login
-sprocket run "Fix the failing tests"</code></pre>
-					</div>
-				</div>
+			<div class="mt-10 flex flex-wrap items-center gap-4">
 				<a
-					href={`${SPROCKET_GITHUB_URL}#using-sprocket`}
-					class={cn(marketingTextLinkClass, 'mt-8 inline-flex')}
+					href={SPROCKET_GITHUB_URL}
+					class={marketingButtonPrimaryClass}
+					target="_blank"
+					rel="noopener noreferrer"
 					data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
 					data-ph-destination="github_sprocket"
-					data-ph-cta="setup_guide"
-					data-ph-location="sprocket_page">Full setup and troubleshooting guide ↗</a
+					data-ph-location="sprocket_page"
+					data-ph-cta="view_on_github"
 				>
+					View on GitHub →
+				</a>
+				<a
+					href="/"
+					class={marketingTextLinkClass}
+					data-ph-capture={CTA_CLICKED_EVENT}
+					data-ph-cta="back_home"
+					data-ph-location="sprocket_page"
+				>
+					Back home
+				</a>
 			</div>
-		</section>
-
-		<section
-			class="border-t border-border/50 bg-background"
-			aria-labelledby="faq-heading"
-			data-ph-section="sprocket_faq"
-		>
-			<div class="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:py-20">
-				<h2 id="faq-heading" class="font-brand text-3xl font-semibold tracking-tight sm:text-4xl">
-					Before you start
-				</h2>
-				<div class="mt-8 divide-y divide-border/70 border-y border-border/70">
-					{
-						faqs.map((faq) => (
-							<details class="group py-5">
-								<summary class="cursor-pointer rounded-sm font-brand text-lg font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent-strong">
-									{faq.question}
-								</summary>
-								<p class="mt-4 text-base leading-relaxed text-muted-foreground">{faq.answer}</p>
-							</details>
-						))
-					}
-				</div>
-				<div class="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm">
-					<a
-						href={`${SPROCKET_GITHUB_URL}/blob/main/LICENSE.md`}
-						class={marketingTextLinkClass}
-						data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
-						data-ph-destination="sprocket_license"
-						data-ph-cta="read_license"
-						data-ph-location="sprocket_page">Read the license ↗</a
-					>
-					<a
-						href="mailto:aarav@spikonado.com"
-						class={marketingTextLinkClass}
-						data-ph-capture={CTA_CLICKED_EVENT}
-						data-ph-cta="contact_support"
-						data-ph-location="sprocket_page">Ask a question</a
-					>
-				</div>
-			</div>
-		</section>
+		</article>
 	</main>
-	<Footer />
 </BaseLayout>

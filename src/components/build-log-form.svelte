@@ -127,7 +127,7 @@
 
 <div class="flex w-full flex-col gap-4">
 	<p class={cn(marketingSectionBodyClass, 'text-base md:text-lg')}>
-		Get launch notes and project updates by email. Unsubscribe anytime.
+		Subscribe for launch notes and progress as we build the platform. Unsubscribe anytime.
 	</p>
 
 	<form class="relative flex w-full max-w-md flex-col gap-3" aria-busy={isBusy} onsubmit={onSubmit}>
