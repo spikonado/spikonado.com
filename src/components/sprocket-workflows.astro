@@ -1,0 +1,58 @@
+---
+interface Props {
+	showPrompts?: boolean;
+}
+
+const { showPrompts = false } = Astro.props;
+
+const workflows = [
+	{
+		category: 'Software',
+		title: 'From a failing test to a checked fix',
+		body: 'Ask Sprocket to investigate the cause, change the code, and run the relevant checks in your project.',
+		outputs: 'Code changes · Test results',
+		prompt: 'Investigate the failing tests, fix the cause, and run the relevant checks.'
+	},
+	{
+		category: 'Hardware',
+		title: 'From requirements to a design you can review',
+		body: 'Research components and create schematics, a bill of materials, and assembly documents. Review and validate the design before building.',
+		outputs: 'Schematics · BOM · Assembly documents',
+		prompt:
+			'Help me design a battery-powered temperature logger. Clarify the requirements, compare components, and create a schematic, BOM, and assembly guide for review.'
+	},
+	{
+		category: 'Combined systems',
+		title: 'Connect the electronics, firmware, and interface',
+		body: 'Work on the parts of a device together. Keep pin maps, firmware, and a control interface in the same project.',
+		outputs: 'Pin maps · Firmware · Interface previews',
+		prompt:
+			'Help me build a sensor dashboard. Plan the electronics, write the firmware and web interface, and check that their data formats agree.'
+	}
+] as const;
+---
+
+<div class="grid gap-6 lg:grid-cols-3">
+	{
+		workflows.map((workflow) => (
+			<article class="flex min-w-0 flex-col rounded-2xl border border-border/70 bg-surface p-6 sm:p-8">
+				<p class="font-mono text-xs font-medium tracking-[0.12em] text-accent-strong uppercase">
+					{workflow.category}
+				</p>
+				<h3 class="mt-4 font-brand text-2xl leading-tight font-semibold text-foreground">
+					{workflow.title}
+				</h3>
+				<p class="mt-4 text-base leading-relaxed text-muted-foreground">{workflow.body}</p>
+				<p class="mt-6 border-t border-border/60 pt-4 text-sm text-muted-foreground">
+					{workflow.outputs}
+				</p>
+				{showPrompts && (
+					<div class="mt-6 flex-1 rounded-xl bg-background p-4">
+						<p class="text-xs font-medium text-accent-strong">Try asking</p>
+						<p class="mt-2 text-sm leading-relaxed text-foreground">{workflow.prompt}</p>
+					</div>
+				)}
+			</article>
+		))
+	}
+</div>

@@ -1,38 +1,48 @@
 ---
 import Footer from '@/components/footer.svelte';
 import BuildLogForm from '@/components/build-log-form.svelte';
-import CopyCommand from '@/components/copy-command.svelte';
 import GetStarted from '@/components/get-started.svelte';
-import SprocketDownload from '@/components/sprocket-download.svelte';
-import SprocketScreenshot from '@/components/sprocket-screenshot.svelte';
+import SprocketWorkflows from '@/components/sprocket-workflows.astro';
 import BaseLayout from '@/layouts/base-layout.astro';
 import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
-import { fetchLatestSprocketRelease, SPROCKET_NPM_COMMAND } from '@/lib/sprocket-releases';
-import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_URL } from '@/lib/seo';
+import { fetchLatestSprocketRelease, SPROCKET_GITHUB_URL } from '@/lib/sprocket-releases';
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_URL, SPROCKET_DESCRIPTION } from '@/lib/seo';
 import {
 	marketingButtonPrimaryClass,
-	marketingCopyCommandSurfaceClass,
-	marketingProductHeadingClass,
 	marketingSectionBodyClass,
-	marketingSectionHeadingClass,
 	marketingTextLinkClass
 } from '@/styles/marketing';
 import { cn } from '@/utils';
 
-const sprocketRelease = await fetchLatestSprocketRelease();
+const release = await fetchLatestSprocketRelease();
 
-const solvedItems = [
+const capabilities = [
 	{
-		title: 'Hardware and software, same platform',
-		body: 'One agent for software and hardware. Ship apps & websites, design electronics, and build full systems without switching tools.'
+		title: 'Delegate work, follow the progress',
+		body: 'Sprocket can split tasks between subagents. Follow their threads in the inbox, send follow-ups, and answer their questions.'
 	},
 	{
-		title: 'Built for anyone who invents',
-		body: 'Apps, robots, devices, and the systems that glue them together should all be in reach, not locked behind expert-only tooling.'
+		title: 'Review the results in your project',
+		body: 'Inspect code changes, images, technical documents, and rendered previews. Artifacts are shared across threads in the same project.'
 	},
 	{
-		title: 'Built for agents and humans',
-		body: 'A stack designed so AI and people can ship together, without fighting the tools along the way.'
+		title: 'Choose how you use AI',
+		body: 'Choose a model and reasoning effort, connect your ChatGPT subscription, or use your own OpenAI API key.'
+	}
+] as const;
+
+const steps = [
+	{
+		title: 'Bring your project',
+		body: 'Choose a folder and share the files and requirements that matter.'
+	},
+	{
+		title: 'Guide the work',
+		body: 'Answer questions and follow the agent and its subagents as they work.'
+	},
+	{
+		title: 'Check the result',
+		body: 'Review outputs and test the changes before putting them to use.'
 	}
 ] as const;
 
@@ -42,252 +52,198 @@ const softwareLd = {
 	applicationCategory: 'DeveloperApplication',
 	operatingSystem: 'Windows, macOS, Linux',
 	url: `${SITE_URL}/sprocket`,
-	description: 'Sprocket is the best and only AI agent for developing both hardware and software.',
-	offers: {
-		'@type': 'Offer',
-		price: '0',
-		priceCurrency: 'USD'
-	},
+	description: SPROCKET_DESCRIPTION,
 	publisher: { '@id': `${SITE_URL}/#organization` }
 };
 ---
 
 <BaseLayout title={DEFAULT_TITLE} description={DEFAULT_DESCRIPTION} jsonLd={softwareLd}>
 	<main id="main">
-		<!-- Hero -->
-		<section class="atmosphere relative overflow-hidden pt-14">
+		<section class="atmosphere relative overflow-hidden pt-14" aria-labelledby="home-heading">
 			<div class="hero-mesh pointer-events-none absolute inset-0" aria-hidden="true"></div>
 			<div
-				class="hero-orb pointer-events-none absolute top-[28%] right-[-8%] h-[28rem] w-[28rem] rounded-full md:top-[18%] md:right-[2%] md:h-[34rem] md:w-[34rem]"
-				aria-hidden="true"
-			>
-			</div>
-
-			<div
-				class="relative mx-auto grid max-w-6xl items-start gap-10 px-4 pt-16 pb-16 sm:px-6 sm:pt-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] lg:gap-14 lg:px-8 lg:pt-24 lg:pb-20"
+				class="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] lg:gap-14 lg:px-8 lg:py-24"
 			>
 				<div>
+					<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
+						AI engineering agent
+					</p>
 					<h1
-						class="max-w-xl font-brand text-3xl leading-[1.1] font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl"
+						id="home-heading"
+						class="mt-4 max-w-2xl font-brand text-4xl leading-[1.08] font-semibold tracking-tight text-foreground sm:text-5xl"
 					>
-						A way for anyone to build{' '}
-						<span class="mark-accent">any kind of technology</span>
+						Build hardware and software <span class="mark-accent inline-block">with Sprocket</span>
 					</h1>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						<span class="mark-verb">Our goal is simple</span>: give everyone the{' '}
-						<span class="mark-verb">tools to invent apps, robots, devices</span>, and the{' '}
-						<span class="mark-verb">systems</span> that glue them together.
+						An AI engineering agent that works in your project folder. Research components, develop
+						software, create schematics and build documents, and delegate work to subagents.
+					</p>
+					<p class="mt-4 text-base leading-relaxed text-muted-foreground">
+						Follow its progress, review the results, and guide the next step.
 					</p>
 				</div>
-
-				<div class="flex flex-col items-stretch gap-5 lg:items-end">
-					<div class="flex w-full max-w-md flex-col gap-5">
-						<GetStarted client:idle release={sprocketRelease} />
-						<div
-							class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground"
-						>
-							<a
-								href="https://github.com/spikonado"
-								class={marketingTextLinkClass}
-								data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
-								data-ph-destination="github_org"
-								data-ph-location="home_hero"
-								data-ph-cta="open_source"
-							>
-								Open source
-							</a>
-							<a
-								href="/#build-log"
-								class={marketingTextLinkClass}
-								data-ph-capture={CTA_CLICKED_EVENT}
-								data-ph-cta="read_build_log"
-								data-ph-location="home_hero"
-							>
-								Read the build log
-							</a>
-							<a
-								href="/#platform"
-								class={marketingTextLinkClass}
-								data-ph-capture={CTA_CLICKED_EVENT}
-								data-ph-cta="see_platform"
-								data-ph-location="home_hero"
-							>
-								See the platform
-							</a>
-						</div>
-					</div>
+				<div class="flex flex-col gap-5">
+					<GetStarted client:idle {release} />
+					<a
+						href={SPROCKET_GITHUB_URL}
+						class={cn(marketingTextLinkClass, 'self-center text-sm')}
+						data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
+						data-ph-destination="github_sprocket"
+						data-ph-location="home_hero"
+						data-ph-cta="source_available">Source available on GitHub ↗</a
+					>
 				</div>
 			</div>
 		</section>
 
-		<!-- Sprocket -->
 		<section
 			id="sprocket"
-			class="border-t border-border/50 bg-background"
+			class="border-t border-border/50 bg-surface"
+			aria-labelledby="sprocket-heading"
 			data-ph-section="sprocket"
 		>
 			<div
-				class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28"
+				class="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-20"
 			>
 				<div>
-					<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
-						Product
-					</p>
-					<h2 class={cn(marketingProductHeadingClass, 'mt-3')}>Sprocket</h2>
-					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						The best and only AI agent for developing both{' '}
-						<span class="mark-verb">hardware</span> and{' '}
-						<span class="mark-verb">software</span>.
-					</p>
-					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
-						Sprocket retrieves best-in-class{' '}
-						<span class="mark-verb">context from the web</span> and is able to{' '}
-						<span class="mark-verb">buy</span> parts and subscriptions{' '}
-						<span class="mark-verb">from any site</span>.
-					</p>
-					<div class="mt-8 flex w-full max-w-md flex-col gap-3">
-						<div class="flex flex-col gap-3 sm:flex-row sm:items-start">
-							<SprocketDownload
-								client:visible
-								release={sprocketRelease}
-								showAlternates={false}
-								location="home_sprocket"
-								class="min-w-0 flex-1"
-							/>
-							<a
-								href="/sprocket"
-								class={cn(marketingButtonPrimaryClass, 'shrink-0')}
-								data-ph-capture={CTA_CLICKED_EVENT}
-								data-ph-cta="learn_more_sprocket"
-								data-ph-location="home_sprocket"
-							>
-								Learn more →
-							</a>
-						</div>
-						<CopyCommand
-							client:visible
-							command={SPROCKET_NPM_COMMAND}
-							location="home_sprocket"
-							class={cn('w-full min-w-0', marketingCopyCommandSurfaceClass)}
-						/>
-					</div>
-				</div>
-
-				<div class="relative">
-					<div
-						class="pointer-events-none absolute -inset-4 rounded-[2rem] bg-linear-to-br from-accent/15 via-transparent to-accent/5 blur-2xl"
-						aria-hidden="true"
+					<h2
+						id="sprocket-heading"
+						class="font-brand text-3xl leading-tight font-semibold tracking-tight sm:text-4xl"
 					>
-					</div>
-					<figure
-						class="relative overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]"
-					>
-						<SprocketScreenshot client:visible />
-					</figure>
-				</div>
-			</div>
-		</section>
-
-		<!-- Platform / Solved -->
-		<section id="platform" class="border-t border-border/50 bg-surface" data-ph-section="platform">
-			<div
-				class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-8 lg:py-28"
-			>
-				<div>
-					<h2 class={marketingSectionHeadingClass}>Solved.</h2>
-					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						We take on the hard parts of building technology so you, and your agents, can move from
-						idea to working system{' '}
-						<span class="mark-verb">without reinventing the stack</span>.
-					</p>
-					<p class="mt-8 font-brand text-xl font-semibold text-foreground">
-						Spikonado is better than stitching it together yourself.
-					</p>
+						Work in one project.<br />Stay involved as it grows.
+					</h2>
+					<ul class="mt-8 divide-y divide-border/60">
+						{
+							capabilities.map((item) => (
+								<li class="py-5 first:pt-0">
+									<h3 class="font-brand text-xl font-semibold">{item.title}</h3>
+									<p class="mt-2 text-base leading-relaxed text-muted-foreground">{item.body}</p>
+								</li>
+							))
+						}
+					</ul>
 					<a
-						href="/#sprocket"
-						class={cn(marketingButtonPrimaryClass, 'mt-8')}
+						href="/sprocket"
+						class={cn(marketingButtonPrimaryClass, 'mt-6')}
 						data-ph-capture={CTA_CLICKED_EVENT}
-						data-ph-cta="heres_how_to_start"
-						data-ph-location="home_platform"
+						data-ph-cta="learn_more_sprocket"
+						data-ph-location="home_sprocket">Explore Sprocket →</a
 					>
-						Here's how to start →
-					</a>
 				</div>
-
-				<ul class="divide-y divide-border/60 border-y border-border/60">
-					{
-						solvedItems.map((item) => (
-							<li class="flex gap-4 py-7 md:py-8">
-								<span
-									class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-strong md:h-8 md:w-8"
-									aria-hidden="true"
-								>
-									<svg viewBox="0 0 16 16" class="h-4 w-4 md:h-[1.1rem] md:w-[1.1rem]" fill="none">
-										<path
-											d="M3.5 8.5 6.5 11.5 12.5 4.5"
-											stroke="currentColor"
-											stroke-width="1.8"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-										/>
-									</svg>
-								</span>
-								<div>
-									<p class="font-brand text-lg font-semibold text-foreground md:text-xl">
-										{item.title}
-									</p>
-									<p class="mt-2 text-base leading-relaxed text-muted-foreground md:text-lg">
-										{item.body}
-									</p>
-								</div>
-							</li>
-						))
-					}
-				</ul>
+				<div class="self-start rounded-2xl border border-border/70 bg-background p-6 sm:p-8">
+					<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
+						How you work
+					</p>
+					<ol class="mt-6 space-y-8">
+						{
+							steps.map((step, index) => (
+								<li class="flex gap-4">
+									<span
+										class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft font-mono text-sm text-foreground"
+										aria-hidden="true"
+									>
+										0{index + 1}
+									</span>
+									<div>
+										<h3 class="font-brand text-xl font-semibold">{step.title}</h3>
+										<p class="mt-2 text-base leading-relaxed text-muted-foreground">{step.body}</p>
+									</div>
+								</li>
+							))
+						}
+					</ol>
+					<p
+						class="mt-8 border-t border-border/70 pt-5 text-sm leading-relaxed text-muted-foreground"
+					>
+						Use the desktop app, work in your browser, or run a task from your terminal.
+					</p>
+				</div>
 			</div>
 		</section>
 
-		<!-- Vario -->
-		<section id="vario" class="border-t border-border/50 bg-background" data-ph-section="vario">
-			<div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-				<div class="max-w-3xl">
-					<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
-						Coming Soon
+		<section
+			id="platform"
+			class="border-t border-border/50 bg-background"
+			aria-labelledby="workflows-heading"
+			data-ph-section="platform"
+		>
+			<div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+				<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
+					Example tasks
+				</p>
+				<h2
+					id="workflows-heading"
+					class="mt-4 font-brand text-3xl leading-tight font-semibold tracking-tight sm:text-4xl"
+				>
+					What will you work on next?
+				</h2>
+				<p class={cn(marketingSectionBodyClass, 'mt-4 mb-8')}>
+					Start with an existing codebase, a new device, or a system that needs both.
+				</p>
+				<SprocketWorkflows />
+				<a
+					href="/sprocket#examples"
+					class={cn(marketingTextLinkClass, 'mt-8 inline-flex')}
+					data-ph-capture={CTA_CLICKED_EVENT}
+					data-ph-cta="explore_example_tasks"
+					data-ph-location="home_platform">See prompts to try →</a
+				>
+			</div>
+		</section>
+
+		<section
+			id="vario"
+			class="border-t border-border/50 bg-surface"
+			aria-labelledby="vario-heading"
+			data-ph-section="vario"
+		>
+			<div
+				class="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8"
+			>
+				<div>
+					<h2 class="font-brand text-2xl font-semibold">Why we're building Spikonado</h2>
+					<p class="mt-4 text-base leading-relaxed text-muted-foreground">
+						Our goal is to give more people the tools to invent apps, robots, devices, and the
+						systems that connect them. Sprocket is available now. Vario is what we're building next.
 					</p>
-					<h2 class={cn(marketingProductHeadingClass, 'mt-3')}>Vario</h2>
-					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						<span class="mark-verb">Modular</span> robotics hardware for{' '}
-						<span class="mark-verb">every use case</span>.
+				</div>
+				<div>
+					<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
+						Coming soon
+					</p>
+					<h2 id="vario-heading" class="mt-3 font-brand text-3xl font-semibold">Vario</h2>
+					<p class="mt-3 text-base leading-relaxed text-muted-foreground">
+						Modular robotics hardware.
 					</p>
 					<a
 						href="/#build-log"
-						class={cn(marketingTextLinkClass, 'mt-8 inline-flex')}
+						class={cn(marketingTextLinkClass, 'mt-5 inline-flex')}
 						data-ph-capture={CTA_CLICKED_EVENT}
 						data-ph-cta="vario_get_notified"
-						data-ph-location="home_vario"
+						data-ph-location="home_vario">Get notified when Vario ships →</a
 					>
-						Get notified when Vario ships →
-					</a>
 				</div>
 			</div>
 		</section>
 
-		<!-- Build log -->
 		<section
 			id="build-log"
-			class="border-t border-border/50 bg-surface"
+			class="border-t border-border/50 bg-background"
+			aria-labelledby="build-log-heading"
 			data-ph-section="build_log"
 		>
 			<div
-				class="mx-auto grid max-w-6xl items-start gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28"
+				class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8"
 			>
 				<div>
-					<h2 class={marketingSectionHeadingClass}>
-						Stay in the <span class="mark-accent">loop</span>
+					<h2
+						id="build-log-heading"
+						class="font-brand text-3xl font-semibold tracking-tight sm:text-4xl"
+					>
+						Follow what we're building
 					</h2>
-					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						Product launches, architecture notes, and what we're building next, written for people
-						who actually ship.
+					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
+						Sprocket releases, engineering notes, and updates on Vario.
 					</p>
 				</div>
 				<div>
@@ -296,6 +252,5 @@ const softwareLd = {
 			</div>
 		</section>
 	</main>
-
 	<Footer />
 </BaseLayout>

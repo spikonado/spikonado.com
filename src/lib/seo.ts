@@ -5,9 +5,11 @@ export const TWITTER_HANDLE = '@spikonado';
 /** Stable social preview image generated at build time (`src/pages/og.png.ts`). */
 export const DEFAULT_OG_IMAGE = '/og.png';
 
-export const DEFAULT_TITLE = 'Spikonado | Build any kind of technology, faster';
+export const DEFAULT_TITLE = 'Spikonado | Build hardware and software with Sprocket';
 export const DEFAULT_DESCRIPTION =
-	'Spikonado helps anyone build apps, robots, devices, and the systems that glue them together.';
+	'An AI engineering agent that works in your project folder. Research components, develop software, create schematics and build documents, and delegate work to subagents.';
+export const SPROCKET_DESCRIPTION =
+	'Sprocket is an AI engineering agent for hardware and software. Work in your project folder, delegate tasks to subagents, and review code, schematics, and previews.';
 
 export const ORGANIZATION_SAME_AS = [
 	'https://github.com/spikonado',

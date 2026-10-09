@@ -1,12 +1,7 @@
 <script lang="ts">
-	import CopyCommand from '@/components/copy-command.svelte';
 	import SprocketDownload from '@/components/sprocket-download.svelte';
-	import { EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
-	import {
-		SPROCKET_GITHUB_URL,
-		SPROCKET_NPM_COMMAND,
-		type SprocketRelease
-	} from '@/lib/sprocket-releases';
+	import { CTA_CLICKED_EVENT } from '@/lib/analytics/events';
+	import { type SprocketRelease } from '@/lib/sprocket-releases';
 	import { marketingPanelClass, marketingTextLinkClass } from '@/styles/marketing';
 	import { cn } from '@/utils';
 
@@ -18,29 +13,25 @@
 </script>
 
 <div class={cn(marketingPanelClass, 'w-full max-w-md p-5 sm:p-6')}>
-	<div class="flex items-center justify-between gap-3">
-		<p class="font-brand text-lg font-semibold text-foreground">Get started</p>
-		<a
-			href={SPROCKET_GITHUB_URL}
-			target="_blank"
-			rel="noopener noreferrer"
-			class={cn(marketingTextLinkClass, 'shrink-0 text-sm')}
-			data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
-			data-ph-destination="github_sprocket"
+	<p class="font-brand text-xl font-semibold text-foreground">Start with your project</p>
+	<p class="mt-3 text-base leading-relaxed text-muted-foreground">
+		Download Sprocket, sign in, and choose a project folder.
+	</p>
+	<SprocketDownload {release} showAlternates={false} location="home_hero" class="mt-6" />
+	<a
+		href="/sprocket#examples"
+		class={cn(marketingTextLinkClass, 'mt-5 inline-flex text-sm')}
+		data-ph-capture={CTA_CLICKED_EVENT}
+		data-ph-location="home_hero"
+		data-ph-cta="explore_example_tasks">Explore example tasks →</a
+	>
+	<p class="mt-5 border-t border-border/60 pt-4 text-sm leading-relaxed text-muted-foreground">
+		Prefer the browser or terminal? <a
+			href="/sprocket#install"
+			class={marketingTextLinkClass}
+			data-ph-capture={CTA_CLICKED_EVENT}
 			data-ph-location="home_hero"
-			data-ph-cta="view_on_github"
+			data-ph-cta="installation_options">See all ways to get started.</a
 		>
-			View on GitHub ↗
-		</a>
-	</div>
-
-	<SprocketDownload {release} location="home_hero" class="mt-4" />
-
-	<div class="relative my-5 flex items-center gap-3" aria-hidden="true">
-		<div class="h-px flex-1 bg-border/80"></div>
-		<span class="font-sans text-xs tracking-wide text-muted-foreground uppercase">or</span>
-		<div class="h-px flex-1 bg-border/80"></div>
-	</div>
-
-	<CopyCommand command={SPROCKET_NPM_COMMAND} location="home_hero" />
+	</p>
 </div>

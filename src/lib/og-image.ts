@@ -109,7 +109,7 @@ export async function renderOgImagePng(): Promise<Buffer> {
 											{
 												type: 'span',
 												props: {
-													children: 'A way for anyone to build '
+													children: 'Build hardware and software '
 												}
 											},
 											{
@@ -122,7 +122,7 @@ export async function renderOgImagePng(): Promise<Buffer> {
 														borderRadius: '10px',
 														display: 'flex'
 													},
-													children: 'any kind of technology'
+													children: 'with Sprocket'
 												}
 											}
 										]
@@ -138,8 +138,7 @@ export async function renderOgImagePng(): Promise<Buffer> {
 											lineHeight: 1.35,
 											maxWidth: 720
 										},
-										children:
-											'Build apps, robots, devices, and the systems that glue them together.'
+										children: 'An AI engineering agent that works in your project folder.'
 									}
 								}
 							]
@@ -170,7 +169,7 @@ export async function renderOgImagePng(): Promise<Buffer> {
 											color: colors.accentStrong,
 											fontWeight: 600
 										},
-										children: 'Build more tech, faster.'
+										children: 'Research, build, and delegate.'
 									}
 								}
 							]
