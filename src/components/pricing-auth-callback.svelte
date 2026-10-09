@@ -20,7 +20,7 @@
 						return;
 					}
 					const query = new URLSearchParams({
-						checkout: 'start',
+						checkout: 'resume',
 						tier: pending.tierId,
 						interval: pending.interval
 					});
@@ -29,6 +29,7 @@
 				}
 				message =
 					callbackError ??
+					client.error ??
 					'Sign-in could not be completed. Return to pricing and try again. Your checkout choice was saved.';
 			} catch (error) {
 				if (!active) return;

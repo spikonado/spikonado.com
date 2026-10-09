@@ -33,6 +33,7 @@ export type CheckoutRequest = {
 export type RunCheckoutOptions = {
 	guard: OperationGuard;
 	emit: (progress: CheckoutProgress) => void;
+	allowSignIn?: boolean;
 };
 
 const INIT_TIMEOUT_MS = 12_000;
@@ -57,7 +58,7 @@ export function checkoutRequestFromSearch(
 	search: string = typeof window === 'undefined' ? '' : window.location.search
 ): CheckoutRequest | null {
 	const params = new URLSearchParams(search);
-	if (params.get('checkout') !== 'start') return null;
+	if (params.get('checkout') !== 'start' && params.get('checkout') !== 'resume') return null;
 	const requested = params.get('interval');
 	const tierId = params.get('tier')?.trim();
 	if (!tierId || !isBillingInterval(requested)) return null;
@@ -113,6 +114,11 @@ export async function runCheckout(
 		}
 		const user = client.auth?.getUser() ?? null;
 		if (!user) {
+			if (options.allowSignIn === false) {
+				throw new Error(
+					'Your sign-in session could not be restored. Check the WorkOS session configuration and browser storage, then choose your plan to try again.'
+				);
+			}
 			emit('signing_in', 'Redirecting to sign in…');
 			await signInForPricing();
 			guard.assertCurrent();

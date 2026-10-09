@@ -78,6 +78,10 @@ describe('checkout navigation', () => {
 			tierId: 'team/plus',
 			interval: 'annual'
 		});
+		expect(checkoutRequestFromSearch('?checkout=resume&tier=team&interval=monthly')).toEqual({
+			tierId: 'team',
+			interval: 'monthly'
+		});
 		for (const search of [
 			'?checkout=start',
 			'?checkout=start&tier=&interval=monthly',
@@ -126,6 +130,28 @@ describe('checkout navigation', () => {
 			tierId: 'team',
 			interval: 'annual'
 		});
+	});
+
+	test('keeps the selection and reports a lost session on callback resumption', async () => {
+		initializeBehavior = async () => ({ ...client, auth: { getUser: () => null } });
+		const events: CheckoutProgress[] = [];
+		await runCheckout('team', 'annual', {
+			guard: createBillingOperations().begin('signed-out'),
+			allowSignIn: false,
+			emit: (event) => events.push(event)
+		});
+
+		expect(events.at(-1)).toMatchObject({
+			status: 'error',
+			message: expect.stringContaining('Your sign-in session could not be restored.')
+		});
+		expect(readPendingPricingAction()).toEqual({
+			type: 'checkout',
+			tierId: 'team',
+			interval: 'annual'
+		});
+		expect(signIn).toHaveBeenCalledTimes(0);
+		expect(create).toHaveBeenCalledTimes(0);
 	});
 
 	test.each(['initialization', 'creation', 'sign-in'])(

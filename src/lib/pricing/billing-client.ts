@@ -10,6 +10,7 @@ import {
 } from '@/lib/convex/api';
 import { storeCheckoutAttempt } from '@/lib/pricing/pending';
 import { resolveCheckoutMode, type DodoCheckoutMode } from '@/lib/pricing/config';
+import { pricingAuthOptions } from '@/lib/pricing/auth-config';
 
 type AuthClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -116,11 +117,10 @@ export async function initializePricingBilling(): Promise<PricingBillingClient> 
 			api.authBootstrap.getClientConfig,
 			{}
 		);
-		const convex = new ConvexClient(convexUrl);
 		const clientId = bootstrap.workosClientId?.trim();
 		if (!clientId) {
 			return {
-				convex,
+				convex: new ConvexClient(convexUrl),
 				auth: null,
 				isConfigured: false,
 				error: 'Sign-in is not configured yet.'
@@ -128,10 +128,11 @@ export async function initializePricingBilling(): Promise<PricingBillingClient> 
 		}
 
 		const auth = await createClient(clientId, {
-			redirectUri: pricingCallbackUri(),
-			onRedirectCallback: () => {}
+			...pricingAuthOptions(),
+			redirectUri: pricingCallbackUri()
 		});
 
+		const convex = new ConvexClient(convexUrl);
 		convex.setAuth(async ({ forceRefreshToken }) => {
 			try {
 				const token = await auth.getAccessToken({ forceRefresh: forceRefreshToken });

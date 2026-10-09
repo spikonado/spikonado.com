@@ -101,6 +101,7 @@ Object.defineProperty(globalThis, 'sessionStorage', {
 });
 
 let portalAssigns: string[] = [];
+const pricingSignIn = mock(async () => {});
 Object.defineProperty(window.location, 'assign', {
 	value: (url: string) => {
 		portalAssigns.push(url);
@@ -243,7 +244,7 @@ mock.module('@/lib/pricing/billing-client', () => ({
 		}
 		return result;
 	},
-	signInForPricing: async () => {},
+	signInForPricing: pricingSignIn,
 	signOutOfPricing: async () => {
 		if (current.signOutDeferred) await current.signOutDeferred.promise;
 		if (current.signOutError) throw current.signOutError;
@@ -327,6 +328,7 @@ beforeEach(() => {
 		statusFailures: 0
 	};
 	portalAssigns = [];
+	pricingSignIn.mockClear();
 	sessionMemory.clear();
 	window.history.replaceState({}, '', '/pricing');
 	container = document.createElement('div');
@@ -352,6 +354,38 @@ afterEach(async () => {
 });
 
 describe('pricing plans orchestration', () => {
+	test('a lost session after the callback stops on pricing instead of signing in again', async () => {
+		window.history.replaceState({}, '', '/pricing?checkout=resume&tier=team&interval=annual');
+		await mount();
+
+		expect(text()).toContain('Your sign-in session could not be restored.');
+		expect(window.location.search).toBe('');
+		expect(current.checkoutCalls).toEqual([]);
+		expect(pricingSignIn).toHaveBeenCalledTimes(0);
+		expect(portalAssigns).toEqual([]);
+		expect(findButton('Get Team').disabled).toBe(false);
+		expect(JSON.parse(sessionMemory.get('spikonado_pricing_pending') ?? '{}')).toEqual({
+			type: 'checkout',
+			tierId: 'team',
+			interval: 'annual'
+		});
+	});
+
+	test('a restored session after the callback opens the selected checkout', async () => {
+		signedIn();
+		window.history.replaceState({}, '', '/pricing?checkout=resume&tier=team&interval=annual');
+		current.checkoutDeferred.resolve({
+			checkoutUrl: 'https://checkout.example/session/cks_resume',
+			attemptId: 'attempt-resume'
+		});
+		await mount();
+
+		expect(current.checkoutCalls).toEqual([{ tier: 'team', interval: 'annual' }]);
+		expect(current.checkoutExpectedAccounts).toEqual(['user-a']);
+		expect(portalAssigns).toEqual(['https://checkout.example/session/cks_resume']);
+		expect(window.location.search).toBe('');
+	});
+
 	test('a saved attempt remains recoverable when checkout validation fails', async () => {
 		signedIn();
 		await mount();

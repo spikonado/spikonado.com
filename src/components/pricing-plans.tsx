@@ -344,8 +344,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		const searchParams = new URLSearchParams(window.location.search);
 		const checkout = searchParams.get('checkout');
 		const returnTierId = searchParams.get('tier')?.trim() || null;
-		const checkoutFromUrl =
-			checkout === 'start' ? checkoutRequestFromSearch(window.location.search) : null;
+		const checkoutFromUrl = checkoutRequestFromSearch(window.location.search);
 		if (checkoutFromUrl) {
 			setInterval(checkoutFromUrl.interval);
 			setCheckoutTierId(checkoutFromUrl.tierId);
@@ -385,6 +384,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 					const guard = operations.begin(session.accountId ?? 'signed-out');
 					await runCheckout(checkoutFromUrl.tierId, checkoutFromUrl.interval, {
 						guard,
+						allowSignIn: checkout !== 'resume',
 						emit: (progress) => onCheckoutProgress(progress, guard)
 					});
 					return;
