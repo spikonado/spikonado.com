@@ -4,7 +4,6 @@ import '@fontsource-variable/ibm-plex-sans/wght.css';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
 import '@/styles/global.css';
-import logoPng from '@/assets/logo.png';
 import logoSvg from '@/assets/logo.svg';
 import Navbar from '@/components/navbar.svelte';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og-image';
@@ -46,7 +45,7 @@ const organizationLd = {
 	'@id': `${SITE_URL}/#organization`,
 	name: SITE_NAME,
 	url: SITE_URL,
-	logo: absoluteUrl(logoPng.src, Astro.site ?? SITE_URL),
+	logo: absoluteUrl(logoSvg.src, Astro.site ?? SITE_URL),
 	description: DEFAULT_DESCRIPTION,
 	sameAs: [...ORGANIZATION_SAME_AS],
 	email: 'privacy@spikonado.com'
@@ -76,9 +75,8 @@ const jsonLdDocument = {
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="color-scheme" content="light" />
 		<meta name="theme-color" content="#f0f4eb" />
-		<link rel="icon" type="image/png" href={logoPng.src} />
 		<link rel="icon" type="image/svg+xml" href={logoSvg.src} />
-		<link rel="apple-touch-icon" href={logoPng.src} />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<link rel="canonical" href={canonicalURL} />
 		<link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
 
