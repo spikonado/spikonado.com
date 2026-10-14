@@ -1,5 +1,5 @@
 <script lang="ts">
-	import logo from '@/assets/logo.png';
+	import logo from '@/assets/logo.svg';
 	import github_logo from '@/assets/github_logo.svg';
 	import x_logo from '@/assets/x_logo.svg';
 	import youtube_logo from '@/assets/youtube_logo.svg';
