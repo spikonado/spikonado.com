@@ -164,7 +164,7 @@ export const pricingFaqs: PricingFaq[] = [
 	{
 		question: 'What are my payment options?',
 		answer:
-			'Credit and debit cards, Apple Pay, Google Pay, Cash App Pay, Klarna, UPI, RuPay, Satispay, Kakao Pay, Naver Pay, and Pix. Checkout shows the options available in your country and currency.'
+			'Credit and debit cards, UPI, Apple Pay, Google Pay, Cash App Pay, Klarna, RuPay, Satispay, Kakao Pay, Naver Pay, and Pix. Checkout shows the options available in your country and currency.'
 	}
 ];
 
