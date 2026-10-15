@@ -811,6 +811,26 @@ describe('pricing plans orchestration', () => {
 		expect(text()).not.toContain('Signed in as');
 	});
 
+	test('local sign-out keeps plan actions disabled until the signed-out view is ready', async () => {
+		signedIn();
+		await mount();
+		current.signOutDeferred = deferred();
+		await click(findButton('Sign out'));
+
+		expect(text()).toContain('Signing out');
+		expect(findButton('Get Team').disabled).toBe(true);
+		await click(findButton('Get Team'));
+
+		await act(async () => {
+			current.signOutDeferred!.resolve();
+			await flushMicrotasks(40);
+		});
+
+		expect(findButton('Get Team').disabled).toBe(false);
+		await click(findButton('Get Team'));
+		expect(pricingSignIn).toHaveBeenCalledTimes(1);
+	});
+
 	test('reload recovery consults the server attempt status, never the URL', async () => {
 		window.history.replaceState({}, '', '/pricing?checkout=return&tier=team');
 		sessionMemory.set(

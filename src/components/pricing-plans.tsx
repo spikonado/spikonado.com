@@ -599,7 +599,7 @@ export default function PricingPlans({ initialCatalog = null }: PricingPlansProp
 		clearPendingPricingAction();
 		const operations = getOperations();
 		accountRef.current = null;
-		setState((current) => ({ ...current, busy: false }));
+		setState((current) => withBusyStatus(current, 'loading', 'Signing out…'));
 		const probe = operations.begin('signed-out');
 		try {
 			await signOutOfPricing();
