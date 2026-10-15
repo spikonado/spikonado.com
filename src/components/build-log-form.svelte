@@ -10,7 +10,6 @@
 		NEWSLETTER_SUBSCRIBE_FAILED_EVENT,
 		NEWSLETTER_SUBSCRIBE_SUBMITTED_EVENT
 	} from '@/lib/analytics/events';
-	import { marketingSectionBodyClass } from '@/styles/marketing';
 	import { cn } from '@/utils';
 
 	const SUBSCRIBE_PATH = '/api/build-log/subscribe';
@@ -125,70 +124,64 @@
 	}
 </script>
 
-<div class="flex w-full flex-col gap-4">
-	<p class={cn(marketingSectionBodyClass, 'text-base md:text-lg')}>
-		Subscribe for launch notes and progress as we build the platform. Unsubscribe anytime.
-	</p>
+<form class="relative flex w-full max-w-md flex-col gap-3" aria-busy={isBusy} onsubmit={onSubmit}>
+	<div
+		class="pointer-events-none absolute left-[-10000px] h-0 w-0 overflow-hidden opacity-0"
+		aria-hidden="true"
+	>
+		<label for="build-log-company">Company</label>
+		<input
+			id="build-log-company"
+			name="company"
+			type="text"
+			tabindex="-1"
+			autocomplete="one-time-code"
+			bind:value={company}
+		/>
+	</div>
 
-	<form class="relative flex w-full max-w-md flex-col gap-3" aria-busy={isBusy} onsubmit={onSubmit}>
-		<div
-			class="pointer-events-none absolute left-[-10000px] h-0 w-0 overflow-hidden opacity-0"
-			aria-hidden="true"
-		>
-			<label for="build-log-company">Company</label>
+	<div class="flex w-full flex-col gap-2">
+		<label for="build-log-email" class="font-sans text-sm font-medium text-foreground">
+			Email
+		</label>
+		<div class="flex flex-col gap-2 sm:flex-row sm:items-stretch">
 			<input
-				id="build-log-company"
-				name="company"
-				type="text"
-				tabindex="-1"
-				autocomplete="one-time-code"
-				bind:value={company}
+				id="build-log-email"
+				name="email"
+				type="email"
+				inputmode="email"
+				autocomplete="email"
+				autocapitalize="off"
+				autocorrect="off"
+				spellcheck="false"
+				maxlength="254"
+				required
+				placeholder="you@example.com"
+				class={fieldClass}
+				bind:value={email}
+				disabled={isBusy}
+				aria-invalid={status === 'invalid' ? 'true' : undefined}
+				aria-describedby="build-log-status"
+				oninput={resetStatusOnEdit}
 			/>
+			<button type="submit" class={submitClass} disabled={isLocked}>
+				{isBusy ? 'Submitting…' : 'Subscribe'}
+			</button>
 		</div>
+	</div>
 
-		<div class="flex w-full flex-col gap-2">
-			<label for="build-log-email" class="font-sans text-sm font-medium text-foreground">
-				Email
-			</label>
-			<div class="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-				<input
-					id="build-log-email"
-					name="email"
-					type="email"
-					inputmode="email"
-					autocomplete="email"
-					autocapitalize="off"
-					autocorrect="off"
-					spellcheck="false"
-					maxlength="254"
-					required
-					placeholder="you@company.com"
-					class={fieldClass}
-					bind:value={email}
-					disabled={isBusy}
-					aria-invalid={status === 'invalid' ? 'true' : undefined}
-					aria-describedby="build-log-status"
-					oninput={resetStatusOnEdit}
-				/>
-				<button type="submit" class={submitClass} disabled={isLocked}>
-					{isBusy ? 'Submitting…' : 'Subscribe'}
-				</button>
-			</div>
-		</div>
-
-		<p
-			id="build-log-status"
-			class={cn(
-				'min-h-5 font-sans text-sm leading-snug',
-				status === 'success' && 'text-foreground',
-				(status === 'invalid' || status === 'error') && 'text-accent-strong',
-				(status === 'idle' || status === 'submitting') && 'text-muted-foreground'
-			)}
-			role="status"
-			aria-live="polite"
-			aria-atomic="true"
-		>
-			{statusMessage}
-		</p>
-	</form>
-</div>
+	<p
+		id="build-log-status"
+		class={cn(
+			'min-h-5 font-sans text-sm leading-snug',
+			status === 'success' && 'text-foreground',
+			(status === 'invalid' || status === 'error') && 'text-accent-strong',
+			(status === 'idle' || status === 'submitting') && 'text-muted-foreground'
+		)}
+		role="status"
+		aria-live="polite"
+		aria-atomic="true"
+	>
+		{statusMessage}
+	</p>
+</form>
