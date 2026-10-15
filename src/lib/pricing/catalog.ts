@@ -162,34 +162,9 @@ export function buildPricingPlans(catalog: PublicPricingCatalog): PricingPlan[] 
 
 export const pricingFaqs: PricingFaq[] = [
 	{
-		question: 'Can I use Sprocket for free?',
+		question: 'What are my payment options?',
 		answer:
-			'Yes. The Free plan includes selected models and AI usage limits that reset Monday at 00:00 UTC and on the first of each month at 00:00 UTC. Sign in to start, no card required.'
-	},
-	{
-		question: 'What happens when I reach an AI usage limit?',
-		answer:
-			'Metered models pause until your weekly or monthly usage window resets. Unmetered models stay available. The run that hits the limit stops, and the model picker switches to models available on your plan.'
-	},
-	{
-		question: 'When does my paid monthly AI usage reset?',
-		answer:
-			'Monthly subscribers reset on their billing date. Annual subscribers reset each month at the UTC day and time their paid annual term began. If a month has fewer days, usage resets on its last day, then returns to the original day in later months. Weekly limits always reset Monday at 00:00 UTC.'
-	},
-	{
-		question: 'How do I change plans or cancel?',
-		answer:
-			'Open Manage billing on your current plan to change tiers or cancel. Upgrades start after successful payment, with credit for unused paid time and a fresh usage allowance. Downgrades and cancellations take effect at your next billing date. There is no mid-term refund.'
-	},
-	{
-		question: 'Can I switch between monthly and annual billing?',
-		answer:
-			'Not during an active subscription. Cancel your current subscription in Manage billing, keep your plan until the next billing date, then choose the other billing interval after that subscription ends. You will complete a new checkout.'
-	},
-	{
-		question: 'How do I get billing help, a refund, or dispute a charge?',
-		answer:
-			'Email aarav@spikonado.com. Refunds and disputes are handled through Dodo and the support inbox — there is no mid-term self-service refund. Manage billing shows your invoices and payment methods.'
+			'Credit and debit cards, Apple Pay, Google Pay, Cash App Pay, Klarna, UPI, RuPay, Satispay, Kakao Pay, Naver Pay, and Pix. Checkout shows the options available in your country and currency.'
 	}
 ];
 
