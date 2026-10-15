@@ -1,5 +1,5 @@
 <script lang="ts">
-	import logo from '@/assets/logo.png';
+	import logo from '@/assets/logo.svg';
 	import github from '@/assets/github_logo.svg';
 	import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
 	import { inertBackground, trapFocus } from '@/lib/focus-trap';

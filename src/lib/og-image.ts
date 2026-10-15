@@ -22,8 +22,8 @@ async function loadFont(relativePath: string): Promise<ArrayBuffer> {
 }
 
 async function loadLogoDataUrl(): Promise<string> {
-	const buffer = await readFile(join(process.cwd(), 'src/assets/logo.png'));
-	return `data:image/png;base64,${buffer.toString('base64')}`;
+	const buffer = await readFile(join(process.cwd(), 'src/assets/logo.svg'));
+	return `data:image/svg+xml;base64,${buffer.toString('base64')}`;
 }
 
 export async function renderOgImagePng(): Promise<Buffer> {
