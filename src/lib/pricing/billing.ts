@@ -30,7 +30,7 @@ function convexClient(token?: string): ConvexHttpClient {
 	return client;
 }
 
-export function fetchPricingCatalog(): Promise<PublicPricingCatalog> {
+export async function fetchPricingCatalog(): Promise<PublicPricingCatalog> {
 	return convexClient().action(api.pricing.getPublicCatalog, {});
 }
 
@@ -97,10 +97,14 @@ export async function startCheckout(tier: string, interval: BillingInterval): Pr
 	if (!result.attemptId) {
 		throw new Error('Checkout recovery is unavailable. Contact billing support before paying.');
 	}
-	sessionStorage.setItem(
-		ATTEMPT_KEY,
-		JSON.stringify({ userId, attemptId: result.attemptId, tier } satisfies CheckoutAttempt)
-	);
+	try {
+		sessionStorage.setItem(
+			ATTEMPT_KEY,
+			JSON.stringify({ userId, attemptId: result.attemptId, tier } satisfies CheckoutAttempt)
+		);
+	} catch {
+		// Without storage the checkout still works; only automatic recovery on return is lost.
+	}
 	assertCheckoutUrl(result.checkout_url, result.mode);
 	return result.checkout_url;
 }

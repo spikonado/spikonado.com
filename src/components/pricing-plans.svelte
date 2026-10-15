@@ -257,7 +257,9 @@
 		void initialize(params);
 
 		const onPageShow = (event: PageTransitionEvent) => {
-			if (event.persisted) void initialize(new URLSearchParams());
+			if (!event.persisted) return;
+			busy = null;
+			void initialize(new URLSearchParams());
 		};
 		window.addEventListener('pageshow', onPageShow);
 		return () => window.removeEventListener('pageshow', onPageShow);
