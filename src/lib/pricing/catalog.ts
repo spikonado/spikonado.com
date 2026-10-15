@@ -14,6 +14,21 @@ export type PlanCard = {
 
 export const pricingFaqs = [
 	{
+		question: 'Are there other limits on AI usage?',
+		answer:
+			"No. Your plan's monthly AI usage is the only limit, with no session, daily, or weekly caps on top of it. To keep responses reliable, Sprocket switches to backup providers when one goes down. You can also bring your own API keys and subscriptions on every plan."
+	},
+	{
+		question: 'Which AI models can I use?',
+		answer:
+			"Sprocket offers a focused set of models that we've assessed as the best value for your time and money, rather than every model available. We review the list with every new model release. To request a model we don't include, email its name and why you need it to aarav@spikonado.com, and we'll look into it."
+	},
+	{
+		question: 'How does using my own API keys or subscriptions work?',
+		answer:
+			"Add API keys from providers like OpenAI and Anthropic, or connect subscriptions like ChatGPT (Codex), Claude Code, GitHub Copilot, and OpenCode. Compatible models then run on your own plan and don't use your Sprocket AI usage."
+	},
+	{
 		question: 'What are my payment options?',
 		answer:
 			'Credit and debit cards, UPI, Apple Pay, Google Pay, Cash App Pay, Klarna, RuPay, Satispay, Kakao Pay, Naver Pay, and Pix. Checkout shows the options available in your country and currency.'
@@ -60,6 +75,8 @@ export function buildPlanCards(catalog: PublicPricingCatalog): PlanCard[] {
 				...new Set([
 					...(isFree ? ['No credit card required'] : []),
 					`${formatPrice({ amountMinor: Math.round(plan.monthlyUsageDollars * 100), currency: 'USD' })} of AI usage each month`,
+					'Bring your own API keys and subscriptions',
+					'Unlimited context from the web',
 					...plan.features.map((feature) => feature.trim()).filter(Boolean)
 				])
 			],

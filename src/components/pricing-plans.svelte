@@ -350,13 +350,13 @@
 			Loading plan details…
 		</p>
 	{:else}
-		<div class="mt-12 grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-6">
+		<div class="mt-12 flex flex-wrap justify-center gap-6">
 			{#each cards as card (card.id)}
 				{@const price = card.prices[interval]}
 				{@const yearly = interval === 'annual'}
 				<article
 					class={cn(
-						'relative flex min-w-0 flex-col rounded-2xl border border-border/70 bg-surface/90 p-6 sm:p-7',
+						'relative flex w-full min-w-0 flex-col rounded-2xl border border-border/70 bg-surface/90 p-6 sm:w-[calc((100%-1.5rem)/2)] sm:p-7 lg:w-[calc((100%-3rem)/3)]',
 						card.highlighted && 'border-accent/40 ring-2 ring-accent/30'
 					)}
 				>
