@@ -396,7 +396,7 @@
 								>
 								{#if feature.href}
 									<a
-										class="font-medium text-accent-strong underline decoration-accent-strong/30 underline-offset-4"
+										class="underline decoration-foreground/30 underline-offset-4 transition-colors hover:decoration-foreground"
 										href={feature.href}
 										target="_blank"
 										rel="noopener">{feature.label}</a
