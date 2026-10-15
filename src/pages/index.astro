@@ -6,7 +6,7 @@ import GetStarted from '@/components/get-started.svelte';
 import SprocketDownload from '@/components/sprocket-download.svelte';
 import SprocketScreenshot from '@/components/sprocket-screenshot.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
-import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
+import { CTA_CLICKED_EVENT } from '@/lib/analytics/events';
 import { fetchLatestSprocketRelease, SPROCKET_NPM_COMMAND } from '@/lib/sprocket-releases';
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_URL, SPROCKET_DESCRIPTION } from '@/lib/seo';
 import {
@@ -80,41 +80,7 @@ const softwareLd = {
 				</div>
 
 				<div class="flex flex-col items-stretch gap-5 lg:items-end">
-					<div class="flex w-full max-w-md flex-col gap-5">
-						<GetStarted client:idle release={sprocketRelease} />
-						<div
-							class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground"
-						>
-							<a
-								href="https://github.com/spikonado/sprocket"
-								class={marketingTextLinkClass}
-								data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
-								data-ph-destination="github_sprocket"
-								data-ph-location="home_hero"
-								data-ph-cta="source_available"
-							>
-								Source available
-							</a>
-							<a
-								href="/#build-log"
-								class={marketingTextLinkClass}
-								data-ph-capture={CTA_CLICKED_EVENT}
-								data-ph-cta="read_build_log"
-								data-ph-location="home_hero"
-							>
-								Read the build log
-							</a>
-							<a
-								href="/#platform"
-								class={marketingTextLinkClass}
-								data-ph-capture={CTA_CLICKED_EVENT}
-								data-ph-cta="see_platform"
-								data-ph-location="home_hero"
-							>
-								See the platform
-							</a>
-						</div>
-					</div>
+					<GetStarted client:idle release={sprocketRelease} />
 				</div>
 			</div>
 		</section>
