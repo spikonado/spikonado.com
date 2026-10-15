@@ -9,6 +9,7 @@
 	const navLinks = [
 		{ label: 'Sprocket', href: '/sprocket', cta: 'nav_sprocket' },
 		{ label: 'Vario', href: '/#vario', cta: 'nav_vario' },
+		{ label: 'Pricing', href: '/pricing', cta: 'nav_pricing' },
 		{ label: 'Build log', href: '/#build-log', cta: 'nav_build_log' }
 	] as const;
 
