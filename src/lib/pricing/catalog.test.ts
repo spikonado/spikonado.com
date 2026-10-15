@@ -42,6 +42,7 @@ test('buildPlanCards prices plans and computes the annual discount', () => {
 		description: 'For daily work',
 		features: ['$50 of AI usage each month', 'Frontier models'],
 		prices: { monthly: '$20', annual: '$200' },
+		annualPerMonth: '$16.67',
 		annualDiscountPercent: 17
 	});
 });

@@ -8,6 +8,7 @@ export type PlanCard = {
 	features: string[];
 	isFree: boolean;
 	prices: Record<BillingInterval, string | null>;
+	annualPerMonth: string | null;
 	annualDiscountPercent: number;
 };
 
@@ -66,6 +67,13 @@ export function buildPlanCards(catalog: PublicPricingCatalog): PlanCard[] {
 				monthly: isFree ? free : monthly && formatPrice(monthly),
 				annual: isFree ? free : annual && formatPrice(annual)
 			},
+			annualPerMonth: isFree
+				? free
+				: annual &&
+					formatPrice({
+						amountMinor: Math.round(annual.amountMinor / 12),
+						currency: annual.currency
+					}),
 			annualDiscountPercent: annualDiscountPercent(monthly, annual)
 		};
 	});

@@ -285,7 +285,7 @@
 					>
 						{value === 'monthly' ? 'Monthly' : 'Yearly'}
 						{#if value === 'annual' && largestDiscount > 0}
-							<span class="ml-2 text-xs">Save up to {largestDiscount}%</span>
+							<span class="ml-2 text-xs">{largestDiscount}% off</span>
 						{/if}
 					</span>
 				</label>
@@ -353,6 +353,7 @@
 		<div class="mt-12 grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-6">
 			{#each cards as card (card.id)}
 				{@const price = card.prices[interval]}
+				{@const yearly = interval === 'annual'}
 				<article
 					class={cn(
 						'relative flex min-w-0 flex-col rounded-2xl border border-border/70 bg-surface/90 p-6 sm:p-7',
@@ -369,14 +370,11 @@
 					<h2 class="font-brand text-xl font-semibold text-foreground">{card.name}</h2>
 					<div class="mt-3 min-h-16">
 						<p class="font-brand text-3xl font-semibold tracking-tight text-foreground">
-							{price ?? 'Unavailable'}
+							{(yearly ? card.annualPerMonth : price) ?? 'Unavailable'}
 						</p>
 						{#if price}
 							<p class="mt-1 text-sm text-muted-foreground">
-								per {interval === 'annual' ? 'year' : 'month'}{interval === 'annual' &&
-								card.annualDiscountPercent > 0
-									? `, ${card.annualDiscountPercent}% off`
-									: ''}
+								per month{yearly && !card.isFree ? `, billed ${price} yearly` : ''}
 							</p>
 						{/if}
 					</div>
