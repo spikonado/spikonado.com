@@ -5,18 +5,11 @@ import { completePricingSignIn } from '@/lib/pricing/auth-server';
 export const prerender = false;
 
 export const GET: APIRoute = async ({ cookies, url }) => {
-	let target = '/pricing/signed-in';
-	try {
-		await completePricingSignIn(await pricingAuthServer(), cookies, url);
-	} catch {
-		target += '?error=sign_in_failed';
-	}
+	const location = await pricingAuthServer()
+		.then((server) => completePricingSignIn(server, cookies, url))
+		.catch(() => '/pricing?sign_in=failed');
 	return new Response(null, {
 		status: 303,
-		headers: {
-			Location: target,
-			'Cache-Control': 'no-store',
-			'Referrer-Policy': 'no-referrer'
-		}
+		headers: { Location: location, 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' }
 	});
 };

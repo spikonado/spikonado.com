@@ -2,22 +2,18 @@ import type { APIRoute } from 'astro';
 import { pricingAuthServer } from '@/lib/pricing/auth-runtime';
 import {
 	getPricingSession,
+	isSameOriginPost,
 	pricingAuthFailure,
-	requirePricingAuthPost
+	pricingAuthJson,
+	PricingAuthError
 } from '@/lib/pricing/auth-server';
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request, cookies, url }) => {
 	try {
-		requirePricingAuthPost(request);
-		const body = await request.json();
-		return Response.json(
-			await getPricingSession(await pricingAuthServer(), cookies, url, body?.forceRefresh === true),
-			{
-				headers: { 'Cache-Control': 'no-store', Vary: 'Cookie, Origin' }
-			}
-		);
+		if (!isSameOriginPost(request)) throw new PricingAuthError('Request not allowed.', 403);
+		return pricingAuthJson(await getPricingSession(await pricingAuthServer(), cookies, url));
 	} catch (error) {
 		return pricingAuthFailure(error);
 	}

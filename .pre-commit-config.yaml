@@ -33,7 +33,6 @@ repos:
       - id: codespell
         exclude: ^bun\.lock$
         exclude_types: [svg]
-        args: ['-L', 'zar']
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.38.2
