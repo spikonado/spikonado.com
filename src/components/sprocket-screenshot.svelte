@@ -1,41 +1,24 @@
 <script lang="ts">
-	import fallback from '@/assets/sprocket.webp';
+	import screenshot from '@/assets/sprocket.webp';
 	import { captureEvent } from '@/lib/analytics/client';
-	import { PRODUCT_MEDIA_OPENED_EVENT } from '@/lib/analytics/events';
+	import { PRODUCT_MEDIA_OPENED_EVENT, type AnalyticsLocation } from '@/lib/analytics/events';
 	import { inertBackground, portal, trapFocus } from '@/lib/focus-trap';
-	import { SPROCKET_IMAGE_REMOTE_URL } from '@/lib/sprocket-image';
 
 	interface Props {
-		class?: string;
-		alt?: string;
+		location: AnalyticsLocation;
 	}
 
-	let {
-		class: className = 'h-auto w-full',
-		alt = 'Sprocket engineering agent interface showing multi-step work across a project'
-	}: Props = $props();
+	let { location }: Props = $props();
 
-	let src = $state(SPROCKET_IMAGE_REMOTE_URL);
-	let usingFallback = $state(false);
+	const alt =
+		'Sprocket uploading robot firmware to a board while showing the robot schematic it designed';
+
 	let open = $state(false);
 	let dialog: HTMLDivElement | undefined = $state();
-	let trigger: HTMLButtonElement | undefined = $state();
-
-	function handleError() {
-		if (usingFallback) {
-			return;
-		}
-		usingFallback = true;
-		src = fallback.src;
-	}
 
 	function openLightbox() {
 		open = true;
-		captureEvent(PRODUCT_MEDIA_OPENED_EVENT, {
-			media: 'sprocket_screenshot',
-			location: 'home_sprocket',
-			using_fallback: usingFallback
-		});
+		captureEvent(PRODUCT_MEDIA_OPENED_EVENT, { media: 'sprocket_screenshot', location });
 	}
 
 	function closeLightbox() {
@@ -70,20 +53,19 @@
 </script>
 
 <button
-	bind:this={trigger}
 	type="button"
 	class="block w-full cursor-zoom-in border-0 bg-transparent p-0 text-left"
 	aria-label="View Sprocket screenshot full size"
 	onclick={openLightbox}
 >
 	<img
-		{src}
+		src={screenshot.src}
+		width={screenshot.width}
+		height={screenshot.height}
 		{alt}
-		class={className}
+		class="h-auto w-full"
 		loading="lazy"
 		decoding="async"
-		referrerpolicy="no-referrer"
-		onerror={handleError}
 	/>
 </button>
 
@@ -125,11 +107,11 @@
 		</button>
 
 		<img
-			{src}
+			src={screenshot.src}
+			width={screenshot.width}
+			height={screenshot.height}
 			{alt}
-			class="relative z-10 max-h-[min(92svh,100%)] max-w-full rounded-lg object-contain shadow-2xl"
-			referrerpolicy="no-referrer"
-			onerror={handleError}
+			class="relative z-10 h-auto max-h-[min(92svh,100%)] w-auto max-w-full rounded-lg object-contain shadow-2xl"
 		/>
 	</div>
 {/if}

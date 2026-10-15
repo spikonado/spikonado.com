@@ -5,12 +5,12 @@ export const TWITTER_HANDLE = '@spikonado';
 /** Stable social preview image generated at build time (`src/pages/og.png.ts`). */
 export const DEFAULT_OG_IMAGE = '/og.png';
 
-export const DEFAULT_TITLE = 'Spikonado | Build any kind of technology, faster';
+export const DEFAULT_TITLE = 'Spikonado | Your imagination is the limit';
 export const DEFAULT_DESCRIPTION =
 	'Spikonado helps anyone build apps, robots, devices, and the systems that glue them together.';
 
 export const SPROCKET_DESCRIPTION =
-	'Sprocket builds software and designs hardware with AI. Write and test code, create schematics, use rich web and file context, and buy parts or subscriptions within approved limits.';
+	'Sprocket is an AI agent for hardware and software. Create schematics, write and test code, use rich web and file context, and buy parts or subscriptions within approved limits.';
 
 export const ORGANIZATION_SAME_AS = [
 	'https://github.com/spikonado',

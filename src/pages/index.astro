@@ -4,7 +4,7 @@ import BuildLogForm from '@/components/build-log-form.svelte';
 import CopyCommand from '@/components/copy-command.svelte';
 import GetStarted from '@/components/get-started.svelte';
 import SprocketDownload from '@/components/sprocket-download.svelte';
-import ProductImagePlaceholder from '@/components/product-image-placeholder.astro';
+import SprocketScreenshot from '@/components/sprocket-screenshot.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
 import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
 import { fetchLatestSprocketRelease, SPROCKET_NPM_COMMAND } from '@/lib/sprocket-releases';
@@ -24,7 +24,7 @@ const sprocketRelease = await fetchLatestSprocketRelease();
 const solvedItems = [
 	{
 		title: 'Hardware and software, same platform',
-		body: 'One agent for software and hardware. Ship apps & websites, design electronics, and build full systems without switching tools.'
+		body: 'One agent for hardware and software. Ship apps & websites, design electronics, and build full systems without switching tools.'
 	},
 	{
 		title: 'Built for anyone who invents',
@@ -129,13 +129,10 @@ const softwareLd = {
 				class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28"
 			>
 				<div>
-					<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
-						Product
-					</p>
-					<h2 class={cn(marketingProductHeadingClass, 'mt-3')}>Sprocket</h2>
+					<h2 class={marketingProductHeadingClass}>Sprocket</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						An AI engineering partner for <span class="mark-verb">software</span> and{' '}
-						<span class="mark-verb">hardware</span>.
+						An AI agent for <span class="mark-verb">hardware</span> and{' '}
+						<span class="mark-verb">software</span>.
 					</p>
 					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
 						Sprocket <span class="mark-verb">designs electronics</span>,{' '}
@@ -179,7 +176,7 @@ const softwareLd = {
 					<figure
 						class="relative overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]"
 					>
-						<ProductImagePlaceholder label="Sprocket working on code and a hardware design" />
+						<SprocketScreenshot client:visible location="home_sprocket" />
 					</figure>
 				</div>
 			</div>
@@ -281,8 +278,7 @@ const softwareLd = {
 				<div>
 					<h2 class={marketingSectionHeadingClass}>Stay in the loop</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						Product launches, architecture notes, and what we're building next, written for people
-						who actually ship.
+						Get an email when we ship something new in Sprocket or Vario. Unsubscribe anytime.
 					</p>
 				</div>
 				<div>
