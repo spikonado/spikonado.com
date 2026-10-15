@@ -5,12 +5,22 @@ export type PlanCard = {
 	name: string;
 	description: string;
 	highlighted: boolean;
-	features: string[];
+	primaryCta: boolean;
+	features: PlanFeature[];
 	isFree: boolean;
 	prices: Record<BillingInterval, string | null>;
 	annualPerMonth: string | null;
 	annualDiscountPercent: number;
 };
+
+export type PlanFeature = { label: string; href?: string };
+
+const SHARED_FEATURES: PlanFeature[] = [
+	{ label: 'Bring your own API keys and subscriptions' },
+	{ label: 'Unlimited context from the web' },
+	{ label: 'Fair source', href: 'https://fsl.software/' },
+	{ label: 'Self-host anytime' }
+];
 
 export const pricingFaqs = [
 	{
@@ -21,7 +31,7 @@ export const pricingFaqs = [
 	{
 		question: 'Which AI models can I use?',
 		answer:
-			"Sprocket offers a focused set of models that we've assessed as the best value for your time and money, rather than every model available. We review the list with every new model release. To request a model we don't include, email its name and why you need it to aarav@spikonado.com, and we'll look into it."
+			"Sprocket offers a focused set of models that we've assessed as the best value for your time and money, rather than every model available. We review the list with every new model release. To request a model we don't include, email its name and why you think it would be a good fit to aarav@spikonado.com, and we'll look into it."
 	},
 	{
 		question: 'How does using my own API keys or subscriptions work?',
@@ -70,16 +80,18 @@ export function buildPlanCards(catalog: PublicPricingCatalog): PlanCard[] {
 			name: plan.label,
 			description: plan.description?.trim() ?? '',
 			highlighted: plan.highlighted,
+			primaryCta: plan.highlighted || isFree || plan.id === 'pro',
 			isFree,
 			features: [
-				...new Set([
-					...(isFree ? ['No credit card required'] : []),
-					`${formatPrice({ amountMinor: Math.round(plan.monthlyUsageDollars * 100), currency: 'USD' })} of AI usage each month`,
-					'Bring your own API keys and subscriptions',
-					'Unlimited context from the web',
-					...plan.features.map((feature) => feature.trim()).filter(Boolean)
-				])
-			],
+				{
+					label: `${formatPrice({ amountMinor: Math.round(plan.monthlyUsageDollars * 100), currency: 'USD' })} of AI usage each month`
+				},
+				...SHARED_FEATURES,
+				...plan.features.map((feature) => ({ label: feature.trim() }))
+			].filter(
+				(feature, index, all) =>
+					feature.label && all.findIndex(({ label }) => label === feature.label) === index
+			),
 			prices: {
 				monthly: isFree ? free : monthly && formatPrice(monthly),
 				annual: isFree ? free : annual && formatPrice(annual)

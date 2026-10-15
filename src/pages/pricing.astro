@@ -40,7 +40,7 @@ const faqLd = {
 
 <BaseLayout title={title} description={description} jsonLd={[productLd, faqLd]}>
 	<main id="main" class="atmosphere min-h-svh px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8">
-		<article class="mx-auto max-w-6xl">
+		<article class="mx-auto max-w-7xl">
 			<h1
 				class="mb-8 text-center font-brand text-5xl font-semibold tracking-tight text-foreground sm:text-6xl"
 			>
@@ -48,7 +48,11 @@ const faqLd = {
 			</h1>
 			<PricingPlans client:load {initialCatalog} />
 
-			<section class="mt-20" aria-labelledby="pricing-faq-heading" data-ph-section="pricing_faq">
+			<section
+				class="mx-auto mt-20 max-w-6xl"
+				aria-labelledby="pricing-faq-heading"
+				data-ph-section="pricing_faq"
+			>
 				<h2 id="pricing-faq-heading" class="font-brand text-2xl font-semibold text-foreground">
 					FAQ
 				</h2>
