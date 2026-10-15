@@ -350,13 +350,13 @@
 			Loading plan details…
 		</p>
 	{:else}
-		<div class="mt-12 grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-6">
+		<div class="mt-12 flex flex-wrap justify-center gap-6">
 			{#each cards as card (card.id)}
 				{@const price = card.prices[interval]}
 				{@const yearly = interval === 'annual'}
 				<article
 					class={cn(
-						'relative flex min-w-0 flex-col rounded-2xl border border-border/70 bg-surface/90 p-6 sm:p-7',
+						'relative flex w-full min-w-0 flex-col rounded-2xl border border-border/70 bg-surface/90 p-6 sm:w-[calc((100%-1.5rem)/2)] sm:p-7 lg:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-4.5rem)/4)]',
 						card.highlighted && 'border-accent/40 ring-2 ring-accent/30'
 					)}
 				>
@@ -374,7 +374,11 @@
 						</p>
 						{#if price}
 							<p class="mt-1 text-sm text-muted-foreground">
-								per month{yearly && !card.isFree ? `, billed ${price} yearly` : ''}
+								per month{card.isFree
+									? ', no credit card required'
+									: yearly
+										? `, billed ${price} yearly`
+										: ''}
 							</p>
 						{/if}
 					</div>
@@ -384,13 +388,22 @@
 						</p>
 					{/if}
 					<ul class="mt-6 flex-1 space-y-2.5">
-						{#each card.features as feature (feature)}
+						{#each card.features as feature (feature.label)}
 							<li class="flex gap-2.5 text-sm leading-snug text-foreground">
 								<span
 									class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-action-soft text-xs"
 									aria-hidden="true">✓</span
 								>
-								<span>{feature}</span>
+								{#if feature.href}
+									<a
+										class="underline decoration-foreground/30 underline-offset-4 transition-colors hover:decoration-foreground"
+										href={feature.href}
+										target="_blank"
+										rel="noopener">{feature.label}</a
+									>
+								{:else}
+									<span>{feature.label}</span>
+								{/if}
 							</li>
 						{/each}
 					</ul>
@@ -398,7 +411,7 @@
 						type="button"
 						class={cn(
 							'mt-8 inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60',
-							card.highlighted
+							card.primaryCta
 								? 'bg-foreground text-background hover:bg-foreground/90'
 								: 'border border-border bg-surface text-foreground hover:bg-action-soft'
 						)}
