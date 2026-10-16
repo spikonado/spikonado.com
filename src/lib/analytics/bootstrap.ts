@@ -1,3 +1,4 @@
+import { PUBLIC_POSTHOG_KEY } from 'astro:env/client';
 import posthog from 'posthog-js';
 import { SECTION_VIEWED_EVENT, type AnalyticsProperties } from '@/lib/analytics/events';
 
@@ -46,7 +47,7 @@ export function captureAnalyticsEvent(
 	properties?: AnalyticsProperties,
 	options?: { sendInstantly?: boolean }
 ): void {
-	if (!import.meta.env.PUBLIC_POSTHOG_KEY?.trim()) {
+	if (!PUBLIC_POSTHOG_KEY?.trim()) {
 		return;
 	}
 
@@ -142,7 +143,7 @@ export function installAnalyticsCapture(): void {
 	if (captureInstalled || typeof document === 'undefined') {
 		return;
 	}
-	if (!import.meta.env.PUBLIC_POSTHOG_KEY?.trim()) {
+	if (!PUBLIC_POSTHOG_KEY?.trim()) {
 		return;
 	}
 
@@ -159,7 +160,7 @@ export function initPostHogAnalytics(): void {
 		return;
 	}
 
-	const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY?.trim();
+	const posthogKey = PUBLIC_POSTHOG_KEY?.trim();
 	if (!posthogKey) {
 		return;
 	}
