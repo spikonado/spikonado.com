@@ -1,0 +1,68 @@
+---
+import { cn } from '@/utils';
+
+type Kind = 'user' | 'text' | 'command' | 'file' | 'web' | 'question' | 'agent' | 'done';
+
+interface Props {
+	step: number;
+	kind: Kind;
+	class?: string;
+}
+
+const { step, kind, class: className } = Astro.props;
+
+const icons: Record<Exclude<Kind, 'user' | 'text'>, string> = {
+	command: 'M4 17l6-5-6-5M12 19h8',
+	file: 'M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5',
+	web: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18',
+	question:
+		'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6M12 17h.01',
+	agent: 'M9 18l6-6-6-6',
+	done: 'M5 12l5 5L20 7'
+};
+const style = `--step:${step}`;
+---
+
+{
+	kind === 'user' ? (
+		<p
+			data-step
+			style={style}
+			class={cn(
+				'ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-accent-soft px-3.5 py-2',
+				className
+			)}
+		>
+			<slot />
+		</p>
+	) : kind === 'text' ? (
+		<div data-step style={style} class={className}>
+			<slot />
+		</div>
+	) : (
+		<p
+			data-step
+			style={style}
+			class={cn(
+				'flex min-w-0 items-center gap-2 text-muted-foreground',
+				kind === 'done' && 'text-accent-strong',
+				className
+			)}
+		>
+			<svg
+				viewBox="0 0 24 24"
+				class="h-3.5 w-3.5 shrink-0"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<path d={icons[kind]} />
+			</svg>
+			<span class="truncate">
+				<slot />
+			</span>
+		</p>
+	)
+}

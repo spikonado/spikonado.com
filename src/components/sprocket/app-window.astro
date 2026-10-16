@@ -1,0 +1,91 @@
+---
+import logo from '@/assets/logo.svg';
+
+interface Props {
+	label: string;
+	thread: string;
+	model?: string;
+}
+
+const { label, thread, model = 'GPT-6.1 Sol · High' } = Astro.props;
+---
+
+<div
+	data-mock
+	role="img"
+	aria-label={label}
+	class="overflow-hidden rounded-2xl border border-border/80 bg-surface font-sans text-[0.8125rem] leading-relaxed text-foreground shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.6)]"
+>
+	<div
+		class="flex items-center gap-2 border-b border-border/70 bg-accent-soft/40 px-4 py-2.5"
+		aria-hidden="true"
+	>
+		<img src={logo.src} alt="" width="16" height="16" class="h-4 w-4" />
+		<span class="font-semibold">Sprocket</span>
+		<span class="text-muted-foreground">/</span>
+		<span class="truncate text-muted-foreground">{thread}</span>
+	</div>
+	<div class="flex min-h-80 flex-col gap-2.5 px-4 py-4 sm:px-5" aria-hidden="true">
+		<slot />
+	</div>
+	<div class="px-3 pb-3" aria-hidden="true">
+		<div class="rounded-xl border border-border/80 bg-background/60 px-3 py-2.5">
+			<p class="truncate text-muted-foreground">
+				Ask anything, use / for commands, @ to tag files/folders, and $ for skills
+			</p>
+			<div class="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+				<span>{model}</span>
+				<span
+					class="flex h-6 w-6 items-center justify-center rounded-full bg-foreground/15 text-foreground/60"
+					>↑</span
+				>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style is:global>
+	@keyframes mock-step-in {
+		from {
+			opacity: 0;
+			transform: translateY(6px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	[data-mock][data-animate] [data-step] {
+		opacity: 0;
+	}
+
+	[data-mock][data-animate].is-playing [data-step] {
+		animation: mock-step-in 0.45s ease-out forwards;
+		animation-delay: calc(var(--step, 0) * 0.65s);
+	}
+</style>
+
+<script>
+	// Steps stay visible without JS or with reduced motion; they're only hidden once we can reveal them.
+	const mocks = document.querySelectorAll<HTMLElement>('[data-mock]');
+	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	if (!reduceMotion && 'IntersectionObserver' in window) {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (entry.isIntersecting) {
+						entry.target.classList.add('is-playing');
+						observer.unobserve(entry.target);
+					}
+				}
+			},
+			{ threshold: 0.35 }
+		);
+		for (const mock of mocks) {
+			mock.dataset.animate = '';
+			observer.observe(mock);
+		}
+	}
+</script>

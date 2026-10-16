@@ -1,0 +1,35 @@
+---
+import AppWindow from '@/components/sprocket/app-window.astro';
+import Step from '@/components/sprocket/mock-step.astro';
+
+const subagents = [
+	{ task: 'Review motor driver firmware', result: 'PWM duty is clamped on M2' },
+	{ task: 'Check encoder wiring in the schematic', result: 'Wiring matches the pin map' },
+	{ task: 'Search for known TB6612FNG issues', result: 'No matching errata' }
+];
+---
+
+<AppWindow
+	thread="Robot drifts left"
+	label="Sprocket splitting a debugging task across three subagents that run in parallel, then combining their findings"
+>
+	<Step step={0} kind="user">Find out why the robot drifts left at full speed.</Step>
+	<Step step={1} kind="agent">Started 3 subagents</Step>
+	<Step step={2} kind="text">
+		<ul class="space-y-1.5">
+			{
+				subagents.map(({ task, result }) => (
+					<li class="rounded-lg border border-border/80 bg-background/50 px-2.5 py-1.5">
+						<p class="truncate">{task}</p>
+						<p class="truncate text-xs text-muted-foreground">{result}</p>
+					</li>
+				))
+			}
+		</ul>
+	</Step>
+	<Step step={3} kind="file">Edited firmware/motors.cpp</Step>
+	<Step step={4} kind="command">pio test -e robot</Step>
+	<Step step={5} kind="text" class="mt-1">
+		A copy-paste bug capped M2 at 90% duty. I fixed it, and all 18 motor tests pass.
+	</Step>
+</AppWindow>
