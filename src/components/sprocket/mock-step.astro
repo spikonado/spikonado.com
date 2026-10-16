@@ -1,4 +1,5 @@
 ---
+import LineIcon, { type LineIconName } from '@/components/line-icon.astro';
 import { cn } from '@/utils';
 
 type Kind = 'user' | 'text' | 'command' | 'file' | 'web' | 'question' | 'agent' | 'done';
@@ -11,14 +12,13 @@ interface Props {
 
 const { step, kind, class: className } = Astro.props;
 
-const icons: Record<Exclude<Kind, 'user' | 'text'>, string> = {
-	command: 'M4 17l6-5-6-5M12 19h8',
-	file: 'M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5',
-	web: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18',
-	question:
-		'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6M12 17h.01',
-	agent: 'M9 18l6-6-6-6',
-	done: 'M5 12l5 5L20 7'
+const icons: Record<Exclude<Kind, 'user' | 'text'>, LineIconName> = {
+	command: 'terminal',
+	file: 'file',
+	web: 'globe',
+	question: 'question',
+	agent: 'chevron',
+	done: 'check'
 };
 const style = `--step:${step}`;
 ---
@@ -49,17 +49,7 @@ const style = `--step:${step}`;
 				className
 			)}
 		>
-			<svg
-				viewBox="0 0 24 24"
-				class="h-3.5 w-3.5 shrink-0"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<path d={icons[kind]} />
-			</svg>
+			<LineIcon name={icons[kind]} class="h-3.5 w-3.5 shrink-0" />
 			<span class="truncate">
 				<slot />
 			</span>

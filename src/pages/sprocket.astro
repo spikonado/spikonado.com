@@ -1,26 +1,25 @@
 ---
-import CopyCommand from '@/components/copy-command.svelte';
 import Footer from '@/components/footer.svelte';
-import SprocketDownload from '@/components/sprocket-download.svelte';
+import LineIcon, { type LineIconName } from '@/components/line-icon.astro';
 import SprocketScreenshot from '@/components/sprocket-screenshot.svelte';
+import InstallRow from '@/components/sprocket/install-row.astro';
 import ContextMock from '@/components/sprocket/mocks/context-mock.astro';
 import HardwareMock from '@/components/sprocket/mocks/hardware-mock.astro';
 import PurchaseMock from '@/components/sprocket/mocks/purchase-mock.astro';
 import QuestionsMock from '@/components/sprocket/mocks/questions-mock.astro';
 import SubagentsMock from '@/components/sprocket/mocks/subagents-mock.astro';
+import ReleaseBadge from '@/components/sprocket/release-badge.astro';
 import BaseLayout from '@/layouts/base-layout.astro';
 import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
 import {
 	fetchLatestSprocketRelease,
 	SPROCKET_GITHUB_URL,
-	SPROCKET_NPM_COMMAND,
 	SPROCKET_NPM_URL,
 	SPROCKET_RELEASES_LATEST_URL
 } from '@/lib/sprocket-releases';
 import { SITE_URL, SPROCKET_DESCRIPTION, titleWithBrand } from '@/lib/seo';
 import {
 	marketingButtonPrimaryClass,
-	marketingCopyCommandSurfaceClass,
 	marketingSectionBodyClass,
 	marketingSectionHeadingClass
 } from '@/styles/marketing';
@@ -90,25 +89,61 @@ const showcases = [
 ] as const;
 
 const capabilities = [
-	{ name: 'Schematics', body: 'KiCad schematics you can open, edit, and route' },
-	{ name: 'BOMs and pin maps', body: 'Parts lists and wiring tables for every board' },
-	{ name: 'Assembly guides', body: 'Step-by-step instructions for building the device' },
-	{ name: 'Firmware and apps', body: 'Writes and tests code across your whole system' },
-	{ name: 'Web context', body: 'Searches the web and reads full pages and docs' },
-	{ name: 'Files', body: 'Reads PDFs, spreadsheets, images, and more' },
-	{ name: 'Purchasing', body: 'Buys parts and subscriptions within approved limits' },
-	{ name: 'Questions', body: 'Asks multiple-choice questions when a task is unclear' },
-	{ name: 'Subagents', body: 'Runs parallel agents for research, building, and review' },
-	{ name: 'Skills', body: 'Reusable instructions for your workflows, called with $' },
-	{ name: 'AGENTS.md', body: 'Project rules that apply per directory' },
-	{ name: 'Artifacts', body: 'Docs, schematics, and previews in a side panel' },
-	{ name: 'Git', body: 'Branches, worktrees, commits, and pull requests' },
-	{ name: 'Terminal', body: 'Runs builds, tests, and flashing tools for you' },
-	{ name: 'CLI', body: 'Run tasks from your terminal with sprocket run' },
-	{ name: 'Desktop or browser', body: 'Use the desktop app, or open Sprocket in a browser' },
-	{ name: 'Your own keys', body: 'Bring API keys and subscriptions from AI providers' },
-	{ name: 'Fair source', body: 'Read the code, and self-host anytime' }
-] as const;
+	{ icon: 'chip', name: 'Schematics', body: 'KiCad schematics you can open, edit, and route' },
+	{
+		icon: 'list',
+		name: 'BOMs and pin maps',
+		body: 'Parts lists and wiring tables for every board'
+	},
+	{
+		icon: 'wrench',
+		name: 'Assembly guides',
+		body: 'Step-by-step instructions for building the device'
+	},
+	{
+		icon: 'code',
+		name: 'Firmware and apps',
+		body: 'Writes and tests code across your whole system'
+	},
+	{ icon: 'globe', name: 'Web context', body: 'Searches the web and reads full pages and docs' },
+	{ icon: 'file', name: 'Files', body: 'Reads PDFs, spreadsheets, images, and more' },
+	{
+		icon: 'card',
+		name: 'Purchasing',
+		body: 'Buys parts and subscriptions within approved limits'
+	},
+	{
+		icon: 'question',
+		name: 'Questions',
+		body: 'Asks multiple-choice questions when a task is unclear'
+	},
+	{
+		icon: 'layers',
+		name: 'Subagents',
+		body: 'Runs parallel agents for research, building, and review'
+	},
+	{ icon: 'zap', name: 'Skills', body: 'Reusable instructions for your workflows, called with $' },
+	{ icon: 'file-text', name: 'AGENTS.md', body: 'Project rules that apply per directory' },
+	{ icon: 'panel', name: 'Artifacts', body: 'Docs, schematics, and previews in a side panel' },
+	{ icon: 'branch', name: 'Git', body: 'Branches, worktrees, commits, and pull requests' },
+	{
+		icon: 'terminal-box',
+		name: 'Terminal',
+		body: 'Runs builds, tests, and flashing tools for you'
+	},
+	{ icon: 'terminal', name: 'CLI', body: 'Run tasks from your terminal with sprocket run' },
+	{
+		icon: 'monitor',
+		name: 'Desktop or browser',
+		body: 'Use the desktop app, or open Sprocket in a browser'
+	},
+	{
+		icon: 'key',
+		name: 'Your own keys',
+		body: 'Bring API keys and subscriptions from AI providers'
+	},
+	{ icon: 'shield', name: 'Fair source', body: 'Read the code, and self-host anytime' }
+] as const satisfies readonly { icon: LineIconName; name: string; body: string }[];
 
 const softwareLd = {
 	'@type': 'SoftwareApplication',
@@ -144,7 +179,6 @@ const chips = [
 
 const subheadingClass =
 	'font-brand text-3xl font-semibold tracking-tight text-foreground sm:text-4xl';
-const installControlClass = 'h-12 w-full rounded-xl text-left sm:w-auto';
 ---
 
 <BaseLayout title={title} description={description} jsonLd={softwareLd}>
@@ -155,26 +189,7 @@ const installControlClass = 'h-12 w-full rounded-xl text-left sm:w-auto';
 		>
 			<div class="hero-mesh pointer-events-none absolute inset-0" aria-hidden="true"></div>
 			<div class="relative mx-auto max-w-3xl">
-				{
-					release && (
-						<a
-							href={release.htmlUrl}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="inline-flex items-center gap-2 rounded-full border border-border bg-surface/80 py-1 pr-3 pl-1 font-sans text-sm text-foreground transition-colors hover:bg-surface"
-							data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
-							data-ph-destination="github_sprocket_release"
-							data-ph-location="sprocket_page"
-							data-ph-cta="release_badge"
-						>
-							<span class="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-strong">
-								New
-							</span>
-							Sprocket {release.version} is out
-							<span aria-hidden="true">↗</span>
-						</a>
-					)
-				}
+				<ReleaseBadge release={release} location="sprocket_page" />
 				<h1 class={cn(marketingSectionHeadingClass, 'mt-6')}>
 					The best AI agent for hardware and software.
 				</h1>
@@ -183,23 +198,7 @@ const installControlClass = 'h-12 w-full rounded-xl text-left sm:w-auto';
 					needs.
 				</p>
 
-				<!-- `contents` puts the download button and its platform links in this row's flex flow. -->
-				<div class="mx-auto mt-10 flex max-w-xl flex-wrap justify-center gap-3">
-					<SprocketDownload
-						client:idle
-						release={release}
-						location="sprocket_page"
-						class="contents"
-						buttonClass={installControlClass}
-						alternatesClass="order-last mt-1 basis-full"
-					/>
-					<CopyCommand
-						client:idle
-						command={SPROCKET_NPM_COMMAND}
-						location="sprocket_page"
-						class={cn(installControlClass, 'py-0 pr-1.5', marketingCopyCommandSurfaceClass)}
-					/>
-				</div>
+				<InstallRow release={release} location="sprocket_page" class="mt-10" />
 
 				<ul class="mt-6 flex flex-wrap justify-center gap-2">
 					{
@@ -283,20 +282,26 @@ const installControlClass = 'h-12 w-full rounded-xl text-left sm:w-auto';
 			data-ph-section="sprocket_capabilities"
 		>
 			<div class="mx-auto max-w-6xl">
-				<h2 id="capabilities-heading" class={cn(subheadingClass, 'text-center')}>
+				<h2
+					id="capabilities-heading"
+					class="font-brand text-4xl font-semibold tracking-tight text-foreground sm:text-5xl"
+				>
 					Everything you need to invent
 				</h2>
-				<p class={cn(marketingSectionBodyClass, 'mx-auto mt-4 text-center')}>
+				<p class="mt-4 text-lg text-foreground/80">
 					One agent for the whole build, from the first idea to a working device.
 				</p>
-				<dl
-					class="mt-12 grid gap-px overflow-hidden rounded-2xl border border-border/70 bg-border/70 sm:grid-cols-2 lg:grid-cols-3"
-				>
+				<dl class="mt-14 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
 					{
-						capabilities.map(({ name, body }) => (
-							<div class="bg-surface/90 p-5">
-								<dt class="font-brand font-semibold text-foreground">{name}</dt>
-								<dd class="mt-1 text-sm leading-relaxed text-muted-foreground">{body}</dd>
+						capabilities.map(({ icon, name, body }) => (
+							<div class="flex gap-4">
+								<LineIcon name={icon} class="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground/70" />
+								<div>
+									<dt class="text-[1.0625rem] font-medium text-foreground">{name}</dt>
+									<dd class="mt-1 text-[0.9375rem] leading-relaxed text-muted-foreground">
+										{body}
+									</dd>
+								</div>
 							</div>
 						))
 					}
@@ -313,22 +318,12 @@ const installControlClass = 'h-12 w-full rounded-xl text-left sm:w-auto';
 			<p class={cn(marketingSectionBodyClass, 'mx-auto mt-4')}>
 				Download the app, or run it with one command.
 			</p>
-			<div class="mx-auto mt-8 flex max-w-xl flex-wrap justify-center gap-3">
-				<SprocketDownload
-					client:visible
-					release={release}
-					showAlternates={false}
-					location="sprocket_page_cta"
-					class="contents"
-					buttonClass={installControlClass}
-				/>
-				<CopyCommand
-					client:visible
-					command={SPROCKET_NPM_COMMAND}
-					location="sprocket_page_cta"
-					class={cn(installControlClass, 'py-0 pr-1.5', marketingCopyCommandSurfaceClass)}
-				/>
-			</div>
+			<InstallRow
+				release={release}
+				location="sprocket_page_cta"
+				showAlternates={false}
+				class="mt-8"
+			/>
 			<a
 				href="/pricing"
 				class={cn(marketingButtonPrimaryClass, 'mt-8')}

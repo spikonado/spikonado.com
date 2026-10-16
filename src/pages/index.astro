@@ -2,7 +2,8 @@
 import Footer from '@/components/footer.svelte';
 import BuildLogForm from '@/components/build-log-form.svelte';
 import CopyCommand from '@/components/copy-command.svelte';
-import GetStarted from '@/components/get-started.svelte';
+import InstallRow from '@/components/sprocket/install-row.astro';
+import ReleaseBadge from '@/components/sprocket/release-badge.astro';
 import SprocketDownload from '@/components/sprocket-download.svelte';
 import SprocketScreenshot from '@/components/sprocket-screenshot.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
@@ -59,29 +60,33 @@ const softwareLd = {
 			</div>
 
 			<div
-				class="relative mx-auto grid max-w-6xl items-start gap-10 px-4 pt-16 pb-16 sm:px-6 sm:pt-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] lg:gap-14 lg:px-8 lg:pt-24 lg:pb-20"
+				class="relative mx-auto max-w-3xl px-4 pt-18 pb-20 text-center sm:px-6 sm:pt-26 lg:px-8 lg:pb-24"
 			>
-				<div>
-					<h1
-						class="max-w-xl font-brand text-3xl leading-[1.1] font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl"
+				<ReleaseBadge release={sprocketRelease} location="home_hero" />
+				<h1 class={cn(marketingSectionHeadingClass, 'mt-6')}>
+					<span class="text-accent-strong">Your imagination</span> is the limit to what <span
+						class="text-accent-strong">you can build</span
 					>
-						<span class="text-accent-strong">Your imagination</span> is the limit to what <span
-							class="text-accent-strong">you can build</span
-						>
-					</h1>
-					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
-						A way for anyone to build <span class="mark-accent">any kind of technology</span>
-					</p>
-					<p class={cn(marketingSectionBodyClass, 'mt-4')}>
-						<span class="mark-verb">Our goal is simple</span>: give everyone the{' '}
-						<span class="mark-verb">tools to invent apps, robots, devices</span>, and the{' '}
-						<span class="mark-verb">systems</span> that glue them together.
-					</p>
-				</div>
+				</h1>
+				<p class={cn(marketingSectionBodyClass, 'mx-auto mt-6')}>
+					A way for anyone to build <span class="mark-accent">any kind of technology</span>
+				</p>
+				<p class={cn(marketingSectionBodyClass, 'mx-auto mt-4')}>
+					<span class="mark-verb">Our goal is simple</span>: give everyone the{' '}
+					<span class="mark-verb">tools to invent apps, robots, devices</span>, and the{' '}
+					<span class="mark-verb">systems</span> that glue them together.
+				</p>
 
-				<div class="flex flex-col items-stretch gap-5 lg:items-end">
-					<GetStarted client:idle release={sprocketRelease} />
-				</div>
+				<InstallRow release={sprocketRelease} location="home_hero" class="mt-10" />
+				<a
+					href="/sprocket"
+					class={cn(marketingButtonPrimaryClass, 'mt-6')}
+					data-ph-capture={CTA_CLICKED_EVENT}
+					data-ph-cta="learn_more_sprocket"
+					data-ph-location="home_hero"
+				>
+					Learn more →
+				</a>
 			</div>
 		</section>
 
