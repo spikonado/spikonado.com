@@ -6,7 +6,7 @@ export const prerender = true;
 export const GET: APIRoute = async () => {
 	const png = await renderOgImagePng();
 
-	return new Response(new Uint8Array(png), {
+	return new Response(png, {
 		headers: {
 			'Content-Type': 'image/png',
 			'Cache-Control': 'public, max-age=31536000, immutable'
