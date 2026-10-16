@@ -3,7 +3,6 @@ import Footer from '@/components/footer.svelte';
 import BuildLogForm from '@/components/build-log-form.svelte';
 import CopyCommand from '@/components/copy-command.svelte';
 import InstallRow from '@/components/sprocket/install-row.astro';
-import ReleaseBadge from '@/components/sprocket/release-badge.astro';
 import SprocketDownload from '@/components/sprocket-download.svelte';
 import SprocketScreenshot from '@/components/sprocket-screenshot.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
@@ -62,11 +61,8 @@ const softwareLd = {
 			<div
 				class="relative mx-auto max-w-3xl px-4 pt-18 pb-20 text-center sm:px-6 sm:pt-26 lg:px-8 lg:pb-24"
 			>
-				<ReleaseBadge release={sprocketRelease} location="home_hero" />
-				<h1 class={cn(marketingSectionHeadingClass, 'mt-6')}>
-					<span class="text-accent-strong">Your imagination</span> is the limit to what <span
-						class="text-accent-strong">you can build</span
-					>
+				<h1 class={marketingSectionHeadingClass}>
+					Your imagination is the limit to what you can build
 				</h1>
 				<p class={cn(marketingSectionBodyClass, 'mx-auto mt-6')}>
 					A way for anyone to build <span class="mark-accent">any kind of technology</span>
