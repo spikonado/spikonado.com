@@ -6,6 +6,7 @@ export type PlanCard = {
 	description: string;
 	highlighted: boolean;
 	primaryCta: boolean;
+	previousPlanName: string | null;
 	features: PlanFeature[];
 	isFree: boolean;
 	prices: Record<BillingInterval, string | null>;
@@ -15,12 +16,21 @@ export type PlanCard = {
 
 export type PlanFeature = { label: string; href?: string };
 
-const SHARED_FEATURES: PlanFeature[] = [
-	{ label: 'Bring your own API keys and subscriptions' },
-	{ label: 'Unlimited context from the web' },
-	{ label: 'Fair source', href: 'https://fsl.software/' },
-	{ label: 'Self-host anytime' }
-];
+function planFeatures(plan: PublicPricingCatalog['plans'][number], isFree: boolean): PlanFeature[] {
+	return [
+		{
+			label: `${formatPrice({ amountMinor: Math.round(plan.monthlyUsageDollars * 100), currency: 'USD' })} of AI usage each month`
+		},
+		{ label: 'Bring your own API keys and subscriptions' },
+		{ label: `${isFree ? 'Limited' : 'Unlimited'} context from the web` },
+		{ label: 'Fair source', href: 'https://fsl.software/' },
+		{ label: 'Self-host anytime' },
+		...plan.features.map((feature) => ({ label: feature.trim() }))
+	].filter(
+		(feature, index, all) =>
+			feature.label && all.findIndex(({ label }) => label === feature.label) === index
+	);
+}
 
 export const pricingFaqs = [
 	{
@@ -71,10 +81,14 @@ function annualDiscountPercent(monthly: DodoPrice | null, annual: DodoPrice | nu
 }
 
 export function buildPlanCards(catalog: PublicPricingCatalog): PlanCard[] {
+	const free = formatPrice({ amountMinor: 0, currency: 'USD' });
+	let previous: { name: string; labels: Set<string> } | null = null;
 	return catalog.plans.map((plan) => {
 		const isFree = plan.id === 'free';
 		const { monthly, annual } = plan.prices;
-		const free = formatPrice({ amountMinor: 0, currency: 'USD' });
+		const features = planFeatures(plan, isFree);
+		const inherited = previous;
+		previous = { name: plan.label, labels: new Set(features.map(({ label }) => label)) };
 		return {
 			id: plan.id,
 			name: plan.label,
@@ -82,16 +96,8 @@ export function buildPlanCards(catalog: PublicPricingCatalog): PlanCard[] {
 			highlighted: plan.highlighted,
 			primaryCta: plan.highlighted || isFree || plan.id === 'pro',
 			isFree,
-			features: [
-				{
-					label: `${formatPrice({ amountMinor: Math.round(plan.monthlyUsageDollars * 100), currency: 'USD' })} of AI usage each month`
-				},
-				...SHARED_FEATURES,
-				...plan.features.map((feature) => ({ label: feature.trim() }))
-			].filter(
-				(feature, index, all) =>
-					feature.label && all.findIndex(({ label }) => label === feature.label) === index
-			),
+			previousPlanName: inherited?.name ?? null,
+			features: inherited ? features.filter(({ label }) => !inherited.labels.has(label)) : features,
 			prices: {
 				monthly: isFree ? free : monthly && formatPrice(monthly),
 				annual: isFree ? free : annual && formatPrice(annual)
