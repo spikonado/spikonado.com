@@ -17,10 +17,6 @@ export const marketingSectionBodyClass =
 // Brand wordmark used in the navbar and footer.
 export const marketingBrandClass = 'font-brand font-semibold tracking-tight text-foreground';
 
-// Contained interactive surfaces (get-started, forms) - not decorative cards.
-export const marketingPanelClass =
-	'rounded-2xl border border-border/70 bg-surface shadow-[0_18px_50px_-28px_oklch(0.2_0.02_260/0.45)]';
-
 // Elevated copyable command used on page backgrounds (not nested in a panel).
 export const marketingCopyCommandSurfaceClass =
 	'border-foreground/12 bg-surface shadow-[0_10px_28px_-16px_oklch(0.2_0.02_260/0.55)]';

@@ -48,6 +48,7 @@ export type AnalyticsLocation =
 	| 'home_vario'
 	| 'home_build_log'
 	| 'sprocket_page'
+	| 'sprocket_page_cta'
 	| 'pricing_page'
 	| 'footer'
 	| 'privacy';
