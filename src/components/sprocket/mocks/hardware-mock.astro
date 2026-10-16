@@ -1,47 +1,38 @@
 ---
+import schematic from '@/assets/robot-car-schematic.svg';
 import AppWindow from '@/components/sprocket/app-window.astro';
 import Step from '@/components/sprocket/mock-step.astro';
 
 const bom = [
-	['U1', 'RP2040 microcontroller', '1'],
-	['U2, U3', 'TB6612FNG motor driver', '2'],
-	['J1–J4', 'JST-XH 2-pin motor header', '4']
+	['U1', 'ESP32-CAM-MB camera board', '1'],
+	['U2', 'TB6612FNG motor driver board', '1'],
+	['U3', 'LM2596 buck converter module', '1'],
+	['BT1', '2× 18650 battery holder with switch', '1'],
+	['MFL–MRR', 'BO gearmotor', '4']
 ] as const;
 ---
 
 <AppWindow
-	thread="Soccer robot controller"
-	label="Sprocket designing a soccer robot controller board: it reads datasheets, creates a schematic, a bill of materials, and an assembly guide"
+	thread="Wi-Fi robot car"
+	label="Sprocket designing a Wi-Fi camera robot car: it reads datasheets, draws a schematic of the battery, buck converter, ESP32-CAM, motor driver, and four motors, then writes a bill of materials and an assembly guide"
 >
-	<Step step={0} kind="user">Design a controller board for my 4-motor soccer robot.</Step>
-	<Step step={1} kind="web">Read RP2040 and TB6612FNG datasheets</Step>
-	<Step step={2} kind="file">Created hardware/soccer-bot.kicad_sch</Step>
+	<Step step={0} kind="user"
+		>Design the electronics for a 4-motor robot car I can drive over Wi-Fi.</Step
+	>
+	<Step step={1} kind="web">Read ESP32-CAM, TB6612FNG, and LM2596 datasheets</Step>
+	<Step step={2} kind="file">Created artifact · Robot car schematic</Step>
 	<Step step={3} kind="text">
-		<div class="rounded-xl border border-border/80 bg-background/50 p-3">
-			<svg viewBox="0 0 320 110" class="h-auto w-full" fill="none">
-				<path
-					d="M90 30h50M90 80h50M210 30h30M210 80h30"
-					class="stroke-accent-strong"
-					stroke-width="1.5"></path>
-				<g class="fill-foreground/5 stroke-foreground/50" stroke-width="1.2">
-					<rect x="20" y="15" width="70" height="80" rx="4"></rect>
-					<rect x="140" y="12" width="70" height="36" rx="4"></rect>
-					<rect x="140" y="62" width="70" height="36" rx="4"></rect>
-					<rect x="240" y="14" width="60" height="32" rx="16"></rect>
-					<rect x="240" y="64" width="60" height="32" rx="16"></rect>
-				</g>
-				<g class="fill-foreground font-mono" font-size="10" text-anchor="middle">
-					<text x="55" y="52">U1</text>
-					<text x="55" y="66" class="fill-muted-foreground" font-size="8">RP2040</text>
-					<text x="175" y="34">U2</text>
-					<text x="175" y="84">U3</text>
-					<text x="270" y="34" font-size="8">M1 · M2</text>
-					<text x="270" y="84" font-size="8">M3 · M4</text>
-				</g>
-			</svg>
-		</div>
+		<img
+			src={schematic.src}
+			width={schematic.width}
+			height={schematic.height}
+			alt=""
+			loading="lazy"
+			decoding="async"
+			class="h-auto w-full rounded-xl border border-border/80"
+		/>
 	</Step>
-	<Step step={4} kind="file">Created hardware/bom.csv</Step>
+	<Step step={4} kind="file">Created docs/bom.md</Step>
 	<Step step={5} kind="text">
 		<table class="w-full text-left text-xs">
 			<thead class="text-muted-foreground">

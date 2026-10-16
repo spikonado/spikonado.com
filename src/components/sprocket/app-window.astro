@@ -86,6 +86,12 @@ const iconProps = {
 		}
 	}
 
+	@keyframes mock-step-out {
+		to {
+			opacity: 0;
+		}
+	}
+
 	[data-mock][data-animate] [data-step] {
 		opacity: 0;
 	}
@@ -93,6 +99,15 @@ const iconProps = {
 	[data-mock][data-animate].is-playing [data-step] {
 		animation: mock-step-in 0.45s ease-out forwards;
 		animation-delay: calc(var(--step, 0) * 0.65s);
+	}
+
+	[data-mock]:not([data-animate]) [data-step-out] {
+		opacity: 0;
+	}
+
+	[data-mock][data-animate].is-playing [data-step-out] {
+		animation: mock-step-out 0.2s ease-in forwards;
+		animation-delay: calc(var(--step-out, 0) * 0.65s);
 	}
 </style>
 

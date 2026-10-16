@@ -33,10 +33,10 @@ const description = SPROCKET_DESCRIPTION;
 const showcases = [
 	{
 		id: 'electronics',
-		heading: 'Design electronics',
-		body: 'Describe a device, and Sprocket designs the board around real parts.',
+		heading: 'Designs electronics',
+		body: 'Describe a device, and Sprocket designs the circuit around real parts.',
 		points: [
-			'Draws KiCad schematics from the datasheets of the parts it picks',
+			'Draws clear schematics from the datasheets of the parts it picks',
 			'Writes the BOM, pin maps, and step-by-step assembly guides',
 			'Writes and tests the firmware that runs on the board'
 		],
@@ -44,7 +44,7 @@ const showcases = [
 	},
 	{
 		id: 'context',
-		heading: 'Work from real docs',
+		heading: 'Works from real docs',
 		body: 'Sprocket checks current sources before it acts, so its answers hold up on real hardware.',
 		points: [
 			'Searches the web and reads full pages, not just snippets',
@@ -55,7 +55,7 @@ const showcases = [
 	},
 	{
 		id: 'purchasing',
-		heading: 'Buy what the project needs',
+		heading: 'Buys what the project needs',
 		body: 'Sprocket orders parts and subscriptions for you, within limits you set.',
 		points: [
 			'You approve each spending limit once with a passkey',
@@ -66,7 +66,7 @@ const showcases = [
 	},
 	{
 		id: 'questions',
-		heading: 'Ask before guessing',
+		heading: 'Asks before guessing',
 		body: 'When a request is ambiguous, Sprocket asks a quick question instead of assuming.',
 		points: [
 			'Multiple-choice answers for design choices, frameworks, and parts',
@@ -77,11 +77,11 @@ const showcases = [
 	},
 	{
 		id: 'subagents',
-		heading: 'Split big tasks',
-		body: 'Sprocket hands parts of a large task to subagents that work in parallel.',
+		heading: 'Splits big tasks',
+		body: 'Sprocket hands parts of a large task to subagents and keeps working while they run.',
 		points: [
+			'Subagents run in the background and report back when they finish',
 			'Each subagent has its own context, so the main thread stays focused',
-			'Research, building, and review happen at the same time',
 			'Subagents can work in their own git worktrees'
 		],
 		mock: SubagentsMock
@@ -89,7 +89,11 @@ const showcases = [
 ] as const;
 
 const capabilities = [
-	{ icon: 'chip', name: 'Schematics', body: 'KiCad schematics you can open, edit, and route' },
+	{
+		icon: 'chip',
+		name: 'Schematics',
+		body: 'Readable circuit schematics, plus KiCad files for PCBs'
+	},
 	{
 		icon: 'list',
 		name: 'BOMs and pin maps',
@@ -120,7 +124,7 @@ const capabilities = [
 	{
 		icon: 'layers',
 		name: 'Subagents',
-		body: 'Runs parallel agents for research, building, and review'
+		body: 'Runs background agents for research, building, and review'
 	},
 	{ icon: 'zap', name: 'Skills', body: 'Reusable instructions for your workflows, called with $' },
 	{ icon: 'file-text', name: 'AGENTS.md', body: 'Project rules that apply per directory' },
