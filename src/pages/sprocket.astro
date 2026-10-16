@@ -127,9 +127,19 @@ const softwareLd = {
 const chipClass =
 	'inline-flex items-center gap-1 rounded-full bg-foreground/6 px-3.5 py-1.5 font-sans text-sm font-medium text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none';
 const chips = [
-	{ label: 'GitHub', href: SPROCKET_GITHUB_URL, cta: 'github', external: true },
-	{ label: 'Releases', href: SPROCKET_RELEASES_LATEST_URL, cta: 'releases', external: true },
-	{ label: 'Pricing', href: '/pricing', cta: 'pricing', external: false }
+	{
+		label: 'GitHub',
+		href: SPROCKET_GITHUB_URL,
+		cta: 'view_on_github',
+		destination: 'github_sprocket'
+	},
+	{
+		label: 'Releases',
+		href: SPROCKET_RELEASES_LATEST_URL,
+		cta: 'releases',
+		destination: 'github_sprocket_releases'
+	},
+	{ label: 'Pricing', href: '/pricing', cta: 'see_pricing', destination: null }
 ] as const;
 
 const subheadingClass =
@@ -192,12 +202,12 @@ const subheadingClass =
 								<a
 									href={chip.href}
 									class={chipClass}
-									{...(chip.external
+									{...(chip.destination
 										? {
 												target: '_blank',
 												rel: 'noopener noreferrer',
 												'data-ph-capture': EXTERNAL_LINK_CLICKED_EVENT,
-												'data-ph-destination': `sprocket_${chip.cta}`
+												'data-ph-destination': chip.destination
 											}
 										: { 'data-ph-capture': CTA_CLICKED_EVENT })}
 									data-ph-cta={chip.cta}
