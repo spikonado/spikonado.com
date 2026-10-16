@@ -110,7 +110,7 @@
 			linear-gradient(to right, oklch(0.18 0.02 260 / 0.045) 1px, transparent 1px),
 			linear-gradient(to bottom, oklch(0.18 0.02 260 / 0.045) 1px, transparent 1px);
 		background-size: 56px 56px;
-		mask-image: radial-gradient(ellipse 75% 70% at 72% 58%, black 20%, transparent 72%);
+		mask-image: radial-gradient(ellipse 70% 65% at 50% 45%, black 15%, transparent 70%);
 	}
 
 	.hero-orb {

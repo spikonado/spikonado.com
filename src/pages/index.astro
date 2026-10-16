@@ -59,29 +59,30 @@ const softwareLd = {
 			</div>
 
 			<div
-				class="relative mx-auto max-w-3xl px-4 pt-18 pb-20 text-center sm:px-6 sm:pt-26 lg:px-8 lg:pb-24"
+				class="relative mx-auto max-w-4xl px-4 pt-18 pb-20 text-center sm:px-6 sm:pt-26 lg:px-8 lg:pb-24"
 			>
-				<h1 class={marketingSectionHeadingClass}>
+				<h1 class={cn(marketingSectionHeadingClass, 'text-balance')}>
 					Your imagination is the limit to what you can build
 				</h1>
-				<p class={cn(marketingSectionBodyClass, 'mx-auto mt-6')}>
+				<p class={cn(marketingSectionBodyClass, 'mx-auto mt-7 text-foreground/80 text-balance')}>
 					A way for anyone to build <span class="mark-accent">any kind of technology</span>
 				</p>
-				<p class={cn(marketingSectionBodyClass, 'mx-auto mt-4')}>
-					<span class="mark-verb">Our goal is simple</span>: give everyone the{' '}
-					<span class="mark-verb">tools to invent apps, robots, devices</span>, and the{' '}
-					<span class="mark-verb">systems</span> that glue them together.
+				<p
+					class="mx-auto mt-3 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground md:text-lg"
+				>
+					Our goal is simple: give everyone the tools to invent apps, robots, devices, and the
+					systems that glue them together.
 				</p>
 
 				<InstallRow release={sprocketRelease} location="home_hero" class="mt-10" />
 				<a
 					href="/sprocket"
-					class={cn(marketingButtonPrimaryClass, 'mt-6')}
+					class={cn(marketingTextLinkClass, 'mt-8 inline-flex text-sm')}
 					data-ph-capture={CTA_CLICKED_EVENT}
 					data-ph-cta="learn_more_sprocket"
 					data-ph-location="home_hero"
 				>
-					Learn more →
+					Learn more about Sprocket →
 				</a>
 			</div>
 		</section>
