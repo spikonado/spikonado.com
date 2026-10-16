@@ -10,8 +10,8 @@ describe('formatPrice', () => {
 	});
 });
 
-test('buildPlanCards prices plans and computes the annual discount', () => {
-	const [free, pro] = buildPlanCards({
+test('buildPlanCards prices plans and lists only what each tier adds', () => {
+	const [free, pro, ultra] = buildPlanCards({
 		plans: [
 			{
 				id: 'free',
@@ -33,22 +33,42 @@ test('buildPlanCards prices plans and computes the annual discount', () => {
 					monthly: { amountMinor: 2000, currency: 'USD' },
 					annual: { amountMinor: 20_000, currency: 'USD' }
 				}
+			},
+			{
+				id: 'ultra',
+				label: 'Ultra',
+				monthlyUsageDollars: 300,
+				description: null,
+				features: ['Frontier models', 'Priority support'],
+				highlighted: false,
+				prices: { monthly: null, annual: null }
 			}
 		]
 	});
 	expect(free.prices).toEqual({ monthly: '$0', annual: '$0' });
+	expect(free.previousPlanName).toBeNull();
 	expect(free.features.map(({ label }) => label)).toEqual([
 		'$5 of AI usage each month',
 		'Bring your own API keys and subscriptions',
-		'Unlimited context from the web',
+		'Limited context from the web',
 		'Fair source',
 		'Self-host anytime'
 	]);
 	expect(pro).toMatchObject({
 		description: 'For daily work',
+		previousPlanName: 'Free',
 		prices: { monthly: '$20', annual: '$200' },
 		annualPerMonth: '$16.67',
 		annualDiscountPercent: 17
 	});
-	expect(pro.features.at(-1)).toEqual({ label: 'Frontier models' });
+	expect(pro.features.map(({ label }) => label)).toEqual([
+		'$50 of AI usage each month',
+		'Unlimited context from the web',
+		'Frontier models'
+	]);
+	expect(ultra.previousPlanName).toBe('Pro');
+	expect(ultra.features.map(({ label }) => label)).toEqual([
+		'$300 of AI usage each month',
+		'Priority support'
+	]);
 });

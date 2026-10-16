@@ -387,7 +387,12 @@
 							{card.description}
 						</p>
 					{/if}
-					<ul class="mt-6 flex-1 space-y-2.5">
+					{#if card.previousPlanName}
+						<p class="mt-6 text-sm font-medium text-foreground">
+							Everything in {card.previousPlanName}, plus:
+						</p>
+					{/if}
+					<ul class={cn('flex-1 space-y-2.5', card.previousPlanName ? 'mt-2.5' : 'mt-6')}>
 						{#each card.features as feature (feature.label)}
 							<li class="flex gap-2.5 text-sm leading-snug text-foreground">
 								<span
