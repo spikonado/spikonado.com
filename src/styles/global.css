@@ -17,10 +17,6 @@
 	/* Lighter blue-green fill for install controls */
 	--action-soft: oklch(0.955 0.03 185);
 	--action-soft-hover: oklch(0.93 0.035 185);
-
-	/* Highlighter mark for verbs / phrases */
-	--mark: oklch(0.93 0.08 95);
-
 	/* Dark surface for product screenshots */
 	--ink: oklch(0.16 0.015 40);
 }
@@ -40,7 +36,6 @@
 	--color-accent-soft: var(--accent-soft);
 	--color-action-soft: var(--action-soft);
 	--color-action-soft-hover: var(--action-soft-hover);
-	--color-mark: var(--mark);
 	--color-ink: var(--ink);
 }
 
@@ -82,15 +77,6 @@
 		box-decoration-break: clone;
 		-webkit-box-decoration-break: clone;
 	}
-
-	.mark-verb {
-		background-color: var(--mark);
-		border-radius: 0.15rem;
-		padding-inline: 0.15em;
-		box-decoration-break: clone;
-		-webkit-box-decoration-break: clone;
-	}
-
 	.atmosphere {
 		background-color: var(--background);
 		background-image:
@@ -110,7 +96,7 @@
 			linear-gradient(to right, oklch(0.18 0.02 260 / 0.045) 1px, transparent 1px),
 			linear-gradient(to bottom, oklch(0.18 0.02 260 / 0.045) 1px, transparent 1px);
 		background-size: 56px 56px;
-		mask-image: radial-gradient(ellipse 75% 70% at 72% 58%, black 20%, transparent 72%);
+		mask-image: radial-gradient(ellipse 70% 65% at 50% 45%, black 15%, transparent 70%);
 	}
 
 	.hero-orb {
