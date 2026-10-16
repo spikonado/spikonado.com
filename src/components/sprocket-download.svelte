@@ -17,6 +17,8 @@
 		class?: string;
 		/** Hide the alternate-platform link row (useful in tight layouts). */
 		showAlternates?: boolean;
+		buttonClass?: string;
+		alternatesClass?: string;
 		location?: AnalyticsLocation;
 	}
 
@@ -24,6 +26,8 @@
 		release = null,
 		class: className = '',
 		showAlternates = true,
+		buttonClass = '',
+		alternatesClass = '',
 		location = 'home_hero'
 	}: Props = $props();
 
@@ -110,7 +114,7 @@
 <div class={cn('min-w-0', className)}>
 	<a
 		href={downloadHref}
-		class={cn(marketingButtonSecondaryClass, 'w-full gap-3')}
+		class={cn(marketingButtonSecondaryClass, 'w-full gap-3', buttonClass)}
 		data-detected={detected ? 'true' : 'false'}
 		{...knownDesktop && primaryAsset ? { download: primaryAsset.filename } : {}}
 		onclick={() =>
@@ -135,11 +139,13 @@
 
 	{#if showAlternates && detected}
 		{#if alternateAssets.length > 0}
-			<p class="mt-3 font-sans text-xs leading-relaxed text-muted-foreground">
+			<p
+				class={cn('mt-3 font-sans text-xs leading-relaxed text-muted-foreground', alternatesClass)}
+			>
 				<span class="sr-only">Other platforms: </span>
 				Also
 				{#each alternateAssets as asset, index (asset.platform)}
-					{#if index > 0}<span aria-hidden="true"> · </span>{/if}
+					{#if index > 0}<span aria-hidden="true" class="mx-1">·</span>{/if}
 					<a
 						href={asset.url}
 						class={cn(marketingTextLinkClass, 'text-xs')}

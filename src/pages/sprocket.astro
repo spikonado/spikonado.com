@@ -144,6 +144,7 @@ const chips = [
 
 const subheadingClass =
 	'font-brand text-3xl font-semibold tracking-tight text-foreground sm:text-4xl';
+const installControlClass = 'h-12 w-full rounded-xl text-left sm:w-auto';
 ---
 
 <BaseLayout title={title} description={description} jsonLd={softwareLd}>
@@ -182,20 +183,25 @@ const subheadingClass =
 					needs.
 				</p>
 
-				<div class="mx-auto mt-10 max-w-md space-y-3 text-left">
-					<SprocketDownload client:idle release={release} location="sprocket_page" />
+				<!-- `contents` puts the download button and its platform links in this row's flex flow. -->
+				<div class="mx-auto mt-10 flex max-w-xl flex-wrap justify-center gap-3">
+					<SprocketDownload
+						client:idle
+						release={release}
+						location="sprocket_page"
+						class="contents"
+						buttonClass={installControlClass}
+						alternatesClass="order-last mt-1 basis-full"
+					/>
 					<CopyCommand
 						client:idle
 						command={SPROCKET_NPM_COMMAND}
 						location="sprocket_page"
-						class={cn('w-full', marketingCopyCommandSurfaceClass)}
+						class={cn(installControlClass, 'py-0 pr-1.5', marketingCopyCommandSurfaceClass)}
 					/>
 				</div>
-				<p class="mt-4 font-sans text-sm text-muted-foreground">
-					Free to start on Windows, macOS, and Linux
-				</p>
 
-				<ul class="mt-5 flex flex-wrap justify-center gap-2">
+				<ul class="mt-6 flex flex-wrap justify-center gap-2">
 					{
 						chips.map((chip) => (
 							<li>
@@ -307,18 +313,20 @@ const subheadingClass =
 			<p class={cn(marketingSectionBodyClass, 'mx-auto mt-4')}>
 				Download the app, or run it with one command.
 			</p>
-			<div class="mx-auto mt-8 max-w-md space-y-3 text-left">
+			<div class="mx-auto mt-8 flex max-w-xl flex-wrap justify-center gap-3">
 				<SprocketDownload
 					client:visible
 					release={release}
 					showAlternates={false}
 					location="sprocket_page_cta"
+					class="contents"
+					buttonClass={installControlClass}
 				/>
 				<CopyCommand
 					client:visible
 					command={SPROCKET_NPM_COMMAND}
 					location="sprocket_page_cta"
-					class={cn('w-full', marketingCopyCommandSurfaceClass)}
+					class={cn(installControlClass, 'py-0 pr-1.5', marketingCopyCommandSurfaceClass)}
 				/>
 			</div>
 			<a
