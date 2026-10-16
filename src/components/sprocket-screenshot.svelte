@@ -11,7 +11,7 @@
 	let { location }: Props = $props();
 
 	const alt =
-		'Sprocket uploading robot firmware to a board while showing the robot schematic it designed';
+		'Sprocket designing a robot controller schematic and previewing it as an artifact while other threads run in parallel';
 
 	let open = $state(false);
 	let dialog: HTMLDivElement | undefined = $state();
