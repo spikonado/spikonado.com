@@ -2,7 +2,7 @@
 	import screenshot from '@/assets/sprocket.webp';
 	import { captureEvent } from '@/lib/analytics/client';
 	import { PRODUCT_MEDIA_OPENED_EVENT, type AnalyticsLocation } from '@/lib/analytics/events';
-	import { inertBackground, portal, trapFocus } from '@/lib/focus-trap';
+	import { lockOverlay, portal } from '@/lib/focus-trap';
 
 	interface Props {
 		location: AnalyticsLocation;
@@ -14,7 +14,6 @@
 		'Sprocket designing a robot controller schematic and previewing it as an artifact while other threads run in parallel';
 
 	let open = $state(false);
-	let dialog: HTMLDivElement | undefined = $state();
 
 	function openLightbox() {
 		open = true;
@@ -24,32 +23,6 @@
 	function closeLightbox() {
 		open = false;
 	}
-
-	$effect(() => {
-		if (!open || !dialog) {
-			return;
-		}
-
-		const previousOverflow = document.body.style.overflow;
-		document.body.style.overflow = 'hidden';
-		// Dialog is portaled to body, so page chrome can safely be inert for SR browse mode.
-		const releaseBackground = inertBackground(dialog);
-		const releaseFocus = trapFocus(dialog);
-
-		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.key === 'Escape') {
-				closeLightbox();
-			}
-		};
-		window.addEventListener('keydown', onKeyDown);
-
-		return () => {
-			document.body.style.overflow = previousOverflow;
-			releaseBackground();
-			releaseFocus();
-			window.removeEventListener('keydown', onKeyDown);
-		};
-	});
 </script>
 
 <button
@@ -71,8 +44,8 @@
 
 {#if open}
 	<div
-		bind:this={dialog}
 		use:portal
+		{@attach lockOverlay(closeLightbox)}
 		class="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-8"
 		role="dialog"
 		aria-modal="true"
