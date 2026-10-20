@@ -1,5 +1,10 @@
-import { expect, test } from 'bun:test';
-import { assertCheckoutUrl } from './billing';
+import { expect, mock, test } from 'bun:test';
+
+mock.module('astro:env/client', () => ({
+	PUBLIC_CONVEX_URL: undefined
+}));
+
+const { assertCheckoutUrl } = await import('./billing');
 
 test('checkout links must be on the Dodo host for the backend’s mode', () => {
 	expect(() =>

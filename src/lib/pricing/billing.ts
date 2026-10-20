@@ -1,3 +1,4 @@
+import { PUBLIC_CONVEX_URL } from 'astro:env/client';
 import { ConvexHttpClient } from 'convex/browser';
 import {
 	api,
@@ -20,7 +21,7 @@ const CHECKOUT_ORIGINS: Record<CheckoutMode, string> = {
 export type CheckoutAttempt = { userId: string; attemptId: string; tier: string };
 
 function convexClient(token?: string): ConvexHttpClient {
-	const url = import.meta.env.PUBLIC_CONVEX_URL?.trim();
+	const url = PUBLIC_CONVEX_URL?.trim();
 	if (!url) throw new Error('Billing is not configured (missing PUBLIC_CONVEX_URL).');
 	const client = new ConvexHttpClient(url, {
 		fetch: ((input, init) =>
