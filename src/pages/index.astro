@@ -55,21 +55,16 @@ const softwareLd = {
 			<div
 				class="hero-orb pointer-events-none absolute top-[28%] right-[-8%] h-[28rem] w-[28rem] rounded-full md:top-[18%] md:right-[2%] md:h-[34rem] md:w-[34rem]"
 				aria-hidden="true"
-			>
-			</div>
+			></div>
 
-			<div
-				class="relative mx-auto max-w-4xl px-4 pt-18 pb-20 text-center sm:px-6 sm:pt-26 lg:px-8 lg:pb-24"
-			>
+			<div class="relative mx-auto max-w-4xl px-4 pt-18 pb-20 text-center sm:px-6 sm:pt-26 lg:px-8 lg:pb-24">
 				<h1 class={cn(marketingSectionHeadingClass, 'text-balance')}>
 					Your imagination is the limit to what you can build
 				</h1>
 				<p class={cn(marketingSectionBodyClass, 'mx-auto mt-7 text-foreground/80 text-balance')}>
 					A way for anyone to build <span class="mark-accent">any kind of technology</span>
 				</p>
-				<p
-					class="mx-auto mt-3 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground md:text-lg"
-				>
+				<p class="mx-auto mt-3 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground md:text-lg">
 					Our goal is simple: give everyone the tools to invent apps, robots, devices, and the
 					systems that glue them together.
 				</p>
@@ -93,9 +88,7 @@ const softwareLd = {
 			class="border-t border-border/50 bg-background"
 			data-ph-section="sprocket"
 		>
-			<div
-				class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28"
-			>
+			<div class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28">
 				<div>
 					<h2 class={marketingProductHeadingClass}>Sprocket</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
@@ -137,11 +130,8 @@ const softwareLd = {
 					<div
 						class="pointer-events-none absolute -inset-4 rounded-[2rem] bg-linear-to-br from-accent/15 via-transparent to-accent/5 blur-2xl"
 						aria-hidden="true"
-					>
-					</div>
-					<figure
-						class="relative overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]"
-					>
+					></div>
+					<figure class="relative overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]">
 						<SprocketScreenshot client:visible location="home_sprocket" />
 					</figure>
 				</div>
@@ -150,9 +140,7 @@ const softwareLd = {
 
 		<!-- Platform / Solved -->
 		<section id="platform" class="border-t border-border/50 bg-surface" data-ph-section="platform">
-			<div
-				class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-8 lg:py-28"
-			>
+			<div class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-8 lg:py-28">
 				<div>
 					<h2 class={marketingSectionHeadingClass}>Solved.</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
@@ -174,34 +162,32 @@ const softwareLd = {
 				</div>
 
 				<ul class="divide-y divide-border/60 border-y border-border/60">
-					{
-						solvedItems.map((item) => (
-							<li class="flex gap-4 py-7 md:py-8">
-								<span
-									class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-strong md:h-8 md:w-8"
-									aria-hidden="true"
-								>
-									<svg viewBox="0 0 16 16" class="h-4 w-4 md:h-[1.1rem] md:w-[1.1rem]" fill="none">
-										<path
-											d="M3.5 8.5 6.5 11.5 12.5 4.5"
-											stroke="currentColor"
-											stroke-width="1.8"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-										/>
-									</svg>
-								</span>
-								<div>
-									<p class="font-brand text-lg font-semibold text-foreground md:text-xl">
-										{item.title}
-									</p>
-									<p class="mt-2 text-base leading-relaxed text-muted-foreground md:text-lg">
-										{item.body}
-									</p>
-								</div>
-							</li>
-						))
-					}
+					{solvedItems.map((item) => (
+						<li class="flex gap-4 py-7 md:py-8">
+							<span
+								class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-strong md:h-8 md:w-8"
+								aria-hidden="true"
+							>
+								<svg viewBox="0 0 16 16" class="h-4 w-4 md:h-[1.1rem] md:w-[1.1rem]" fill="none">
+									<path
+										d="M3.5 8.5 6.5 11.5 12.5 4.5"
+										stroke="currentColor"
+										stroke-width="1.8"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
+								</svg>
+							</span>
+							<div>
+								<p class="font-brand text-lg font-semibold text-foreground md:text-xl">
+									{item.title}
+								</p>
+								<p class="mt-2 text-base leading-relaxed text-muted-foreground md:text-lg">
+									{item.body}
+								</p>
+							</div>
+						</li>
+					))}
 				</ul>
 			</div>
 		</section>
@@ -236,9 +222,7 @@ const softwareLd = {
 			class="border-t border-border/50 bg-surface"
 			data-ph-section="build_log"
 		>
-			<div
-				class="mx-auto grid max-w-6xl items-start gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28"
-			>
+			<div class="mx-auto grid max-w-6xl items-start gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28">
 				<div>
 					<h2 class={marketingSectionHeadingClass}>Stay in the loop</h2>
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
