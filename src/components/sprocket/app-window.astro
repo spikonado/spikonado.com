@@ -120,13 +120,13 @@ const iconProps = {
 		const observer = new IntersectionObserver(
 			(entries) => {
 				for (const entry of entries) {
-					if (entry.isIntersecting) {
-						entry.target.classList.add('is-playing');
-						observer.unobserve(entry.target);
-					}
+					// Rewind only once a mock drops below the viewport, so it replays when scrolled down to again.
+					if (entry.intersectionRatio >= 0.35) entry.target.classList.add('is-playing');
+					else if (!entry.isIntersecting && entry.boundingClientRect.top > 0)
+						entry.target.classList.remove('is-playing');
 				}
 			},
-			{ threshold: 0.35 }
+			{ threshold: [0, 0.35] }
 		);
 		for (const mock of mocks) {
 			mock.dataset.animate = '';
