@@ -34,11 +34,7 @@ const iconProps = {
 		<span class="text-muted-foreground">/</span>
 		<span class="truncate text-muted-foreground">{thread}</span>
 	</div>
-	<div
-		data-mock-body
-		class="flex min-h-80 flex-col gap-2.5 px-4 py-4 transition-opacity duration-300 sm:px-5"
-		aria-hidden="true"
-	>
+	<div class="flex min-h-80 flex-col gap-2.5 px-4 py-4 sm:px-5" aria-hidden="true">
 		<slot />
 	</div>
 	<div class="px-3 pb-3" aria-hidden="true">
@@ -113,58 +109,21 @@ const iconProps = {
 		animation: mock-step-out 0.2s ease-in forwards;
 		animation-delay: calc(var(--step-out, 0) * 0.65s);
 	}
-
-	[data-mock].is-rewinding [data-mock-body] {
-		opacity: 0;
-	}
 </style>
 
 <script>
 	// Steps stay visible without JS or with reduced motion; they're only hidden once we can reveal them.
 	const mocks = document.querySelectorAll<HTMLElement>('[data-mock]');
 	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-	const replayDelayMs = 4000;
-	const rewindMs = 300;
-	const runs = new Map<Element, { timer?: number }>();
-
-	function play(mock: HTMLElement) {
-		const run: { timer?: number } = {};
-		runs.set(mock, run);
-		mock.classList.remove('is-playing', 'is-rewinding');
-		void mock.offsetWidth;
-		mock.classList.add('is-playing');
-		const animations = mock
-			.getAnimations({ subtree: true })
-			.filter(
-				(animation) =>
-					animation instanceof CSSAnimation && animation.effect?.getTiming().iterations !== Infinity
-			)
-			.map((animation) => animation.finished);
-		void Promise.allSettled(animations).then(() => {
-			if (runs.get(mock) !== run) return;
-			run.timer = window.setTimeout(() => {
-				if (runs.get(mock) !== run) return;
-				mock.classList.add('is-rewinding');
-				run.timer = window.setTimeout(() => {
-					if (runs.get(mock) === run) play(mock);
-				}, rewindMs);
-			}, replayDelayMs);
-		});
-	}
-
-	function stop(mock: HTMLElement) {
-		window.clearTimeout(runs.get(mock)?.timer);
-		runs.delete(mock);
-		mock.classList.remove('is-playing', 'is-rewinding');
-	}
 
 	if (!reduceMotion && 'IntersectionObserver' in window) {
 		const observer = new IntersectionObserver(
 			(entries) => {
 				for (const entry of entries) {
-					const mock = entry.target as HTMLElement;
-					if (!entry.isIntersecting) stop(mock);
-					else if (entry.intersectionRatio >= 0.35 && !runs.has(mock)) play(mock);
+					// Rewind only once a mock drops below the viewport, so it replays when scrolled down to again.
+					if (entry.intersectionRatio >= 0.35) entry.target.classList.add('is-playing');
+					else if (!entry.isIntersecting && entry.boundingClientRect.top > 0)
+						entry.target.classList.remove('is-playing');
 				}
 			},
 			{ threshold: [0, 0.35] }
