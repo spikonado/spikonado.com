@@ -135,7 +135,10 @@ const iconProps = {
 		mock.classList.add('is-playing');
 		const animations = mock
 			.getAnimations({ subtree: true })
-			.filter((animation) => animation instanceof CSSAnimation)
+			.filter(
+				(animation) =>
+					animation instanceof CSSAnimation && animation.effect?.getTiming().iterations !== Infinity
+			)
 			.map((animation) => animation.finished);
 		void Promise.allSettled(animations).then(() => {
 			if (runs.get(mock) !== run) return;
