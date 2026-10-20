@@ -82,7 +82,7 @@ const showcases = [
 		points: [
 			'Subagents run in the background and report back when they finish',
 			'Each subagent has its own context, so the main thread stays focused',
-			'Subagents can work in their own git worktrees'
+			'Follow their threads in the inbox, send follow-ups, and answer their questions'
 		],
 		mock: SubagentsMock
 	}
@@ -110,7 +110,16 @@ const capabilities = [
 		body: 'Writes and tests code across your whole system'
 	},
 	{ icon: 'globe', name: 'Web context', body: 'Searches the web and reads full pages and docs' },
-	{ icon: 'file', name: 'Files', body: 'Reads PDFs, spreadsheets, images, and more' },
+	{
+		icon: 'window',
+		name: 'Browser',
+		body: 'Clicks through sites, fills forms, and takes screenshots'
+	},
+	{
+		icon: 'file',
+		name: 'Files',
+		body: 'Browse and edit the project, and read PDFs, spreadsheets, and images'
+	},
 	{
 		icon: 'card',
 		name: 'Purchasing',
@@ -126,10 +135,18 @@ const capabilities = [
 		name: 'Subagents',
 		body: 'Runs background agents for research, building, and review'
 	},
-	{ icon: 'zap', name: 'Skills', body: 'Reusable instructions for your workflows, called with $' },
+	{
+		icon: 'zap',
+		name: 'Skills',
+		body: 'Reusable instructions for your workflows, called with $ or /'
+	},
 	{ icon: 'file-text', name: 'AGENTS.md', body: 'Project rules that apply per directory' },
 	{ icon: 'panel', name: 'Artifacts', body: 'Docs, schematics, and previews in a side panel' },
-	{ icon: 'branch', name: 'Git', body: 'Branches, worktrees, commits, and pull requests' },
+	{
+		icon: 'branch',
+		name: 'Git',
+		body: 'Branches, worktrees, commits, and linked GitHub pull requests'
+	},
 	{
 		icon: 'terminal-box',
 		name: 'Terminal',
