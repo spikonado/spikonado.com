@@ -25,7 +25,22 @@ export default defineConfig({
 				access: 'public',
 				optional: true
 			}),
+			PUBLIC_CONVEX_URL: envField.string({
+				context: 'client',
+				access: 'public',
+				optional: true
+			}),
 			RESEND_API_KEY: envField.string({
+				context: 'server',
+				access: 'secret',
+				optional: true
+			}),
+			WORKOS_API_KEY: envField.string({
+				context: 'server',
+				access: 'secret',
+				optional: true
+			}),
+			WORKOS_COOKIE_PASSWORD: envField.string({
 				context: 'server',
 				access: 'secret',
 				optional: true
