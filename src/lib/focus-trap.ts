@@ -138,3 +138,24 @@ export function closeOnEscape(onClose: () => void): Attachment {
 		};
 	};
 }
+
+/**
+ * Overlay open/close as one attachment so cleanup order is not left to
+ * sibling `{@attach}` teardown. Unlock scroll and drop `inert` before
+ * restoring focus; otherwise the opener (often inside `main`) cannot take it.
+ */
+export function lockOverlay(onClose: () => void): Attachment<HTMLElement> {
+	return (node) => {
+		const unlockScroll = lockBodyScroll(node);
+		const releaseBackground = inertBackground(node);
+		const releaseFocus = trapFocus(node);
+		const stopEscape = closeOnEscape(onClose)(node);
+
+		return () => {
+			stopEscape?.();
+			unlockScroll?.();
+			releaseBackground?.();
+			releaseFocus?.();
+		};
+	};
+}

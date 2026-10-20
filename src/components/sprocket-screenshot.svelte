@@ -2,13 +2,7 @@
 	import screenshot from '@/assets/sprocket.webp';
 	import { captureEvent } from '@/lib/analytics/client';
 	import { PRODUCT_MEDIA_OPENED_EVENT, type AnalyticsLocation } from '@/lib/analytics/events';
-	import {
-		closeOnEscape,
-		inertBackground,
-		lockBodyScroll,
-		portal,
-		trapFocus
-	} from '@/lib/focus-trap';
+	import { lockOverlay, portal } from '@/lib/focus-trap';
 
 	interface Props {
 		location: AnalyticsLocation;
@@ -51,10 +45,7 @@
 {#if open}
 	<div
 		use:portal
-		{@attach trapFocus}
-		{@attach inertBackground}
-		{@attach lockBodyScroll}
-		{@attach closeOnEscape(closeLightbox)}
+		{@attach lockOverlay(closeLightbox)}
 		class="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-8"
 		role="dialog"
 		aria-modal="true"

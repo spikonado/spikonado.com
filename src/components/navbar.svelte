@@ -2,7 +2,7 @@
 	import logo from '@/assets/logo.svg';
 	import github from '@/assets/github_logo.svg';
 	import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
-	import { closeOnEscape, inertBackground, lockBodyScroll, trapFocus } from '@/lib/focus-trap';
+	import { lockOverlay } from '@/lib/focus-trap';
 	import { marketingBrandClass, marketingButtonPrimaryClass } from '@/styles/marketing';
 	import { cn } from '@/utils';
 
@@ -26,10 +26,7 @@
 </script>
 
 <header
-	{@attach menuOpen && trapFocus}
-	{@attach menuOpen && inertBackground}
-	{@attach menuOpen && lockBodyScroll}
-	{@attach menuOpen && closeOnEscape(closeMenu)}
+	{@attach menuOpen && lockOverlay(closeMenu)}
 	class="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95"
 >
 	<div
