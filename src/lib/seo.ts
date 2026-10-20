@@ -10,7 +10,7 @@ export const DEFAULT_DESCRIPTION =
 	'Spikonado helps anyone build apps, robots, devices, and the systems that glue them together.';
 
 export const SPROCKET_DESCRIPTION =
-	'Sprocket is the best AI agent for hardware and software. Create schematics, write and test code, use rich web and file context, and buy parts or subscriptions within approved limits.';
+	'Sprocket is the best AI agent for hardware and software. Create schematics, write and test code, use rich web and file context, and buy anything online within approved limits.';
 
 export const ORGANIZATION_SAME_AS = [
 	'https://github.com/spikonado',
