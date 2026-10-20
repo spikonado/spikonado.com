@@ -211,70 +211,64 @@ const subheadingClass =
 				<InstallRow release={release} class="mt-10" />
 
 				<ul class="mt-6 flex flex-wrap justify-center gap-2">
-					{
-						chips.map((chip) => (
-							<li>
-								<a
-									href={chip.href}
-									class={chipClass}
-									{...(chip.external && { target: '_blank', rel: 'noopener noreferrer' })}
-								>
-									{chip.label}
-									<span aria-hidden="true">›</span>
-								</a>
-							</li>
-						))
-					}
+					{chips.map((chip) => (
+						<li>
+							<a
+								href={chip.href}
+								class={chipClass}
+								{...(chip.external && { target: '_blank', rel: 'noopener noreferrer' })}
+							>
+								{chip.label}
+								<span aria-hidden="true">›</span>
+							</a>
+						</li>
+					))}
 				</ul>
 			</div>
 
-			<figure
-				class="relative mx-auto mt-16 max-w-5xl overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]"
-			>
+			<figure class="relative mx-auto mt-16 max-w-5xl overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]">
 				<SprocketScreenshot client:visible />
 			</figure>
 		</section>
 
 		<div class="mx-auto max-w-6xl border-t border-border/70 px-4 sm:px-6 lg:px-8">
-			{
-				showcases.map(({ id, heading, body, points, mock: Mock }, index) => (
-					<section
-						id={id}
-						aria-labelledby={`${id}-heading`}
-						data-ph-capture-attribute-section={`sprocket_${id}`}
-						class="grid scroll-mt-24 items-center gap-10 py-16 lg:grid-cols-2 lg:gap-16 lg:py-24"
-					>
-						<div class={cn(index % 2 === 1 && 'lg:order-2')}>
-							<h2 id={`${id}-heading`} class={subheadingClass}>
-								{heading}
-							</h2>
-							<p class={cn(marketingSectionBodyClass, 'mt-4')}>{body}</p>
-							<ul class="mt-6 space-y-3">
-								{points.map((point) => (
-									<li class="flex gap-3 text-base leading-relaxed text-muted-foreground">
-										<svg
-											viewBox="0 0 16 16"
-											class="mt-1 h-4 w-4 shrink-0 text-accent-strong"
-											fill="none"
-											aria-hidden="true"
-										>
-											<path
-												d="M3.5 8.5 6.5 11.5 12.5 4.5"
-												stroke="currentColor"
-												stroke-width="1.8"
-												stroke-linecap="round"
-												stroke-linejoin="round"
-											/>
-										</svg>
-										{point}
-									</li>
-								))}
-							</ul>
-						</div>
-						<Mock />
-					</section>
-				))
-			}
+			{showcases.map(({ id, heading, body, points, mock: Mock }, index) => (
+				<section
+					id={id}
+					aria-labelledby={`${id}-heading`}
+					data-ph-capture-attribute-section={`sprocket_${id}`}
+					class="grid scroll-mt-24 items-center gap-10 py-16 lg:grid-cols-2 lg:gap-16 lg:py-24"
+				>
+					<div class={cn(index % 2 === 1 && 'lg:order-2')}>
+						<h2 id={`${id}-heading`} class={subheadingClass}>
+							{heading}
+						</h2>
+						<p class={cn(marketingSectionBodyClass, 'mt-4')}>{body}</p>
+						<ul class="mt-6 space-y-3">
+							{points.map((point) => (
+								<li class="flex gap-3 text-base leading-relaxed text-muted-foreground">
+									<svg
+										viewBox="0 0 16 16"
+										class="mt-1 h-4 w-4 shrink-0 text-accent-strong"
+										fill="none"
+										aria-hidden="true"
+									>
+										<path
+											d="M3.5 8.5 6.5 11.5 12.5 4.5"
+											stroke="currentColor"
+											stroke-width="1.8"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+										/>
+									</svg>
+									{point}
+								</li>
+							))}
+						</ul>
+					</div>
+					<Mock />
+				</section>
+			))}
 		</div>
 
 		<section
@@ -293,19 +287,15 @@ const subheadingClass =
 					One agent for the whole build, from the first idea to a working device.
 				</p>
 				<dl class="mt-14 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-					{
-						capabilities.map(({ icon, name, body }) => (
-							<div class="flex gap-4">
-								<LineIcon name={icon} class="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground/70" />
-								<div>
-									<dt class="text-[1.0625rem] font-medium text-foreground">{name}</dt>
-									<dd class="mt-1 text-[0.9375rem] leading-relaxed text-muted-foreground">
-										{body}
-									</dd>
-								</div>
+					{capabilities.map(({ icon, name, body }) => (
+						<div class="flex gap-4">
+							<LineIcon name={icon} class="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground/70" />
+							<div>
+								<dt class="text-[1.0625rem] font-medium text-foreground">{name}</dt>
+								<dd class="mt-1 text-[0.9375rem] leading-relaxed text-muted-foreground">{body}</dd>
 							</div>
-						))
-					}
+						</div>
+					))}
 				</dl>
 			</div>
 		</section>
@@ -315,12 +305,17 @@ const subheadingClass =
 			aria-labelledby="sprocket-install-heading"
 			data-ph-capture-attribute-section="sprocket_install"
 		>
-			<h2 id="sprocket-install-heading" class={subheadingClass}>Start building with Sprocket</h2>
+			<h2 id="sprocket-install-heading" class={subheadingClass}>
+				Start building with Sprocket
+			</h2>
 			<p class={cn(marketingSectionBodyClass, 'mx-auto mt-4')}>
 				Download the app, or run it with one command.
 			</p>
 			<InstallRow release={release} showAlternates={false} class="mt-8" />
-			<a href="/pricing" class={cn(marketingButtonPrimaryClass, 'mt-8')}> See pricing → </a>
+			<a href="/pricing" class={cn(marketingButtonPrimaryClass, 'mt-8')}>
+				{' '}
+				See pricing →{' '}
+			</a>
 		</section>
 	</main>
 	<Footer />
