@@ -31,6 +31,9 @@ export default defineConfig({
 		csp: {
 			scriptDirective: {
 				resources: ["'self'", 'https://kpg.spikonado.com']
+			},
+			styleDirective: {
+				resources: [{ resource: "'unsafe-inline'", kind: 'attribute' }]
 			}
 		}
 	},
