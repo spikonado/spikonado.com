@@ -1,6 +1,6 @@
 // @ts-check
 
-import { defineConfig } from 'astro/config';
+import { defineConfig, envField } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import svelte from '@astrojs/svelte';
 import tailwindcss from '@tailwindcss/vite';
@@ -18,6 +18,35 @@ export default defineConfig({
 		svelte()
 	],
 	adapter: vercel(),
+	env: {
+		schema: {
+			PUBLIC_POSTHOG_KEY: envField.string({
+				context: 'client',
+				access: 'public',
+				optional: true
+			}),
+			PUBLIC_CONVEX_URL: envField.string({
+				context: 'client',
+				access: 'public',
+				optional: true
+			}),
+			RESEND_API_KEY: envField.string({
+				context: 'server',
+				access: 'secret',
+				optional: true
+			}),
+			WORKOS_API_KEY: envField.string({
+				context: 'server',
+				access: 'secret',
+				optional: true
+			}),
+			WORKOS_COOKIE_PASSWORD: envField.string({
+				context: 'server',
+				access: 'secret',
+				optional: true
+			})
+		}
+	},
 
 	vite: {
 		plugins: [tailwindcss()]
