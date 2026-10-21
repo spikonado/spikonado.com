@@ -162,6 +162,11 @@ const capabilities = [
 		name: 'Your own keys',
 		body: 'Bring API keys and subscriptions from AI providers'
 	},
+	{
+		icon: 'chart',
+		name: 'AI usage',
+		body: 'Token use and API cost per run, thread, and account'
+	},
 	{ icon: 'shield', name: 'Fair source', body: 'Read the code, and self-host anytime' }
 ] as const satisfies readonly { icon: LineIconName; name: string; body: string }[];
 
