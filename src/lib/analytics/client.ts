@@ -57,13 +57,15 @@ export function captureException(error: unknown, properties: Record<string, unkn
 	client()?.captureException(error, properties);
 }
 
-/** The WorkOS user ID is the Sprocket account ID, so it stays stable across devices. */
-export function identifyUser(user: { id: string; email: string }): void {
-	client()?.identify(user.id, { email: user.email });
-}
-
-export function resetUser(): void {
-	client()?.reset();
+/**
+ * The WorkOS user ID is the Sprocket account ID, so it stays stable across devices.
+ * `null` only resets identified visitors, so anonymous visitors keep their history.
+ */
+export function setAnalyticsUser(user: { id: string; email: string } | null): void {
+	const ph = client();
+	if (!ph) return;
+	if (user) ph.identify(user.id, { email: user.email });
+	else if (ph.get_property('$user_state') === 'identified') ph.reset();
 }
 
 function trackSectionViews(): void {

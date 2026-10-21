@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { captureException, identifyUser, resetUser, track } from '@/lib/analytics/client';
+	import { captureException, setAnalyticsUser, track } from '@/lib/analytics/client';
 	import type { BillingInterval, MySubscription, PublicPricingCatalog } from '@/lib/convex/api';
 	import {
 		clearCheckoutAttempt,
@@ -54,7 +54,7 @@
 
 	async function loadAccount() {
 		user = (await loadPricingSession({ reload: true })).user;
-		if (user) identifyUser(user);
+		setAnalyticsUser(user);
 		subscription = user ? await fetchMySubscription() : FREE;
 	}
 
@@ -173,7 +173,7 @@
 		busy = { plan: null, label: 'Signing out…' };
 		try {
 			await signOutOfPricing();
-			resetUser();
+			setAnalyticsUser(null);
 			user = null;
 			subscription = FREE;
 			pending = null;
@@ -190,9 +190,12 @@
 	}
 
 	function selectPlan(card: PlanCard) {
+		if (!card.isFree && card.id === subscription.tier && subscription.billingManaged) {
+			void manageBilling();
+			return;
+		}
 		track('pricing_plan_selected', { plan: card.id, interval, signed_in: user !== null });
 		if (card.isFree) window.location.assign('/#sprocket');
-		else if (card.id === subscription.tier && subscription.billingManaged) void manageBilling();
 		else void checkout(card.id, interval);
 	}
 
