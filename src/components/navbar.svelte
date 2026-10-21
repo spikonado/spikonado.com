@@ -1,16 +1,15 @@
 <script lang="ts">
 	import logo from '@/assets/logo.svg';
 	import github from '@/assets/github_logo.svg';
-	import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
 	import { lockOverlay } from '@/lib/focus-trap';
 	import { marketingBrandClass, marketingButtonPrimaryClass } from '@/styles/marketing';
 	import { cn } from '@/utils';
 
 	const navLinks = [
-		{ label: 'Sprocket', href: '/sprocket', cta: 'nav_sprocket' },
-		{ label: 'Vario', href: '/#vario', cta: 'nav_vario' },
-		{ label: 'Pricing', href: '/pricing', cta: 'nav_pricing' },
-		{ label: 'Build log', href: '/#build-log', cta: 'nav_build_log' }
+		{ label: 'Sprocket', href: '/sprocket' },
+		{ label: 'Vario', href: '/#vario' },
+		{ label: 'Pricing', href: '/pricing' },
+		{ label: 'Build log', href: '/#build-log' }
 	] as const;
 
 	let menuOpen = $state(false);
@@ -28,6 +27,7 @@
 <header
 	{@attach menuOpen && lockOverlay(closeMenu)}
 	class="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95"
+	data-ph-capture-attribute-section="navbar"
 >
 	<div
 		class="relative mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8"
@@ -36,9 +36,6 @@
 			href="/"
 			class="group flex min-w-0 items-center gap-2 transition-transform duration-150 hover:scale-[1.02]"
 			onclick={closeMenu}
-			data-ph-capture={CTA_CLICKED_EVENT}
-			data-ph-cta="brand_home"
-			data-ph-location="navbar"
 		>
 			<img src={logo.src} alt="" class="h-8 w-8 shrink-0" />
 			<span class={cn(marketingBrandClass, 'truncate text-xl sm:text-2xl')}>Spikonado</span>
@@ -52,9 +49,6 @@
 				<a
 					href={link.href}
 					class="font-sans text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-					data-ph-capture={CTA_CLICKED_EVENT}
-					data-ph-cta={link.cta}
-					data-ph-location="navbar"
 				>
 					{link.label}
 				</a>
@@ -67,10 +61,6 @@
 				target="_blank"
 				rel="noopener noreferrer"
 				class="hidden items-center gap-2 rounded-lg border border-border bg-surface px-2.5 py-1.5 font-sans text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent-soft md:inline-flex"
-				data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
-				data-ph-destination="github_org"
-				data-ph-location="navbar"
-				data-ph-cta="github"
 			>
 				<img src={github.src} alt="" class="h-4 w-4" />
 				<span>GitHub</span>
@@ -78,9 +68,6 @@
 			<a
 				href="/#sprocket"
 				class={cn(marketingButtonPrimaryClass, 'hidden text-sm whitespace-nowrap md:inline-flex')}
-				data-ph-capture={CTA_CLICKED_EVENT}
-				data-ph-cta="start_building"
-				data-ph-location="navbar"
 			>
 				Start building
 			</a>
@@ -133,6 +120,7 @@
 			aria-modal="true"
 			aria-label="Site navigation"
 			tabindex="-1"
+			data-ph-capture-attribute-section="navbar_mobile"
 		>
 			<nav class="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-4 sm:px-6" aria-label="Mobile">
 				{#each navLinks as link (link.label)}
@@ -140,9 +128,6 @@
 						href={link.href}
 						class="rounded-xl px-3 py-3 font-sans text-base font-medium text-foreground transition-colors hover:bg-accent-soft"
 						onclick={closeMenu}
-						data-ph-capture={CTA_CLICKED_EVENT}
-						data-ph-cta={link.cta}
-						data-ph-location="navbar_mobile"
 					>
 						{link.label}
 					</a>
@@ -155,10 +140,6 @@
 						rel="noopener noreferrer"
 						class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 font-sans text-base font-medium text-foreground transition-colors hover:bg-accent-soft"
 						onclick={closeMenu}
-						data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
-						data-ph-destination="github_org"
-						data-ph-location="navbar_mobile"
-						data-ph-cta="github"
 					>
 						<img src={github.src} alt="" class="h-5 w-5" />
 						<span>GitHub</span>
@@ -167,9 +148,6 @@
 						href="/#sprocket"
 						class={cn(marketingButtonPrimaryClass, 'w-full py-3 text-base')}
 						onclick={closeMenu}
-						data-ph-capture={CTA_CLICKED_EVENT}
-						data-ph-cta="start_building"
-						data-ph-location="navbar_mobile"
 					>
 						Start building
 					</a>

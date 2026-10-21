@@ -1,19 +1,17 @@
 ---
 import CopyCommand from '@/components/copy-command.svelte';
 import SprocketDownload from '@/components/sprocket-download.svelte';
-import type { AnalyticsLocation } from '@/lib/analytics/events';
 import { SPROCKET_NPM_COMMAND, type SprocketRelease } from '@/lib/sprocket-releases';
 import { marketingCopyCommandSurfaceClass } from '@/styles/marketing';
 import { cn } from '@/utils';
 
 interface Props {
 	release: SprocketRelease | null;
-	location: AnalyticsLocation;
 	showAlternates?: boolean;
 	class?: string;
 }
 
-const { release, location, showAlternates = true, class: className } = Astro.props;
+const { release, showAlternates = true, class: className } = Astro.props;
 const controlClass = 'h-12 w-full rounded-xl text-left sm:w-auto';
 ---
 
@@ -22,7 +20,6 @@ const controlClass = 'h-12 w-full rounded-xl text-left sm:w-auto';
 	<SprocketDownload
 		client:idle
 		{release}
-		{location}
 		{showAlternates}
 		class="contents"
 		buttonClass={controlClass}
@@ -31,7 +28,6 @@ const controlClass = 'h-12 w-full rounded-xl text-left sm:w-auto';
 	<CopyCommand
 		client:idle
 		command={SPROCKET_NPM_COMMAND}
-		{location}
 		class={cn(controlClass, 'py-0 pr-1.5', marketingCopyCommandSurfaceClass)}
 	/>
 </div>

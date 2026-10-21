@@ -1,13 +1,11 @@
 ---
-import { EXTERNAL_LINK_CLICKED_EVENT, type AnalyticsLocation } from '@/lib/analytics/events';
 import type { SprocketRelease } from '@/lib/sprocket-releases';
 
 interface Props {
 	release: SprocketRelease | null;
-	location: AnalyticsLocation;
 }
 
-const { release, location } = Astro.props;
+const { release } = Astro.props;
 ---
 
 {
@@ -17,10 +15,6 @@ const { release, location } = Astro.props;
 			target="_blank"
 			rel="noopener noreferrer"
 			class="inline-flex items-center gap-2 rounded-full border border-border bg-surface/80 py-1 pr-3 pl-1 font-sans text-sm text-foreground transition-colors hover:bg-surface"
-			data-ph-capture={EXTERNAL_LINK_CLICKED_EVENT}
-			data-ph-destination="github_sprocket_release"
-			data-ph-location={location}
-			data-ph-cta="release_badge"
 		>
 			<span class="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-strong">
 				New

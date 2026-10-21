@@ -26,6 +26,15 @@ bun install
 bun dev
 ```
 
+## Analytics
+
+PostHog autocapture records clicks, pageviews, and outbound links. Tag a page region with `data-ph-capture-attribute-section="<name>"` so its clicks carry a `section` property. Regions inside `<main>` also send `section_viewed`. Add custom events to `src/lib/analytics/events.ts` and send them with `track()` in the browser or `trackServerEvent()` in API routes.
+
+Environment:
+
+- `PUBLIC_POSTHOG_KEY`: the PostHog project token.
+- `POSTHOG_PERSONAL_API_KEY` and `POSTHOG_PROJECT_ID`: build-time only. When both are set, the build uploads source maps for error tracking. The key needs write access to error tracking.
+
 ## Pricing checkout
 
 `/pricing` reads plans and Dodo prices from the Sprocket Convex deployment, signs users in with WorkOS AuthKit, and redirects to Dodo hosted checkout.

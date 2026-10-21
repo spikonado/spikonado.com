@@ -1,50 +1,83 @@
 import posthog from 'posthog-js';
-import { captureAnalyticsEvent } from '@/lib/analytics/bootstrap';
-import type { AnalyticsProperties } from '@/lib/analytics/events';
+import type { AnalyticsEvent, AnalyticsEvents } from '@/lib/analytics/events';
 
-/** Fire-and-forget capture that never throws into product UI. */
-export function captureEvent(event: string, properties?: AnalyticsProperties): void {
-	try {
-		captureAnalyticsEvent(event, properties);
-	} catch {
-		// Analytics must not break UX.
-	}
-}
+const POSTHOG_KEY = import.meta.env.PUBLIC_POSTHOG_KEY?.trim();
 
-export function captureExceptionSafe(error: unknown, properties?: AnalyticsProperties): void {
-	try {
-		if (!import.meta.env.PUBLIC_POSTHOG_KEY) {
-			return;
+/**
+ * PostHog autocapture adds `data-ph-capture-attribute-*` values from a clicked element and its
+ * ancestors to the click event. Sections inside `<main>` also emit `section_viewed`.
+ */
+const SECTION_ATTRIBUTE = 'data-ph-capture-attribute-section';
+
+let initialized = false;
+
+// Islands can capture before the layout script runs, so every call initializes on demand.
+function client(): typeof posthog | undefined {
+	if (!initialized) {
+		initialized = true;
+		if (!POSTHOG_KEY) {
+			if (import.meta.env.DEV) {
+				console.error(
+					'PUBLIC_POSTHOG_KEY variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once PUBLIC_POSTHOG_KEY is configured'
+				);
+			}
+			return undefined;
 		}
-		posthog.captureException(error, properties);
-	} catch {
-		// Analytics must not break UX.
-	}
-}
-
-export function posthogRequestHeaders(): Record<string, string> {
-	try {
-		const distinctId = posthog.get_distinct_id?.();
-		const sessionId = posthog.get_session_id?.();
-		return {
-			...(distinctId ? { 'X-POSTHOG-DISTINCT-ID': distinctId } : {}),
-			...(sessionId ? { 'X-POSTHOG-SESSION-ID': sessionId } : {})
-		};
-	} catch {
-		return {};
-	}
-}
-
-export function identifySubscriber(subscriberEmail: string): void {
-	try {
-		if (!import.meta.env.PUBLIC_POSTHOG_KEY) {
-			return;
-		}
-		posthog.identify(subscriberEmail, {
-			email: subscriberEmail,
-			subscribed_to_build_log: true
+		posthog.init(POSTHOG_KEY, {
+			api_host: 'https://kpg.spikonado.com',
+			ui_host: 'https://eu.posthog.com',
+			defaults: '2026-08-30',
+			strict_script_versioning: true,
+			capture_exceptions: true,
+			capture_performance: { web_vitals: true, network_timing: true },
+			// Links API route events and errors to the browser's person and session replay.
+			tracing_headers: [window.location.hostname]
 		});
-	} catch {
-		// Analytics must not break UX.
+		posthog.register({ site: 'spikonado_marketing' });
+		trackSectionViews();
 	}
+	return POSTHOG_KEY ? posthog : undefined;
+}
+
+export function initAnalytics(): void {
+	client();
+}
+
+/** Pass `source` to record which page section the event came from. */
+export function track<E extends AnalyticsEvent>(
+	event: E,
+	properties: AnalyticsEvents[E],
+	source?: Element
+): void {
+	const section = source?.closest(`[${SECTION_ATTRIBUTE}]`)?.getAttribute(SECTION_ATTRIBUTE);
+	client()?.capture(event, section ? { ...properties, section } : properties);
+}
+
+export function captureException(error: unknown, properties: Record<string, unknown>): void {
+	client()?.captureException(error, properties);
+}
+
+/** The WorkOS user ID is the Sprocket account ID, so it stays stable across devices. */
+export function identifyUser(user: { id: string; email: string }): void {
+	client()?.identify(user.id, { email: user.email });
+}
+
+export function resetUser(): void {
+	client()?.reset();
+}
+
+function trackSectionViews(): void {
+	if (typeof IntersectionObserver === 'undefined') return;
+	const observer = new IntersectionObserver(
+		(entries) => {
+			for (const entry of entries) {
+				const section = entry.target.getAttribute(SECTION_ATTRIBUTE);
+				if (!entry.isIntersecting || !section) continue;
+				observer.unobserve(entry.target);
+				posthog.capture('section_viewed', { section } satisfies AnalyticsEvents['section_viewed']);
+			}
+		},
+		{ threshold: 0.35, rootMargin: '0px 0px -10% 0px' }
+	);
+	document.querySelectorAll(`main [${SECTION_ATTRIBUTE}]`).forEach((el) => observer.observe(el));
 }

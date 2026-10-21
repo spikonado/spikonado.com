@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { captureEvent } from '@/lib/analytics/client';
-	import { SPROCKET_DOWNLOAD_CLICKED_EVENT, type AnalyticsLocation } from '@/lib/analytics/events';
+	import { track } from '@/lib/analytics/client';
+	import type { AnalyticsEvents } from '@/lib/analytics/events';
 	import {
 		detectDesktopTargetAsync,
 		otherDesktopAssets,
@@ -19,7 +19,6 @@
 		showAlternates?: boolean;
 		buttonClass?: string;
 		alternatesClass?: string;
-		location?: AnalyticsLocation;
 	}
 
 	let {
@@ -27,8 +26,7 @@
 		class: className = '',
 		showAlternates = true,
 		buttonClass = '',
-		alternatesClass = '',
-		location = 'home_hero'
+		alternatesClass = ''
 	}: Props = $props();
 
 	/** null until client detection finishes — keeps SSR and first paint stable. */
@@ -66,26 +64,15 @@
 
 	const iconClass = 'h-4 w-4 shrink-0';
 
-	function trackDownload(options: {
-		href: string;
-		variant: 'primary' | 'alternate' | 'all_releases';
-		platform?: string;
-		filename?: string;
-	}) {
-		captureEvent(SPROCKET_DOWNLOAD_CLICKED_EVENT, {
-			location,
-			variant: options.variant,
-			// Don't invent a platform for non-platform links (e.g. all_releases).
-			platform:
-				options.platform ??
-				(options.variant === 'all_releases' ? 'unknown' : (osFamily ?? 'unknown')),
-			os_label: osLabel,
-			filename: options.filename,
-			href: options.href,
-			release_tag: release?.tagName,
-			detected: detected,
-			path: typeof window !== 'undefined' ? window.location.pathname : undefined
-		});
+	function trackDownload(
+		event: MouseEvent & { currentTarget: HTMLAnchorElement },
+		download: Omit<AnalyticsEvents['sprocket_download_clicked'], 'release_tag'>
+	) {
+		track(
+			'sprocket_download_clicked',
+			{ ...download, release_tag: release?.tagName },
+			event.currentTarget
+		);
 	}
 </script>
 
@@ -117,11 +104,10 @@
 		class={cn(marketingButtonSecondaryClass, 'w-full gap-3', buttonClass)}
 		data-detected={detected ? 'true' : 'false'}
 		{...knownDesktop && primaryAsset ? { download: primaryAsset.filename } : {}}
-		onclick={() =>
-			trackDownload({
-				href: downloadHref,
+		onclick={(event) =>
+			trackDownload(event, {
 				variant: 'primary',
-				platform: primaryAsset?.platform ?? osFamily ?? undefined,
+				platform: primaryAsset?.platform ?? osFamily ?? 'unknown',
 				filename: primaryAsset?.filename
 			})}
 	>
@@ -150,9 +136,8 @@
 						href={asset.url}
 						class={cn(marketingTextLinkClass, 'text-xs')}
 						download={asset.filename}
-						onclick={() =>
-							trackDownload({
-								href: asset.url,
+						onclick={(event) =>
+							trackDownload(event, {
 								variant: 'alternate',
 								platform: asset.platform,
 								filename: asset.filename
@@ -167,11 +152,8 @@
 				<a
 					href={SPROCKET_RELEASES_LATEST_URL}
 					class={cn(marketingTextLinkClass, 'text-xs')}
-					onclick={() =>
-						trackDownload({
-							href: SPROCKET_RELEASES_LATEST_URL,
-							variant: 'all_releases'
-						})}
+					onclick={(event) =>
+						trackDownload(event, { variant: 'all_releases', platform: 'unknown' })}
 				>
 					All desktop builds
 				</a>

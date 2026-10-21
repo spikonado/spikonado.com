@@ -1,15 +1,5 @@
 <script lang="ts">
-	import {
-		captureEvent,
-		captureExceptionSafe,
-		identifySubscriber,
-		posthogRequestHeaders
-	} from '@/lib/analytics/client';
-	import {
-		NEWSLETTER_FORM,
-		NEWSLETTER_SUBSCRIBE_FAILED_EVENT,
-		NEWSLETTER_SUBSCRIBE_SUBMITTED_EVENT
-	} from '@/lib/analytics/events';
+	import { captureException, track } from '@/lib/analytics/client';
 	import { cn } from '@/utils';
 
 	const SUBSCRIBE_PATH = '/api/build-log/subscribe';
@@ -49,12 +39,7 @@
 	}
 
 	function captureSubscribeFailure(reason: string) {
-		captureEvent(NEWSLETTER_SUBSCRIBE_FAILED_EVENT, {
-			form: NEWSLETTER_FORM,
-			source: 'client',
-			reason,
-			location: 'home_build_log'
-		});
+		track('newsletter_subscribe_failed', { reason, source: 'client' });
 	}
 
 	async function onSubmit(event: SubmitEvent) {
@@ -68,11 +53,7 @@
 
 		status = 'submitting';
 		statusMessage = 'Submitting…';
-		captureEvent(NEWSLETTER_SUBSCRIBE_SUBMITTED_EVENT, {
-			form: NEWSLETTER_FORM,
-			source: 'client',
-			location: 'home_build_log'
-		});
+		track('newsletter_subscribe_submitted', {});
 		const controller = new AbortController();
 		const timeout = window.setTimeout(() => controller.abort(), 10_000);
 
@@ -82,8 +63,7 @@
 				signal: controller.signal,
 				headers: {
 					'Content-Type': 'application/json',
-					Accept: 'application/json',
-					...posthogRequestHeaders()
+					Accept: 'application/json'
 				},
 				body: JSON.stringify({
 					email: trimmedEmail,
@@ -92,7 +72,6 @@
 			});
 
 			if (response.ok) {
-				identifySubscriber(trimmedEmail.toLowerCase());
 				email = '';
 				company = '';
 				status = 'success';
@@ -112,10 +91,7 @@
 			statusMessage = 'Something went wrong. Please try again in a moment.';
 		} catch (error) {
 			captureSubscribeFailure(error instanceof Error ? error.name : 'network_error');
-			captureExceptionSafe(error, {
-				context: 'newsletter_subscribe',
-				form: NEWSLETTER_FORM
-			});
+			captureException(error, { context: 'newsletter_subscribe' });
 			status = 'error';
 			statusMessage = 'Something went wrong. Please try again in a moment.';
 		} finally {

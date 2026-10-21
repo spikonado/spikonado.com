@@ -110,10 +110,9 @@ const jsonLdDocument = {
 
 		<script>
 			import { initBotId } from 'botid/client/core';
-			import { initPostHogAnalytics } from '@/lib/analytics/bootstrap';
+			import { initAnalytics } from '@/lib/analytics/client';
 
-			// Init PostHog eagerly so same-tab CTA navigations can beacon-flush captures.
-			initPostHogAnalytics();
+			initAnalytics();
 
 			const bootBotId = () => {
 				initBotId({

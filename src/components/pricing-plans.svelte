@@ -1,12 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { captureAnalyticsEvent } from '@/lib/analytics/bootstrap';
-	import {
-		CHECKOUT_STARTED_EVENT,
-		CHECKOUT_STATUS_EVENT,
-		CTA_CLICKED_EVENT,
-		INTERVAL_SELECTED_EVENT
-	} from '@/lib/analytics/events';
+	import { captureException, identifyUser, resetUser, track } from '@/lib/analytics/client';
 	import type { BillingInterval, MySubscription, PublicPricingCatalog } from '@/lib/convex/api';
 	import {
 		clearCheckoutAttempt,
@@ -25,7 +19,6 @@
 
 	let { initialCatalog }: { initialCatalog: PublicPricingCatalog | null } = $props();
 
-	const location = 'pricing_page';
 	const SUPPORT_EMAIL = 'aarav@spikonado.com';
 	const SUPPORT_HREF = `mailto:${SUPPORT_EMAIL}?subject=Sprocket%20billing%20support`;
 	const ACTIVATION_TIMEOUT_MS = 30_000;
@@ -56,10 +49,12 @@
 	function fail(error: unknown, fallback: string) {
 		busy = null;
 		notice = { text: error instanceof Error ? error.message : fallback, error: true };
+		captureException(error, { context: fallback });
 	}
 
 	async function loadAccount() {
 		user = (await loadPricingSession({ reload: true })).user;
+		if (user) identifyUser(user);
 		subscription = user ? await fetchMySubscription() : FREE;
 	}
 
@@ -100,7 +95,7 @@
 						text: `${subscription.tierLabel} is active. You can manage billing anytime from this page.`,
 						error: false
 					};
-					captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activated', location });
+					track('pricing_subscription_activated', { plan: attempt.tier });
 					return true;
 				}
 			}
@@ -111,35 +106,35 @@
 			text: `We could not confirm your ${label} payment yet. Check again in a moment. No new purchase will be started.`,
 			error: false
 		};
-		captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'activation_pending', location });
+		track('pricing_activation_timed_out', { plan: attempt.tier });
 		return true;
 	}
 
 	async function checkout(tier: string, planInterval: BillingInterval) {
 		busy = { plan: tier, label: 'Starting checkout…' };
 		notice = null;
-		captureAnalyticsEvent(CHECKOUT_STARTED_EVENT, { interval: planInterval, location, plan: tier });
 		if (!user) {
 			busy = { plan: tier, label: 'Redirecting to sign in…' };
 			signInForCheckout(tier, planInterval);
 			return;
 		}
+		const plan = { plan: tier, interval: planInterval };
+		track('pricing_checkout_started', plan);
 		try {
 			const checkoutUrl = await startCheckout(tier, planInterval);
 			busy = { plan: tier, label: 'Redirecting to checkout…' };
-			captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'redirecting', location });
+			track('pricing_checkout_redirected', plan);
 			window.location.assign(checkoutUrl);
 		} catch (error) {
+			track('pricing_checkout_failed', plan);
 			fail(error, 'Could not start checkout.');
 			const attempt = readCheckoutAttempt(user.id);
 			if (attempt) pending = { attemptId: attempt.attemptId, checkoutUrl: null };
-			captureAnalyticsEvent(CHECKOUT_STATUS_EVENT, { status: 'error', location });
 		}
 	}
 
 	async function manageBilling() {
 		busy = { plan: subscription.tier, label: 'Opening billing portal…' };
-		captureAnalyticsEvent(CTA_CLICKED_EVENT, { cta: 'pricing_manage_billing', location });
 		try {
 			window.location.assign(await fetchCustomerPortalUrl());
 		} catch (error) {
@@ -175,10 +170,10 @@
 	}
 
 	async function signOut() {
-		captureAnalyticsEvent(CTA_CLICKED_EVENT, { cta: 'pricing_sign_out', location });
 		busy = { plan: null, label: 'Signing out…' };
 		try {
 			await signOutOfPricing();
+			resetUser();
 			user = null;
 			subscription = FREE;
 			pending = null;
@@ -191,11 +186,11 @@
 
 	function selectInterval(next: BillingInterval) {
 		interval = next;
-		captureAnalyticsEvent(INTERVAL_SELECTED_EVENT, { interval: next, location });
+		track('pricing_interval_selected', { interval: next });
 	}
 
 	function selectPlan(card: PlanCard) {
-		captureAnalyticsEvent(CTA_CLICKED_EVENT, { cta: `pricing_${card.id}`, location, interval });
+		track('pricing_plan_selected', { plan: card.id, interval, signed_in: user !== null });
 		if (card.isFree) window.location.assign('/#sprocket');
 		else if (card.id === subscription.tier && subscription.billingManaged) void manageBilling();
 		else void checkout(card.id, interval);
@@ -229,8 +224,10 @@
 				return;
 			}
 			if (params.get('sign_in') === 'failed') {
+				track('pricing_sign_in_failed', {});
 				notice = { text: 'Sign-in could not be completed. Try again.', error: true };
 			} else if (params.get('checkout') === 'cancel') {
+				track('pricing_checkout_cancelled', {});
 				notice = { text: 'Checkout was cancelled. You can try again anytime.', error: false };
 			}
 			await recoverAttempt();
@@ -266,7 +263,7 @@
 	});
 </script>
 
-<section aria-label="Plans" data-ph-section="pricing_plans">
+<section aria-label="Plans" data-ph-capture-attribute-section="pricing_plans">
 	<div class="flex flex-col items-center text-center">
 		<fieldset class="inline-flex rounded-full border border-border/70 bg-surface p-1">
 			<legend class="sr-only">Billing interval</legend>
