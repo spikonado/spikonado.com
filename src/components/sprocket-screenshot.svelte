@@ -1,23 +1,16 @@
 <script lang="ts">
 	import screenshot from '@/assets/sprocket.webp';
-	import { captureEvent } from '@/lib/analytics/client';
-	import { PRODUCT_MEDIA_OPENED_EVENT, type AnalyticsLocation } from '@/lib/analytics/events';
+	import { track } from '@/lib/analytics/client';
 	import { lockOverlay, portal } from '@/lib/focus-trap';
-
-	interface Props {
-		location: AnalyticsLocation;
-	}
-
-	let { location }: Props = $props();
 
 	const alt =
 		'Sprocket designing a robot controller schematic and previewing it as an artifact while other threads run in parallel';
 
 	let open = $state(false);
 
-	function openLightbox() {
+	function openLightbox(event: MouseEvent & { currentTarget: HTMLButtonElement }) {
 		open = true;
-		captureEvent(PRODUCT_MEDIA_OPENED_EVENT, { media: 'sprocket_screenshot', location });
+		track('product_media_opened', { media: 'sprocket_screenshot' }, event.currentTarget);
 	}
 
 	function closeLightbox() {

@@ -6,7 +6,6 @@ import InstallRow from '@/components/sprocket/install-row.astro';
 import SprocketDownload from '@/components/sprocket-download.svelte';
 import SprocketScreenshot from '@/components/sprocket-screenshot.svelte';
 import BaseLayout from '@/layouts/base-layout.astro';
-import { CTA_CLICKED_EVENT } from '@/lib/analytics/events';
 import { fetchLatestSprocketRelease, SPROCKET_NPM_COMMAND } from '@/lib/sprocket-releases';
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_URL, SPROCKET_DESCRIPTION } from '@/lib/seo';
 import {
@@ -50,7 +49,10 @@ const softwareLd = {
 <BaseLayout title={DEFAULT_TITLE} description={DEFAULT_DESCRIPTION} jsonLd={softwareLd}>
 	<main id="main">
 		<!-- Hero -->
-		<section class="atmosphere relative overflow-hidden pt-14">
+		<section
+			class="atmosphere relative overflow-hidden pt-14"
+			data-ph-capture-attribute-section="hero"
+		>
 			<div class="hero-mesh pointer-events-none absolute inset-0" aria-hidden="true"></div>
 			<div
 				class="hero-orb pointer-events-none absolute top-[28%] right-[-8%] h-[28rem] w-[28rem] rounded-full md:top-[18%] md:right-[2%] md:h-[34rem] md:w-[34rem]"
@@ -74,16 +76,8 @@ const softwareLd = {
 					systems that glue them together.
 				</p>
 
-				<InstallRow release={sprocketRelease} location="home_hero" class="mt-10" />
-				<a
-					href="/sprocket"
-					class={cn(marketingButtonPrimaryClass, 'mt-6')}
-					data-ph-capture={CTA_CLICKED_EVENT}
-					data-ph-cta="learn_more_sprocket"
-					data-ph-location="home_hero"
-				>
-					Learn more →
-				</a>
+				<InstallRow release={sprocketRelease} class="mt-10" />
+				<a href="/sprocket" class={cn(marketingButtonPrimaryClass, 'mt-6')}> Learn more → </a>
 			</div>
 		</section>
 
@@ -91,7 +85,7 @@ const softwareLd = {
 		<section
 			id="sprocket"
 			class="border-t border-border/50 bg-background"
-			data-ph-section="sprocket"
+			data-ph-capture-attribute-section="sprocket"
 		>
 			<div
 				class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28"
@@ -111,23 +105,15 @@ const softwareLd = {
 								client:visible
 								release={sprocketRelease}
 								showAlternates={false}
-								location="home_sprocket"
 								class="min-w-0 flex-1"
 							/>
-							<a
-								href="/sprocket"
-								class={cn(marketingButtonPrimaryClass, 'shrink-0')}
-								data-ph-capture={CTA_CLICKED_EVENT}
-								data-ph-cta="learn_more_sprocket"
-								data-ph-location="home_sprocket"
-							>
+							<a href="/sprocket" class={cn(marketingButtonPrimaryClass, 'shrink-0')}>
 								Learn more →
 							</a>
 						</div>
 						<CopyCommand
 							client:visible
 							command={SPROCKET_NPM_COMMAND}
-							location="home_sprocket"
 							class={cn('w-full min-w-0', marketingCopyCommandSurfaceClass)}
 						/>
 					</div>
@@ -142,14 +128,18 @@ const softwareLd = {
 					<figure
 						class="relative overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]"
 					>
-						<SprocketScreenshot client:visible location="home_sprocket" />
+						<SprocketScreenshot client:visible />
 					</figure>
 				</div>
 			</div>
 		</section>
 
 		<!-- Platform / Solved -->
-		<section id="platform" class="border-t border-border/50 bg-surface" data-ph-section="platform">
+		<section
+			id="platform"
+			class="border-t border-border/50 bg-surface"
+			data-ph-capture-attribute-section="platform"
+		>
 			<div
 				class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-8 lg:py-28"
 			>
@@ -162,13 +152,7 @@ const softwareLd = {
 					<p class="mt-8 font-brand text-xl font-semibold text-foreground">
 						Spikonado is better than stitching it together yourself.
 					</p>
-					<a
-						href="/#sprocket"
-						class={cn(marketingButtonPrimaryClass, 'mt-8')}
-						data-ph-capture={CTA_CLICKED_EVENT}
-						data-ph-cta="heres_how_to_start"
-						data-ph-location="home_platform"
-					>
+					<a href="/#sprocket" class={cn(marketingButtonPrimaryClass, 'mt-8')}>
 						Here's how to start →
 					</a>
 				</div>
@@ -207,7 +191,11 @@ const softwareLd = {
 		</section>
 
 		<!-- Vario -->
-		<section id="vario" class="border-t border-border/50 bg-background" data-ph-section="vario">
+		<section
+			id="vario"
+			class="border-t border-border/50 bg-background"
+			data-ph-capture-attribute-section="vario"
+		>
 			<div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
 				<div class="max-w-3xl">
 					<p class="font-mono text-xs font-medium tracking-[0.14em] text-accent-strong uppercase">
@@ -217,13 +205,7 @@ const softwareLd = {
 					<p class={cn(marketingSectionBodyClass, 'mt-6')}>
 						Modular robotics hardware for every use case.
 					</p>
-					<a
-						href="/#build-log"
-						class={cn(marketingTextLinkClass, 'mt-8 inline-flex')}
-						data-ph-capture={CTA_CLICKED_EVENT}
-						data-ph-cta="vario_get_notified"
-						data-ph-location="home_vario"
-					>
+					<a href="/#build-log" class={cn(marketingTextLinkClass, 'mt-8 inline-flex')}>
 						Get notified when Vario ships →
 					</a>
 				</div>
@@ -234,7 +216,7 @@ const softwareLd = {
 		<section
 			id="build-log"
 			class="border-t border-border/50 bg-surface"
-			data-ph-section="build_log"
+			data-ph-capture-attribute-section="build_log"
 		>
 			<div
 				class="mx-auto grid max-w-6xl items-start gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28"

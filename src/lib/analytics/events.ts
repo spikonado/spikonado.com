@@ -1,56 +1,30 @@
-/** Shared PostHog event names and property contracts for the marketing site. */
+import type { BillingInterval } from '@/lib/convex/api';
 
-/** Desktop download CTA (primary or alternate platform). */
-export const SPROCKET_DOWNLOAD_CLICKED_EVENT = 'sprocket_download_clicked';
+type Checkout = { plan: string; interval: BillingInterval };
 
-/** User copied the `npx` install command. */
-export const INSTALL_COMMAND_COPIED_EVENT = 'install_command_copied';
+/** Every custom PostHog event and its properties. Autocapture covers plain clicks. */
+export type AnalyticsEvents = {
+	section_viewed: { section: string };
+	sprocket_download_clicked: {
+		variant: 'primary' | 'alternate' | 'all_releases';
+		platform: string;
+		filename?: string;
+		release_tag?: string;
+	};
+	install_command_copied: { command: string };
+	product_media_opened: { media: 'sprocket_screenshot' };
+	newsletter_subscribe_submitted: Record<string, never>;
+	newsletter_subscribed: Record<string, never>;
+	newsletter_subscribe_failed: { reason: string; source: 'client' | 'server' };
+	pricing_interval_selected: { interval: BillingInterval };
+	pricing_plan_selected: Checkout & { signed_in: boolean };
+	pricing_checkout_started: Checkout;
+	pricing_checkout_redirected: Checkout;
+	pricing_checkout_failed: Checkout;
+	pricing_checkout_cancelled: Record<string, never>;
+	pricing_subscription_activated: { plan: string };
+	pricing_activation_timed_out: { plan: string };
+	pricing_sign_in_failed: Record<string, never>;
+};
 
-/** Named marketing CTA (nav, hero links, product learn-more, etc.). */
-export const CTA_CLICKED_EVENT = 'cta_clicked';
-
-/** Outbound link to GitHub, social, npm, etc. */
-export const EXTERNAL_LINK_CLICKED_EVENT = 'external_link_clicked';
-
-/** Key homepage/product section entered the viewport (once per page load). */
-export const SECTION_VIEWED_EVENT = 'section_viewed';
-
-/** Product screenshot lightbox opened. */
-export const PRODUCT_MEDIA_OPENED_EVENT = 'product_media_opened';
-
-/** Newsletter / build-log subscription form submitted (before server response). */
-export const NEWSLETTER_SUBSCRIBE_SUBMITTED_EVENT = 'newsletter_subscribe_submitted';
-
-/** PostHog event when a build-log / newsletter subscription succeeds. */
-export const NEWSLETTER_SUBSCRIBED_EVENT = 'newsletter_subscribed';
-
-/** PostHog event when a build-log / newsletter subscription fails. */
-export const NEWSLETTER_SUBSCRIBE_FAILED_EVENT = 'newsletter_subscribe_failed';
-
-/** User selected monthly vs annual on the pricing page. */
-export const INTERVAL_SELECTED_EVENT = 'pricing_interval_selected';
-
-/** Authenticated paid-plan checkout session creation started. */
-export const CHECKOUT_STARTED_EVENT = 'pricing_checkout_started';
-
-/** Checkout lifecycle update (redirect, activation, error). No PII. */
-export const CHECKOUT_STATUS_EVENT = 'pricing_checkout_status';
-
-export const NEWSLETTER_FORM = 'build_log' as const;
-
-/** Placement of an interactive element on the page. */
-export type AnalyticsLocation =
-	| 'navbar'
-	| 'navbar_mobile'
-	| 'home_hero'
-	| 'home_sprocket'
-	| 'home_platform'
-	| 'home_vario'
-	| 'home_build_log'
-	| 'sprocket_page'
-	| 'sprocket_page_cta'
-	| 'pricing_page'
-	| 'footer'
-	| 'privacy';
-
-export type AnalyticsProperties = Record<string, string | number | boolean | null | undefined>;
+export type AnalyticsEvent = keyof AnalyticsEvents;

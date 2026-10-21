@@ -10,7 +10,6 @@ import QuestionsMock from '@/components/sprocket/mocks/questions-mock.astro';
 import SubagentsMock from '@/components/sprocket/mocks/subagents-mock.astro';
 import ReleaseBadge from '@/components/sprocket/release-badge.astro';
 import BaseLayout from '@/layouts/base-layout.astro';
-import { CTA_CLICKED_EVENT, EXTERNAL_LINK_CLICKED_EVENT } from '@/lib/analytics/events';
 import {
 	fetchLatestSprocketRelease,
 	SPROCKET_GITHUB_URL,
@@ -183,19 +182,9 @@ const softwareLd = {
 const chipClass =
 	'inline-flex items-center gap-1 rounded-full bg-foreground/6 px-3.5 py-1.5 font-sans text-sm font-medium text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none';
 const chips = [
-	{
-		label: 'GitHub',
-		href: SPROCKET_GITHUB_URL,
-		cta: 'view_on_github',
-		destination: 'github_sprocket'
-	},
-	{
-		label: 'Releases',
-		href: SPROCKET_RELEASES_LATEST_URL,
-		cta: 'releases',
-		destination: 'github_sprocket_releases'
-	},
-	{ label: 'Pricing', href: '/pricing', cta: 'see_pricing', destination: null }
+	{ label: 'GitHub', href: SPROCKET_GITHUB_URL, external: true },
+	{ label: 'Releases', href: SPROCKET_RELEASES_LATEST_URL, external: true },
+	{ label: 'Pricing', href: '/pricing', external: false }
 ] as const;
 
 const subheadingClass =
@@ -206,11 +195,11 @@ const subheadingClass =
 	<main id="main" class="atmosphere">
 		<section
 			class="relative overflow-hidden px-4 pt-32 pb-16 text-center sm:px-6 sm:pt-40 lg:px-8"
-			data-ph-section="sprocket_hero"
+			data-ph-capture-attribute-section="sprocket_hero"
 		>
 			<div class="hero-mesh pointer-events-none absolute inset-0" aria-hidden="true"></div>
 			<div class="relative mx-auto max-w-3xl">
-				<ReleaseBadge release={release} location="sprocket_page" />
+				<ReleaseBadge release={release} />
 				<h1 class={cn(marketingSectionHeadingClass, 'mt-6')}>
 					The best AI agent for hardware and software.
 				</h1>
@@ -219,7 +208,7 @@ const subheadingClass =
 					for your project.
 				</p>
 
-				<InstallRow release={release} location="sprocket_page" class="mt-10" />
+				<InstallRow release={release} class="mt-10" />
 
 				<ul class="mt-6 flex flex-wrap justify-center gap-2">
 					{
@@ -228,16 +217,7 @@ const subheadingClass =
 								<a
 									href={chip.href}
 									class={chipClass}
-									{...(chip.destination
-										? {
-												target: '_blank',
-												rel: 'noopener noreferrer',
-												'data-ph-capture': EXTERNAL_LINK_CLICKED_EVENT,
-												'data-ph-destination': chip.destination
-											}
-										: { 'data-ph-capture': CTA_CLICKED_EVENT })}
-									data-ph-cta={chip.cta}
-									data-ph-location="sprocket_page"
+									{...(chip.external && { target: '_blank', rel: 'noopener noreferrer' })}
 								>
 									{chip.label}
 									<span aria-hidden="true">›</span>
@@ -251,7 +231,7 @@ const subheadingClass =
 			<figure
 				class="relative mx-auto mt-16 max-w-5xl overflow-hidden rounded-2xl border border-border/70 bg-ink shadow-[0_30px_80px_-40px_oklch(0.2_0.02_260/0.7)]"
 			>
-				<SprocketScreenshot client:visible location="sprocket_page" />
+				<SprocketScreenshot client:visible />
 			</figure>
 		</section>
 
@@ -261,7 +241,7 @@ const subheadingClass =
 					<section
 						id={id}
 						aria-labelledby={`${id}-heading`}
-						data-ph-section={`sprocket_${id}`}
+						data-ph-capture-attribute-section={`sprocket_${id}`}
 						class="grid scroll-mt-24 items-center gap-10 py-16 lg:grid-cols-2 lg:gap-16 lg:py-24"
 					>
 						<div class={cn(index % 2 === 1 && 'lg:order-2')}>
@@ -300,7 +280,7 @@ const subheadingClass =
 		<section
 			class="border-t border-border/70 px-4 py-20 sm:px-6 lg:px-8 lg:py-28"
 			aria-labelledby="capabilities-heading"
-			data-ph-section="sprocket_capabilities"
+			data-ph-capture-attribute-section="sprocket_capabilities"
 		>
 			<div class="mx-auto max-w-6xl">
 				<h2
@@ -333,27 +313,14 @@ const subheadingClass =
 		<section
 			class="border-t border-border/70 px-4 py-20 text-center sm:px-6 lg:px-8 lg:py-28"
 			aria-labelledby="sprocket-install-heading"
-			data-ph-section="sprocket_install"
+			data-ph-capture-attribute-section="sprocket_install"
 		>
 			<h2 id="sprocket-install-heading" class={subheadingClass}>Start building with Sprocket</h2>
 			<p class={cn(marketingSectionBodyClass, 'mx-auto mt-4')}>
 				Download the app, or run it with one command.
 			</p>
-			<InstallRow
-				release={release}
-				location="sprocket_page_cta"
-				showAlternates={false}
-				class="mt-8"
-			/>
-			<a
-				href="/pricing"
-				class={cn(marketingButtonPrimaryClass, 'mt-8')}
-				data-ph-capture={CTA_CLICKED_EVENT}
-				data-ph-cta="see_pricing"
-				data-ph-location="sprocket_page_cta"
-			>
-				See pricing →
-			</a>
+			<InstallRow release={release} showAlternates={false} class="mt-8" />
+			<a href="/pricing" class={cn(marketingButtonPrimaryClass, 'mt-8')}> See pricing → </a>
 		</section>
 	</main>
 	<Footer />
