@@ -2,9 +2,8 @@ import { PUBLIC_POSTHOG_KEY } from 'astro:env/client';
 import posthog from 'posthog-js';
 import type { AnalyticsEvent, AnalyticsEvents } from '@/lib/analytics/events';
 
-const POSTHOG_KEY = import.meta.env.PUBLIC_POSTHOG_KEY?.trim();
+const POSTHOG_KEY = PUBLIC_POSTHOG_KEY?.trim();
 
-<<<<<<< HEAD
 /**
  * PostHog autocapture adds `data-ph-capture-attribute-*` values from a clicked element and its
  * ancestors to the click event. Sections inside `<main>` also emit `section_viewed`.
@@ -34,40 +33,6 @@ function client(): typeof posthog | undefined {
 			capture_performance: { web_vitals: true, network_timing: true },
 			// Links API route events and errors to the browser's person and session replay.
 			tracing_headers: [window.location.hostname]
-=======
-export function captureExceptionSafe(error: unknown, properties?: AnalyticsProperties): void {
-	try {
-		if (!PUBLIC_POSTHOG_KEY) {
-			return;
-		}
-		posthog.captureException(error, properties);
-	} catch {
-		// Analytics must not break UX.
-	}
-}
-
-export function posthogRequestHeaders(): Record<string, string> {
-	try {
-		const distinctId = posthog.get_distinct_id?.();
-		const sessionId = posthog.get_session_id?.();
-		return {
-			...(distinctId ? { 'X-POSTHOG-DISTINCT-ID': distinctId } : {}),
-			...(sessionId ? { 'X-POSTHOG-SESSION-ID': sessionId } : {})
-		};
-	} catch {
-		return {};
-	}
-}
-
-export function identifySubscriber(subscriberEmail: string): void {
-	try {
-		if (!PUBLIC_POSTHOG_KEY) {
-			return;
-		}
-		posthog.identify(subscriberEmail, {
-			email: subscriberEmail,
-			subscribed_to_build_log: true
->>>>>>> 40ec88e (feat(env): Adopt a typed astro:env schema for PostHog and Resend)
 		});
 		posthog.register({ site: 'spikonado_marketing' });
 		trackSectionViews();
