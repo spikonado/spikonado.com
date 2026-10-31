@@ -141,6 +141,7 @@ const capabilities = [
 	},
 	{ icon: 'file-text', name: 'AGENTS.md', body: 'Project rules that apply per directory' },
 	{ icon: 'panel', name: 'Artifacts', body: 'Docs, schematics, and previews in a side panel' },
+	{ icon: 'image', name: 'Visuals', body: 'Charts, diagrams, and mockups in replies' },
 	{
 		icon: 'branch',
 		name: 'Git',
@@ -154,13 +155,18 @@ const capabilities = [
 	{ icon: 'terminal', name: 'CLI', body: 'Run tasks from your terminal with sprocket run' },
 	{
 		icon: 'monitor',
-		name: 'Desktop or browser',
-		body: 'Use the desktop app, or open Sprocket in a browser'
+		name: 'Desktop, browser, or phone',
+		body: "Use the desktop app, a browser, or add it to your phone's home screen"
 	},
 	{
 		icon: 'key',
 		name: 'Your own keys',
 		body: 'Bring API keys and subscriptions from AI providers'
+	},
+	{
+		icon: 'chart',
+		name: 'AI usage',
+		body: 'Token use and API cost per run, thread, and account'
 	},
 	{ icon: 'shield', name: 'Fair source', body: 'Read the code, and self-host anytime' }
 ] as const satisfies readonly { icon: LineIconName; name: string; body: string }[];
