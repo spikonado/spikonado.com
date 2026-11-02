@@ -35,7 +35,7 @@ const showcases = [
 		heading: 'Designs electronics',
 		body: 'Describe a device, and Sprocket designs the circuit around real parts.',
 		points: [
-			'Draws clear schematics from the datasheets of the parts it picks',
+			'Designs KiCad schematics from the datasheets of the parts it picks',
 			'Writes the BOM, pin maps, and step-by-step assembly guides',
 			'Writes and tests the firmware that runs on the board'
 		],
@@ -94,6 +94,11 @@ const capabilities = [
 		body: 'Readable circuit schematics, plus KiCad files for PCBs'
 	},
 	{
+		icon: 'board',
+		name: 'KiCad',
+		body: 'Designs schematics and boards in KiCad on your computer'
+	},
+	{
 		icon: 'list',
 		name: 'BOMs and pin maps',
 		body: 'Parts lists and wiring tables for every board'
@@ -145,7 +150,11 @@ const capabilities = [
 		body: 'Reusable instructions for your workflows, called with $ or /'
 	},
 	{ icon: 'file-text', name: 'AGENTS.md', body: 'Project rules that apply per directory' },
-	{ icon: 'panel', name: 'Artifacts', body: 'Docs, schematics, and previews in a side panel' },
+	{
+		icon: 'panel',
+		name: 'Artifacts',
+		body: 'Docs, schematics, and interactive KiCad projects in a side panel'
+	},
 	{ icon: 'image', name: 'Visuals', body: 'Charts, diagrams, and mockups in replies' },
 	{
 		icon: 'branch',
