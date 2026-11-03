@@ -43,7 +43,10 @@ export default defineConfig({
 		}),
 		svelte()
 	],
-	adapter: vercel(),
+	adapter: vercel({
+		// Prerendered pages otherwise only get CSP as a meta tag.
+		staticHeaders: true
+	}),
 
 	vite: {
 		plugins: [tailwindcss(), ...posthogSourceMaps]
