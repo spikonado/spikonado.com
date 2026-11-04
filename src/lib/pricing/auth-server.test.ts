@@ -85,9 +85,10 @@ function unsignedJwt(claims: Record<string, unknown>): string {
 }
 
 test('session expiry comes from a verified access token', async () => {
-	const exp = Math.floor(Date.now() / 1000) + 3600;
-	const accessToken = unsignedJwt({ exp, sid: 'session-1' });
-	const verifyAccessToken = mock(async () => ({ exp, sid: 'session-1' }));
+	const payloadExp = Math.floor(Date.now() / 1000) + 3600;
+	const verifiedExp = payloadExp + 120;
+	const accessToken = unsignedJwt({ exp: payloadExp, sid: 'session-1' });
+	const verifyAccessToken = mock(async () => ({ exp: verifiedExp, sid: 'session-1' }));
 	const server = {
 		cookiePassword: 'x'.repeat(32),
 		workos: {
@@ -116,12 +117,15 @@ test('session expiry comes from a verified access token', async () => {
 	expect(verifyAccessToken).toHaveBeenCalledWith(accessToken);
 	expect(session.user).toEqual({ id: 'user_1', email: 'ada@spikonado.com' });
 	expect(session.accessToken).toBe(accessToken);
-	expect(session.expiresAt).toBe(exp * 1000);
+	expect(session.expiresAt).toBe(verifiedExp * 1000);
 });
 
 test('logout uses the verified session ID when the access token is still valid', async () => {
-	const accessToken = unsignedJwt({ exp: Math.floor(Date.now() / 1000) + 3600, sid: 'session-1' });
-	const verifyAccessToken = mock(async () => ({ sid: 'session-1' }));
+	const accessToken = unsignedJwt({
+		exp: Math.floor(Date.now() / 1000) + 3600,
+		sid: 'payload-sid'
+	});
+	const verifyAccessToken = mock(async () => ({ sid: 'verified-sid' }));
 	const getLogoutUrl = mock(() => 'https://api.workos.com/user_management/sessions/logout');
 	const server = {
 		cookiePassword: 'x'.repeat(32),
@@ -142,7 +146,7 @@ test('logout uses the verified session ID when the access token is still valid',
 
 	expect(verifyAccessToken).toHaveBeenCalledWith(accessToken);
 	expect(getLogoutUrl).toHaveBeenCalledWith({
-		sessionId: 'session-1',
+		sessionId: 'verified-sid',
 		returnTo: 'https://spikonado.com/pricing'
 	});
 	expect(logoutUrl).toBe('https://api.workos.com/user_management/sessions/logout');
