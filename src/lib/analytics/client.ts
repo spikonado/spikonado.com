@@ -27,7 +27,7 @@ function client(): typeof posthog | undefined {
 			api_host: 'https://kpg.spikonado.com',
 			ui_host: 'https://eu.posthog.com',
 			// Keep hash capture: the site uses /#section links for CTAs.
-			defaults: '2026-08-30',
+			defaults: 'latest',
 			disable_capture_url_hashes: false,
 			strict_script_versioning: true,
 			capture_exceptions: true,
