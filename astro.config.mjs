@@ -27,13 +27,26 @@ export default defineConfig({
 	site: 'https://spikonado.com',
 	// No Astro.session usage on this site, so leave the session runtime out of the SSR bundle.
 	session: false,
+	security: {
+		csp: {
+			scriptDirective: {
+				resources: ["'self'", 'https://kpg.spikonado.com']
+			},
+			styleDirective: {
+				resources: [{ resource: "'unsafe-inline'", kind: 'attribute' }]
+			}
+		}
+	},
 	integrations: [
 		sitemap({
 			filter: (page) => !page.includes('/api/')
 		}),
 		svelte()
 	],
-	adapter: vercel(),
+	adapter: vercel({
+		// Prerendered pages otherwise only get CSP as a meta tag.
+		staticHeaders: true
+	}),
 
 	vite: {
 		plugins: [tailwindcss(), ...posthogSourceMaps]
