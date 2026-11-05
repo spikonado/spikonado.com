@@ -1,6 +1,12 @@
 import { expect, mock, test } from 'bun:test';
 import type { AstroCookies } from 'astro';
-import { beginPricingSignIn, completePricingSignIn, type PricingAuthServer } from './auth-server';
+import {
+	beginPricingSignIn,
+	completePricingSignIn,
+	getPricingSession,
+	pricingLogoutUrl,
+	type PricingAuthServer
+} from './auth-server';
 
 function fakeCookies() {
 	const jar = new Map<string, string>();
@@ -70,4 +76,110 @@ test('sign-in completion requires the state issued to this browser', async () =>
 		)
 	).rejects.toThrow('Sign-in could not be completed.');
 	expect(authenticateWithCode).not.toHaveBeenCalled();
+});
+
+function unsignedJwt(claims: Record<string, unknown>): string {
+	const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+	const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
+	return `${header}.${payload}.sig`;
+}
+
+test('session expiry comes from a verified access token', async () => {
+	const payloadExp = Math.floor(Date.now() / 1000) + 3600;
+	const verifiedExp = payloadExp + 120;
+	const accessToken = unsignedJwt({ exp: payloadExp, sid: 'session-1' });
+	const verifyAccessToken = mock(async () => ({ exp: verifiedExp, sid: 'session-1' }));
+	const server = {
+		cookiePassword: 'x'.repeat(32),
+		workos: {
+			userManagement: {
+				loadSealedSession: () => ({
+					authenticate: async () => ({
+						authenticated: true,
+						user: { id: 'user_1', email: 'ada@spikonado.com' },
+						accessToken
+					}),
+					refresh: async () => ({ authenticated: false })
+				}),
+				verifyAccessToken
+			}
+		}
+	} as unknown as PricingAuthServer;
+	const { cookies } = fakeCookies();
+	cookies.set('__Host-spikonado-pricing-session', 'sealed-session');
+
+	const session = await getPricingSession(
+		server,
+		cookies,
+		new URL('https://spikonado.com/api/pricing/session')
+	);
+
+	expect(verifyAccessToken).toHaveBeenCalledWith(accessToken);
+	expect(session.user).toEqual({ id: 'user_1', email: 'ada@spikonado.com' });
+	expect(session.accessToken).toBe(accessToken);
+	expect(session.expiresAt).toBe(verifiedExp * 1000);
+});
+
+test('logout uses the verified session ID when the access token is still valid', async () => {
+	const accessToken = unsignedJwt({
+		exp: Math.floor(Date.now() / 1000) + 3600,
+		sid: 'payload-sid'
+	});
+	const verifyAccessToken = mock(async () => ({ sid: 'verified-sid' }));
+	const getLogoutUrl = mock(() => 'https://api.workos.com/user_management/sessions/logout');
+	const server = {
+		cookiePassword: 'x'.repeat(32),
+		workos: {
+			userManagement: {
+				getSessionFromCookie: async () => ({ accessToken }),
+				verifyAccessToken,
+				getLogoutUrl
+			}
+		}
+	} as unknown as PricingAuthServer;
+
+	const logoutUrl = await pricingLogoutUrl(
+		server,
+		'sealed-session',
+		new URL('https://spikonado.com/api/pricing/sign-out')
+	);
+
+	expect(verifyAccessToken).toHaveBeenCalledWith(accessToken);
+	expect(getLogoutUrl).toHaveBeenCalledWith({
+		sessionId: 'verified-sid',
+		returnTo: 'https://spikonado.com/pricing'
+	});
+	expect(logoutUrl).toBe('https://api.workos.com/user_management/sessions/logout');
+});
+
+test('logout still reads the session ID after the access token expires', async () => {
+	const accessToken = unsignedJwt({
+		exp: Math.floor(Date.now() / 1000) - 60,
+		sid: 'session-expired'
+	});
+	const verifyAccessToken = mock(async () => null);
+	const getLogoutUrl = mock(() => 'https://api.workos.com/user_management/sessions/logout');
+	const server = {
+		cookiePassword: 'x'.repeat(32),
+		workos: {
+			userManagement: {
+				getSessionFromCookie: async () => ({ accessToken }),
+				verifyAccessToken,
+				getLogoutUrl
+			}
+		}
+	} as unknown as PricingAuthServer;
+
+	const logoutUrl = await pricingLogoutUrl(
+		server,
+		'sealed-session',
+		new URL('https://spikonado.com/api/pricing/sign-out')
+	);
+
+	expect(verifyAccessToken).toHaveBeenCalledWith(accessToken);
+	expect(getLogoutUrl).toHaveBeenCalledWith({
+		sessionId: 'session-expired',
+		returnTo: 'https://spikonado.com/pricing'
+	});
+	expect(logoutUrl).toBe('https://api.workos.com/user_management/sessions/logout');
 });

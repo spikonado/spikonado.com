@@ -51,8 +51,24 @@ function cookie(url: URL, kind: 'session' | 'login') {
 	};
 }
 
-function tokenClaims(token: string): { exp?: number; sid?: string } {
-	return JSON.parse(Buffer.from(token.split('.')[1] ?? '', 'base64url').toString());
+/** Session ID from an expired access token. `verifyAccessToken` returns null after expiry. */
+function unsignedTokenSid(token: string): string | undefined {
+	try {
+		const payload: unknown = JSON.parse(
+			Buffer.from(token.split('.')[1] ?? '', 'base64url').toString()
+		);
+		if (
+			payload &&
+			typeof payload === 'object' &&
+			'sid' in payload &&
+			typeof payload.sid === 'string'
+		) {
+			return payload.sid;
+		}
+	} catch {
+		// Malformed tokens cannot be used to build a WorkOS logout URL.
+	}
+	return undefined;
 }
 
 export async function beginPricingSignIn(
@@ -119,11 +135,16 @@ function writeSessionCookie(cookies: Cookies, url: URL, sealedSession: string): 
 	cookies.set(name, sealedSession, { ...options, maxAge: SESSION_MAX_AGE });
 }
 
-function signedIn(user: User, accessToken: string): PricingSession & { expiresAt: number } {
+async function signedIn(
+	server: PricingAuthServer,
+	user: User,
+	accessToken: string
+): Promise<PricingSession & { expiresAt: number }> {
+	const claims = await server.workos.userManagement.verifyAccessToken(accessToken);
 	return {
 		user: { id: user.id, email: user.email },
 		accessToken,
-		expiresAt: (tokenClaims(accessToken).exp ?? 0) * 1000
+		expiresAt: (claims?.exp ?? 0) * 1000
 	};
 }
 
@@ -141,7 +162,7 @@ export async function getPricingSession(
 	});
 	const current = await session.authenticate();
 	if (current.authenticated) {
-		const valid = signedIn(current.user, current.accessToken);
+		const valid = await signedIn(server, current.user, current.accessToken);
 		if (valid.expiresAt > Date.now() + TOKEN_REFRESH_MARGIN_MS) return valid;
 	} else if (current.reason !== 'invalid_jwt') {
 		cookies.delete(name, options);
@@ -156,7 +177,7 @@ export async function getPricingSession(
 	if (!refreshed.session || !refreshed.sealedSession)
 		throw new PricingAuthError('Sign-in could not be refreshed.');
 	writeSessionCookie(cookies, url, refreshed.sealedSession);
-	return signedIn(refreshed.user, refreshed.session.accessToken);
+	return await signedIn(server, refreshed.user, refreshed.session.accessToken);
 }
 
 /** Clears local pricing cookies and returns the sealed session that was in them. */
@@ -174,12 +195,15 @@ export async function pricingLogoutUrl(
 	sealedSession: string,
 	url: URL
 ): Promise<string | null> {
-	// Unsealing without verification still finds the session ID after the access token expires.
+	// Expired tokens fail verifyAccessToken, so unsealing still has to yield the session ID.
 	const session = await server.workos.userManagement.getSessionFromCookie({
 		sessionData: sealedSession,
 		cookiePassword: server.cookiePassword
 	});
-	const sessionId = session?.accessToken && tokenClaims(session.accessToken).sid;
+	const accessToken = session?.accessToken;
+	if (!accessToken) return null;
+	const claims = await server.workos.userManagement.verifyAccessToken(accessToken);
+	const sessionId = claims?.sid ?? unsignedTokenSid(accessToken);
 	if (!sessionId) return null;
 	return server.workos.userManagement.getLogoutUrl({
 		sessionId,
