@@ -106,14 +106,12 @@ export const inertBackground: Attachment<HTMLElement> = (keep) => {
 };
 
 /** Render a node as a direct child of document.body. */
-export function portal(node: HTMLElement) {
+export const portal: Attachment<HTMLElement> = (node) => {
 	document.body.appendChild(node);
-	return {
-		destroy() {
-			node.remove();
-		}
+	return () => {
+		node.remove();
 	};
-}
+};
 
 /** Lock document scrolling while a modal or overlay is open. */
 export const lockBodyScroll: Attachment = () => {
