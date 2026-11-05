@@ -16,31 +16,35 @@ const chosen = 1;
 	thread="Telemetry dashboard"
 	label="Sprocket asking a multiple-choice question about where a telemetry dashboard should run before it starts building"
 >
-	<Step step={0} kind="user">Add a dashboard for the robot's telemetry.</Step>
-	<Step step={1} kind="question">Waiting for your answer</Step>
+	<Step step={0} kind="user">
+		Add a dashboard for the robot's telemetry.
+	</Step>
+	<Step step={1} kind="question">
+		Waiting for your answer
+	</Step>
 	<Step step={2} kind="text">
 		<div class="rounded-xl border border-border/80 bg-background/50 p-3">
 			<p class="font-medium">Where should the dashboard run?</p>
 			<ul class="mt-2 space-y-1.5">
-				{
-					options.map((option, index) => (
-						<li
-							class={cn(
-								'flex items-center gap-2 rounded-lg border px-2.5 py-1.5',
-								index === chosen
-									? 'question-chosen border-border/80'
-									: 'border-border/80 text-muted-foreground'
-							)}
-						>
-							<span class="font-mono text-xs text-muted-foreground">{index + 1}</span>
-							{option}
-						</li>
-					))
-				}
+				{options.map((option, index) => (
+					<li
+						class={cn(
+							'flex items-center gap-2 rounded-lg border px-2.5 py-1.5',
+							index === chosen
+								? 'question-chosen border-border/80'
+								: 'border-border/80 text-muted-foreground'
+						)}
+					>
+						<span class="font-mono text-xs text-muted-foreground">{index + 1}</span>
+						{option}
+					</li>
+				))}
 			</ul>
 		</div>
 	</Step>
-	<Step step={4} kind="done">Answered "Web page served by the robot"</Step>
+	<Step step={4} kind="done">
+		Answered "Web page served by the robot"
+	</Step>
 	<Step step={5} kind="text" class="mt-1">
 		I'll serve the dashboard from the robot over Wi-Fi, so any browser on your network can open it.
 	</Step>
