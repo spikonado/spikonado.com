@@ -3,11 +3,11 @@
 	import { cn } from '@/utils';
 
 	interface Props {
-		command?: string;
+		command: string;
 		class?: string;
 	}
 
-	let { command = 'npx @spikonado/sprocket', class: className = '' }: Props = $props();
+	let { command, class: className = '' }: Props = $props();
 
 	let copied = $state(false);
 	let copyTimer: ReturnType<typeof setTimeout> | undefined;
