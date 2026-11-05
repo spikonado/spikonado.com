@@ -4,7 +4,7 @@
 	import { lockOverlay, portal } from '@/lib/focus-trap';
 
 	const alt =
-		'Sprocket designing a robot controller schematic and previewing it as an artifact while other threads run in parallel';
+		'Sprocket running parallel agent threads, showing AI cost per reply, designing a PCB in KiCad, asking questions before it guesses, keeping commands running, and connecting a ChatGPT subscription or API key';
 
 	let open = $state(false);
 
