@@ -2,13 +2,14 @@
 	import logo from '@/assets/logo.svg';
 	import github from '@/assets/github_logo.svg';
 	import { lockOverlay } from '@/lib/focus-trap';
+	import { SPROCKET_SITE_URL } from '@/lib/seo';
 	import { marketingBrandClass, marketingButtonPrimaryClass } from '@/styles/marketing';
 	import { cn } from '@/utils';
 
 	const navLinks = [
-		{ label: 'Sprocket', href: '/sprocket' },
+		{ label: 'Sprocket', href: SPROCKET_SITE_URL },
 		{ label: 'Vario', href: '/#vario' },
-		{ label: 'Pricing', href: '/pricing' },
+		{ label: 'Pricing', href: `${SPROCKET_SITE_URL}/pricing` },
 		{ label: 'Build log', href: '/#build-log' }
 	] as const;
 

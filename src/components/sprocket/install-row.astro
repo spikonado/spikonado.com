@@ -7,11 +7,10 @@ import { cn } from '@/utils';
 
 interface Props {
 	release: SprocketRelease | null;
-	showAlternates?: boolean;
 	class?: string;
 }
 
-const { release, showAlternates = true, class: className } = Astro.props;
+const { release, class: className } = Astro.props;
 const controlClass = 'h-12 w-full rounded-xl text-left sm:w-auto';
 ---
 
@@ -20,7 +19,6 @@ const controlClass = 'h-12 w-full rounded-xl text-left sm:w-auto';
 	<SprocketDownload
 		client:idle
 		{release}
-		{showAlternates}
 		class="contents"
 		buttonClass={controlClass}
 		alternatesClass="order-last mt-1 basis-full text-center"
