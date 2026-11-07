@@ -1,8 +1,12 @@
 {
 	"bunVersion": "1.x",
 	"redirects": [
-		{ "source": "/sprocket", "destination": "https://usesprocket.dev/", "permanent": true },
-		{ "source": "/pricing", "destination": "https://usesprocket.dev/pricing", "permanent": true }
+		{ "source": "/sprocket{/}?", "destination": "https://usesprocket.dev/", "permanent": true },
+		{
+			"source": "/pricing{/}?",
+			"destination": "https://usesprocket.dev/pricing",
+			"permanent": true
+		}
 	],
 	"rewrites": [
 		{
