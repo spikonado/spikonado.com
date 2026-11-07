@@ -5,6 +5,7 @@
 	import youtube_logo from '@/assets/youtube_logo.svg';
 	import instagram_logo from '@/assets/instagram_logo.svg';
 	import facebook_logo from '@/assets/facebook_logo.svg';
+	import { SPROCKET_SITE_URL } from '@/lib/seo';
 	import { cn } from '@/utils';
 	import {
 		marketingBrandClass,
@@ -13,12 +14,12 @@
 	} from '@/styles/marketing';
 
 	const productLinks = [
-		{ label: 'Sprocket', path: '/sprocket' },
+		{ label: 'Sprocket', path: SPROCKET_SITE_URL },
 		{ label: 'Vario', path: '/#vario' }
 	] as const;
 
 	const companyLinks = [
-		{ label: 'Pricing', path: '/pricing' },
+		{ label: 'Pricing', path: `${SPROCKET_SITE_URL}/pricing` },
 		{ label: 'Build log', path: '/#build-log' },
 		{ label: 'Privacy Policy', path: '/privacy' }
 	] as const;

@@ -1,5 +1,6 @@
 export const SITE_NAME = 'Spikonado';
 export const SITE_URL = 'https://spikonado.com';
+export const SPROCKET_SITE_URL = 'https://usesprocket.dev';
 export const TWITTER_HANDLE = '@spikonado';
 
 /** Stable social preview image generated at build time (`src/pages/og.png.ts`). */
