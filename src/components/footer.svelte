@@ -62,7 +62,7 @@
 			<ul class={linkListClass}>
 				{#each productLinks as link (link.label)}
 					<li>
-						<a href={link.path} class={cn(linkClass, 'font-brand')}>
+						<a href={link.path} class={linkClass}>
 							{link.label}
 						</a>
 					</li>

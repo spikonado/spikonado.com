@@ -2,7 +2,7 @@
 export const marketingSectionShellClass = 'relative overflow-hidden bg-background';
 
 const marketingHeadingBaseClass =
-	'font-brand text-5xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-6xl md:text-7xl';
+	'text-5xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-6xl md:text-7xl';
 
 // Large brand/display heading used for the homepage hero and section titles.
 export const marketingSectionHeadingClass = marketingHeadingBaseClass;

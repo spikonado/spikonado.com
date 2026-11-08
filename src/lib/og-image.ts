@@ -28,8 +28,8 @@ async function loadLockupDataUrl(): Promise<string> {
 
 export async function renderOgImagePng(): Promise<Buffer> {
 	const [regular, semibold, lockup] = await Promise.all([
-		loadFont('@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff'),
-		loadFont('@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff'),
+		loadFont('@fontsource/geist/files/geist-latin-400-normal.woff'),
+		loadFont('@fontsource/geist/files/geist-latin-600-normal.woff'),
 		loadLockupDataUrl()
 	]);
 
@@ -48,7 +48,7 @@ export async function renderOgImagePng(): Promise<Buffer> {
 					backgroundImage:
 						'radial-gradient(ellipse 55% 70% at 88% 42%, rgba(203, 234, 251, 0.85) 0%, rgba(237, 242, 232, 0) 68%), radial-gradient(ellipse 40% 50% at 12% 88%, rgba(203, 234, 251, 0.35) 0%, rgba(237, 242, 232, 0) 70%)',
 					color: colors.foreground,
-					fontFamily: 'IBM Plex Sans'
+					fontFamily: 'Geist'
 				},
 				children: [
 					{
@@ -158,8 +158,8 @@ export async function renderOgImagePng(): Promise<Buffer> {
 			width: OG_IMAGE_WIDTH,
 			height: OG_IMAGE_HEIGHT,
 			fonts: [
-				{ name: 'IBM Plex Sans', data: regular, weight: 400, style: 'normal' },
-				{ name: 'IBM Plex Sans', data: semibold, weight: 600, style: 'normal' }
+				{ name: 'Geist', data: regular, weight: 400, style: 'normal' },
+				{ name: 'Geist', data: semibold, weight: 600, style: 'normal' }
 			]
 		}
 	);
