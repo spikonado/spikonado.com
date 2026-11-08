@@ -29,11 +29,20 @@ export default defineConfig({
 	session: false,
 	security: {
 		csp: {
+			// Sources follow https://posthog.com/docs/advanced/content-security-policy so replay,
+			// surveys, and the PostHog and Vercel toolbars all load.
+			directives: ["worker-src 'self' blob: data:"],
 			scriptDirective: {
-				resources: ["'self'", 'https://kpg.spikonado.com']
+				resources: [
+					"'self'",
+					'https://kpg.spikonado.com',
+					'https://*.posthog.com',
+					'https://vercel.live'
+				]
 			},
+			// Surveys and both toolbars inject <style> elements, which hashes can't cover.
 			styleDirective: {
-				resources: [{ resource: "'unsafe-inline'", kind: 'attribute' }]
+				resources: ["'self'", "'unsafe-inline'", 'https://*.posthog.com', 'https://vercel.live']
 			}
 		}
 	},
