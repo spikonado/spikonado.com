@@ -64,6 +64,7 @@ export default function SprocketScreenshot() {
 					width={screenshot.width}
 					height={screenshot.height}
 					alt={alt}
+					loading="lazy"
 					className="h-auto max-h-full w-auto max-w-full rounded-lg object-contain shadow-2xl"
 				/>
 			</dialog>
