@@ -2,7 +2,6 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import satori from 'satori';
 import sharp from 'sharp';
-import { SITE_NAME } from '@/lib/seo';
 
 export const OG_IMAGE_WIDTH = 1200;
 export const OG_IMAGE_HEIGHT = 630;
@@ -21,16 +20,17 @@ async function loadFont(relativePath: string): Promise<ArrayBuffer> {
 	return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 }
 
-async function loadLogoDataUrl(): Promise<string> {
-	const buffer = await readFile(join(process.cwd(), 'src/assets/logo.svg'));
-	return `data:image/svg+xml;base64,${buffer.toString('base64')}`;
+async function loadLockupDataUrl(): Promise<string> {
+	const svg = await readFile(join(process.cwd(), 'src/assets/spikonado-lockup.svg'), 'utf8');
+	const colored = svg.replace('currentColor', colors.foreground);
+	return `data:image/svg+xml;base64,${Buffer.from(colored).toString('base64')}`;
 }
 
 export async function renderOgImagePng(): Promise<Buffer> {
-	const [regular, semibold, logo] = await Promise.all([
+	const [regular, semibold, lockup] = await Promise.all([
 		loadFont('@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff'),
 		loadFont('@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff'),
-		loadLogoDataUrl()
+		loadLockupDataUrl()
 	]);
 
 	const svg = await satori(
@@ -52,36 +52,11 @@ export async function renderOgImagePng(): Promise<Buffer> {
 				},
 				children: [
 					{
-						type: 'div',
+						type: 'img',
 						props: {
-							style: {
-								display: 'flex',
-								alignItems: 'center',
-								gap: '18px'
-							},
-							children: [
-								{
-									type: 'img',
-									props: {
-										src: logo,
-										width: 56,
-										height: 56,
-										style: { borderRadius: '12px' }
-									}
-								},
-								{
-									type: 'div',
-									props: {
-										style: {
-											fontSize: 36,
-											fontWeight: 600,
-											letterSpacing: '-0.02em',
-											lineHeight: 1
-										},
-										children: SITE_NAME
-									}
-								}
-							]
+							src: lockup,
+							height: 56,
+							style: { alignSelf: 'flex-start' }
 						}
 					},
 					{

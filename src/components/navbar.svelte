@@ -1,9 +1,9 @@
 <script lang="ts">
-	import logo from '@/assets/logo.svg';
+	import spikonadoLockup from '@/assets/spikonado-lockup.svg?raw';
 	import github from '@/assets/github_logo.svg';
 	import { lockOverlay } from '@/lib/focus-trap';
 	import { SPROCKET_SITE_URL } from '@/lib/seo';
-	import { marketingBrandClass, marketingButtonPrimaryClass } from '@/styles/marketing';
+	import { marketingButtonPrimaryClass } from '@/styles/marketing';
 	import { cn } from '@/utils';
 
 	const navLinks = [
@@ -35,11 +35,12 @@
 	>
 		<a
 			href="/"
-			class="group flex min-w-0 items-center gap-2 transition-transform duration-150 hover:scale-[1.02]"
+			aria-label="Spikonado"
+			class="flex h-8 shrink-0 text-foreground transition-transform duration-150 hover:scale-[1.02] [&>svg]:h-full [&>svg]:w-auto"
 			onclick={closeMenu}
 		>
-			<img src={logo.src} alt="" class="h-8 w-8 shrink-0" />
-			<span class={cn(marketingBrandClass, 'truncate text-xl sm:text-2xl')}>Spikonado</span>
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- bundled SVG asset -->
+			{@html spikonadoLockup}
 		</a>
 
 		<nav
