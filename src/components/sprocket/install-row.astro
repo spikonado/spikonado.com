@@ -1,6 +1,6 @@
 ---
-import CopyCommand from '@/components/copy-command.svelte';
-import SprocketDownload from '@/components/sprocket-download.svelte';
+import CopyCommand from '@/components/copy-command';
+import SprocketDownload from '@/components/sprocket-download';
 import { SPROCKET_NPM_COMMAND, type SprocketRelease } from '@/lib/sprocket-releases';
 import { marketingCopyCommandSurfaceClass } from '@/styles/marketing';
 import { cn } from '@/utils';
@@ -14,18 +14,12 @@ const { release, class: className } = Astro.props;
 const controlClass = 'h-12 w-full rounded-xl text-left sm:w-auto';
 ---
 
-<!-- `contents` puts the download button and its platform links in this row's flex flow. -->
+<!-- Islands render with `display: contents`, so the download button and its platform links join this row's flex flow. -->
 <div class={cn('mx-auto flex max-w-xl flex-wrap justify-center gap-3', className)}>
-	<SprocketDownload
-		client:idle
-		{release}
-		class="contents"
-		buttonClass={controlClass}
-		alternatesClass="order-last mt-1 basis-full text-center"
-	/>
+	<SprocketDownload client:idle {release} className={controlClass} />
 	<CopyCommand
 		client:idle
 		command={SPROCKET_NPM_COMMAND}
-		class={cn(controlClass, 'py-0 pr-1.5', marketingCopyCommandSurfaceClass)}
+		className={cn(controlClass, 'py-0 pr-1.5', marketingCopyCommandSurfaceClass)}
 	/>
 </div>

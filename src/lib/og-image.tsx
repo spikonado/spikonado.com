@@ -1,0 +1,121 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import satori from 'satori';
+import sharp from 'sharp';
+
+export const OG_IMAGE_WIDTH = 1200;
+export const OG_IMAGE_HEIGHT = 630;
+
+/** Hex approximations of the site's oklch tokens for Satori. */
+const colors = {
+	background: '#edf2e8',
+	foreground: '#0c121a',
+	accentStrong: '#006ac0',
+	accentSoft: '#cbeafb',
+	muted: '#575e69'
+} as const;
+
+async function loadFont(weight: 400 | 600) {
+	const path = `@fontsource/geist/files/geist-latin-${weight}-normal.woff`;
+
+	return {
+		name: 'Geist',
+		data: await readFile(join(process.cwd(), 'node_modules', path)),
+		weight,
+		style: 'normal'
+	} as const;
+}
+
+export async function renderOgImagePng(): Promise<Buffer> {
+	const [regular, semibold, lockup] = await Promise.all([
+		loadFont(400),
+		loadFont(600),
+		readFile(join(process.cwd(), 'src/assets/spikonado-lockup.svg'), 'utf8')
+	]);
+
+	const lockupSrc = `data:image/svg+xml;base64,${Buffer.from(
+		lockup.replace('currentColor', colors.foreground)
+	).toString('base64')}`;
+
+	const svg = await satori(
+		<div
+			style={{
+				width: '100%',
+				height: '100%',
+				boxSizing: 'border-box',
+				display: 'flex',
+				flexDirection: 'column',
+				justifyContent: 'space-between',
+				padding: '72px 80px',
+				backgroundColor: colors.background,
+				backgroundImage:
+					'radial-gradient(ellipse 55% 70% at 88% 42%, rgba(203, 234, 251, 0.85) 0%, rgba(237, 242, 232, 0) 68%), radial-gradient(ellipse 40% 50% at 12% 88%, rgba(203, 234, 251, 0.35) 0%, rgba(237, 242, 232, 0) 70%)',
+				color: colors.foreground,
+				fontFamily: 'Geist'
+			}}
+		>
+			<img src={lockupSrc} height={56} style={{ alignSelf: 'flex-start' }} alt="" />
+			<div style={{ display: 'flex', flexDirection: 'column', gap: '28px', maxWidth: 920 }}>
+				<div
+					style={{
+						display: 'flex',
+						flexWrap: 'wrap',
+						fontSize: 68,
+						fontWeight: 600,
+						letterSpacing: '-0.025em',
+						lineHeight: 1.12
+					}}
+				>
+					<span>A way for anyone to build </span>
+					<span
+						style={{
+							color: colors.accentStrong,
+							backgroundColor: colors.accentSoft,
+							padding: '0 12px 6px',
+							borderRadius: '10px',
+							display: 'flex'
+						}}
+					>
+						any kind of technology
+					</span>
+				</div>
+				<div
+					style={{
+						fontSize: 28,
+						fontWeight: 400,
+						color: colors.muted,
+						lineHeight: 1.35,
+						maxWidth: 720
+					}}
+				>
+					Build apps, robots, devices, and the systems that glue them together.
+				</div>
+			</div>
+			<div
+				style={{
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'space-between',
+					fontSize: 22,
+					color: colors.muted
+				}}
+			>
+				<span>spikonado.com</span>
+				<span
+					style={{
+						display: 'flex',
+						alignItems: 'center',
+						gap: '10px',
+						color: colors.accentStrong,
+						fontWeight: 600
+					}}
+				>
+					Build more tech, faster.
+				</span>
+			</div>
+		</div>,
+		{ width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT, fonts: [regular, semibold] }
+	);
+
+	return sharp(Buffer.from(svg)).png().toBuffer();
+}
