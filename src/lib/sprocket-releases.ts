@@ -111,10 +111,7 @@ type NavigatorLike = {
 	maxTouchPoints?: number;
 	userAgentData?: {
 		platform?: string;
-		getHighEntropyValues?: (hints: string[]) => Promise<{
-			architecture?: string;
-			platform?: string;
-		}>;
+		getHighEntropyValues?: (hints: string[]) => Promise<{ architecture?: string }>;
 	};
 };
 
@@ -125,13 +122,11 @@ type NavigatorLike = {
  * "Intel Mac OS X" on Apple Silicon, so guessing from the UA is unsafe.
  */
 export function detectDesktopTarget(
-	nav: NavigatorLike = typeof navigator === 'undefined'
-		? { userAgent: '', platform: '' }
-		: navigator,
+	nav: NavigatorLike,
 	architectureHint = ''
 ): DetectedDesktopTarget {
-	const ua = nav.userAgent ?? '';
-	const platform = nav.platform ?? '';
+	const ua = nav.userAgent;
+	const platform = nav.platform;
 	const uaDataPlatform = nav.userAgentData?.platform?.toLowerCase() ?? '';
 	const architecture = architectureHint.toLowerCase();
 
@@ -191,20 +186,17 @@ export function detectDesktopTarget(
 	return { platform: null, osFamily: null };
 }
 
-export async function detectDesktopTargetAsync(
-	nav: NavigatorLike = typeof navigator === 'undefined'
-		? { userAgent: '', platform: '' }
-		: navigator
-): Promise<DetectedDesktopTarget> {
-	let architecture = '';
+export async function detectBrowserDesktopTarget(): Promise<DetectedDesktopTarget> {
+	const nav: NavigatorLike = navigator;
+	let architecture: string | undefined;
+
 	try {
-		const values = await nav.userAgentData?.getHighEntropyValues?.(['architecture', 'platform']);
-		if (values?.architecture) {
-			architecture = values.architecture;
-		}
+		architecture = (await nav.userAgentData?.getHighEntropyValues?.(['architecture']))
+			?.architecture;
 	} catch {
-		// Keep the empty default when Client Hints are unavailable.
+		// Without Client Hints the architecture stays unknown.
 	}
+
 	return detectDesktopTarget(nav, architecture);
 }
 

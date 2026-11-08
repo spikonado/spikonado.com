@@ -2,7 +2,7 @@ import { useEffect, useState, type MouseEvent } from 'react';
 import { track } from '@/lib/analytics/client';
 import type { AnalyticsEvents } from '@/lib/analytics/events';
 import {
-	detectDesktopTargetAsync,
+	detectBrowserDesktopTarget,
 	OS_LABELS,
 	SPROCKET_RELEASES_LATEST_URL,
 	type DetectedDesktopTarget,
@@ -38,13 +38,7 @@ export default function SprocketDownload({ release, showAlternates = true, class
 	const [target, setTarget] = useState<DetectedDesktopTarget | null>(null);
 
 	useEffect(() => {
-		let cancelled = false;
-		void detectDesktopTargetAsync().then((detected) => {
-			if (!cancelled) setTarget(detected);
-		});
-		return () => {
-			cancelled = true;
-		};
+		void detectBrowserDesktopTarget().then(setTarget);
 	}, []);
 
 	const assets = release?.assets ?? [];
