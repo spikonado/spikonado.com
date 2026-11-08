@@ -3,13 +3,13 @@ import '@fontsource-variable/geist/wght.css';
 import '@fontsource-variable/geist-mono/wght.css';
 import '@/styles/global.css';
 import logoSvg from '@/assets/logo.svg';
-import Navbar from '@/components/navbar.svelte';
+import Navbar from '@/components/navbar.astro';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og-image';
 import {
 	DEFAULT_DESCRIPTION,
 	DEFAULT_OG_IMAGE,
 	DEFAULT_TITLE,
-	ORGANIZATION_SAME_AS,
+	ORGANIZATION_SOCIALS,
 	SITE_NAME,
 	SITE_URL,
 	TWITTER_HANDLE,
@@ -45,7 +45,7 @@ const organizationLd = {
 	url: SITE_URL,
 	logo: absoluteUrl(logoSvg.src, Astro.site ?? SITE_URL),
 	description: DEFAULT_DESCRIPTION,
-	sameAs: [...ORGANIZATION_SAME_AS],
+	sameAs: ORGANIZATION_SOCIALS.map(({ href }) => href),
 	email: 'privacy@spikonado.com'
 };
 
@@ -132,7 +132,7 @@ const jsonLdDocument = {
 		>
 			Skip to content
 		</a>
-		<Navbar client:idle />
+		<Navbar />
 		<slot />
 	</body>
 </html>

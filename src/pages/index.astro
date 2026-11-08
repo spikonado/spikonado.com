@@ -1,10 +1,10 @@
 ---
-import Footer from '@/components/footer.svelte';
-import BuildLogForm from '@/components/build-log-form.svelte';
-import CopyCommand from '@/components/copy-command.svelte';
+import Footer from '@/components/footer.astro';
+import BuildLogForm from '@/components/build-log-form';
+import CopyCommand from '@/components/copy-command';
 import InstallRow from '@/components/sprocket/install-row.astro';
-import SprocketDownload from '@/components/sprocket-download.svelte';
-import SprocketScreenshot from '@/components/sprocket-screenshot.svelte';
+import SprocketDownload from '@/components/sprocket-download';
+import SprocketScreenshot from '@/components/sprocket-screenshot';
 import BaseLayout from '@/layouts/base-layout.astro';
 import { fetchLatestSprocketRelease, SPROCKET_NPM_COMMAND } from '@/lib/sprocket-releases';
 import {
@@ -113,7 +113,7 @@ const softwareLd = {
 								client:visible
 								release={sprocketRelease}
 								showAlternates={false}
-								class="min-w-0 flex-1"
+								className="min-w-0 flex-1"
 							/>
 							<a href={SPROCKET_SITE_URL} class={cn(marketingButtonPrimaryClass, 'shrink-0')}>
 								Learn more →
@@ -122,7 +122,7 @@ const softwareLd = {
 						<CopyCommand
 							client:visible
 							command={SPROCKET_NPM_COMMAND}
-							class={cn('w-full min-w-0', marketingCopyCommandSurfaceClass)}
+							className={cn('w-full min-w-0', marketingCopyCommandSurfaceClass)}
 						/>
 					</div>
 				</div>

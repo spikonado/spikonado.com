@@ -8,7 +8,6 @@ export type SprocketDesktopPlatform =
 
 export interface SprocketDesktopAsset {
 	platform: SprocketDesktopPlatform;
-	label: string;
 	shortLabel: string;
 	filename: string;
 	url: string;
@@ -21,66 +20,48 @@ export interface SprocketRelease {
 	assets: SprocketDesktopAsset[];
 }
 
-/** Brand mark family for download CTAs. */
 export type SprocketOsFamily = 'mac' | 'windows' | 'linux';
 
-export interface DetectedDesktopTarget {
-	/** Specific release asset when architecture is known; null if the visitor must choose. */
-	platform: SprocketDesktopPlatform | null;
-	/** Brand family for icons/labels even when architecture is unknown. */
-	osFamily: SprocketOsFamily | null;
-	osLabel: string;
-}
+export const OS_LABELS: Record<SprocketOsFamily, string> = {
+	mac: 'macOS',
+	windows: 'Windows',
+	linux: 'Linux'
+};
 
-export function osFamilyForPlatform(
-	platform: SprocketDesktopPlatform | null
-): SprocketOsFamily | null {
-	if (!platform) {
-		return null;
-	}
-	if (platform.startsWith('mac-')) {
-		return 'mac';
-	}
-	if (platform.startsWith('win-')) {
-		return 'windows';
-	}
-	return 'linux';
+export interface DetectedDesktopTarget {
+	/** Null when the architecture is unknown, so the visitor must choose. */
+	platform: SprocketDesktopPlatform | null;
+	osFamily: SprocketOsFamily | null;
 }
 
 const DESKTOP_ASSET_RULES: {
 	platform: SprocketDesktopPlatform;
 	match: RegExp;
-	label: string;
 	shortLabel: string;
 }[] = [
 	{
 		platform: 'mac-arm64',
 		match: /sprocket-desktop-[\d.]+-mac-arm64\.dmg$/i,
-		label: 'macOS (Apple Silicon)',
 		shortLabel: 'Apple Silicon'
 	},
 	{
 		platform: 'mac-x64',
 		match: /sprocket-desktop-[\d.]+-mac-x64\.dmg$/i,
-		label: 'macOS (Intel)',
 		shortLabel: 'Intel Mac'
 	},
 	{
 		platform: 'win-x64',
 		match: /sprocket-desktop-[\d.]+-win-x64\.exe$/i,
-		label: 'Windows',
 		shortLabel: 'Windows'
 	},
 	{
 		platform: 'linux-x86_64',
 		match: /sprocket-desktop-[\d.]+-linux-x86_64\.AppImage$/i,
-		label: 'Linux (x64)',
 		shortLabel: 'Linux x64'
 	},
 	{
 		platform: 'linux-arm64',
 		match: /sprocket-desktop-[\d.]+-linux-arm64\.AppImage$/i,
-		label: 'Linux (ARM64)',
 		shortLabel: 'Linux ARM'
 	}
 ];
@@ -115,7 +96,6 @@ export function parseSprocketDesktopAssets(
 		}
 		parsed.push({
 			platform: rule.platform,
-			label: rule.label,
 			shortLabel: rule.shortLabel,
 			filename: asset.name,
 			url: asset.browser_download_url
@@ -123,26 +103,6 @@ export function parseSprocketDesktopAssets(
 	}
 
 	return parsed;
-}
-
-export function pickDesktopAsset(
-	assets: SprocketDesktopAsset[],
-	platform: SprocketDesktopPlatform | null
-): SprocketDesktopAsset | null {
-	if (!platform) {
-		return null;
-	}
-	return assets.find((asset) => asset.platform === platform) ?? null;
-}
-
-export function otherDesktopAssets(
-	assets: SprocketDesktopAsset[],
-	platform: SprocketDesktopPlatform | null
-): SprocketDesktopAsset[] {
-	if (!platform) {
-		return assets;
-	}
-	return assets.filter((asset) => asset.platform !== platform);
 }
 
 type NavigatorLike = {
@@ -182,13 +142,13 @@ export function detectDesktopTarget(
 		/iphone|ipad|ipod/i.test(ua) ||
 		(/mac/i.test(platform) && (nav.maxTouchPoints ?? 0) > 1);
 	if (isMobile) {
-		return { platform: null, osFamily: null, osLabel: 'your device' };
+		return { platform: null, osFamily: null };
 	}
 
 	const isWindows =
 		uaDataPlatform.includes('windows') || /win/i.test(platform) || /windows/i.test(ua);
 	if (isWindows) {
-		return { platform: 'win-x64', osFamily: 'windows', osLabel: 'Windows' };
+		return { platform: 'win-x64', osFamily: 'windows' };
 	}
 
 	const isMac =
@@ -197,13 +157,13 @@ export function detectDesktopTarget(
 		const isIntel = architecture === 'x86' || architecture === 'x86_64';
 		const isArm = architecture === 'arm' || architecture === 'arm64';
 		if (isIntel) {
-			return { platform: 'mac-x64', osFamily: 'mac', osLabel: 'macOS' };
+			return { platform: 'mac-x64', osFamily: 'mac' };
 		}
 		if (isArm) {
-			return { platform: 'mac-arm64', osFamily: 'mac', osLabel: 'macOS' };
+			return { platform: 'mac-arm64', osFamily: 'mac' };
 		}
 		// Architecture unknown: show macOS CTA but do not auto-pick a DMG.
-		return { platform: null, osFamily: 'mac', osLabel: 'macOS' };
+		return { platform: null, osFamily: 'mac' };
 	}
 
 	const isLinux = uaDataPlatform.includes('linux') || /linux/i.test(platform) || /linux/i.test(ua);
@@ -212,7 +172,7 @@ export function detectDesktopTarget(
 		// fall through to the x86_64 AppImage (unusable), or be treated as ARM64.
 		const isArm64 = architecture === 'arm64' || /\baarch64\b/i.test(ua) || /\barm64\b/i.test(ua);
 		if (isArm64) {
-			return { platform: 'linux-arm64', osFamily: 'linux', osLabel: 'Linux' };
+			return { platform: 'linux-arm64', osFamily: 'linux' };
 		}
 
 		const isX64 =
@@ -222,13 +182,13 @@ export function detectDesktopTarget(
 			/\bx86_64\b/i.test(platform) ||
 			/\bamd64\b/i.test(platform);
 		if (isX64) {
-			return { platform: 'linux-x86_64', osFamily: 'linux', osLabel: 'Linux' };
+			return { platform: 'linux-x86_64', osFamily: 'linux' };
 		}
 
-		return { platform: null, osFamily: 'linux', osLabel: 'Linux' };
+		return { platform: null, osFamily: 'linux' };
 	}
 
-	return { platform: null, osFamily: null, osLabel: 'your OS' };
+	return { platform: null, osFamily: null };
 }
 
 export async function detectDesktopTargetAsync(

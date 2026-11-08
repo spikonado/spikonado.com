@@ -1,8 +1,8 @@
 // @ts-check
 
 import { defineConfig } from 'astro/config';
+import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
-import svelte from '@astrojs/svelte';
 import posthog from '@posthog/rollup-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import vercel from '@astrojs/vercel';
@@ -31,7 +31,7 @@ export default defineConfig({
 		sitemap({
 			filter: (page) => !page.includes('/api/')
 		}),
-		svelte()
+		react()
 	],
 	adapter: vercel(),
 
