@@ -66,7 +66,10 @@ export async function renderOgImagePng(): Promise<Buffer> {
 										src: logo,
 										width: 56,
 										height: 56,
-										style: { borderRadius: '12px' }
+										style: {
+											borderRadius: '16px',
+											cornerShape: 'squircle'
+										}
 									}
 								},
 								{
@@ -119,7 +122,8 @@ export async function renderOgImagePng(): Promise<Buffer> {
 														color: colors.accentStrong,
 														backgroundColor: colors.accentSoft,
 														padding: '0 12px 6px',
-														borderRadius: '10px',
+														borderRadius: '14px',
+														cornerShape: 'squircle',
 														display: 'flex'
 													},
 													children: 'any kind of technology'
