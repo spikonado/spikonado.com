@@ -1,7 +1,6 @@
 export const SPROCKET_NPM_COMMAND = 'npx usesprocket';
 export const SPROCKET_GITHUB_URL = 'https://github.com/spikonado/sprocket';
 export const SPROCKET_RELEASES_LATEST_URL = `${SPROCKET_GITHUB_URL}/releases/latest`;
-export const SPROCKET_NPM_URL = 'https://www.npmjs.com/package/usesprocket';
 
 /** Stable identifiers matching GitHub desktop asset filenames. */
 export type SprocketDesktopPlatform =
