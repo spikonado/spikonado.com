@@ -2,7 +2,7 @@
 export const marketingSectionShellClass = 'relative overflow-hidden bg-background';
 
 const marketingHeadingBaseClass =
-	'font-brand text-5xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-6xl md:text-7xl';
+	'text-5xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-6xl md:text-7xl';
 
 // Large brand/display heading used for the homepage hero and section titles.
 export const marketingSectionHeadingClass = marketingHeadingBaseClass;
@@ -13,9 +13,6 @@ export const marketingProductHeadingClass = marketingHeadingBaseClass;
 // Shared supporting copy style for the homepage and footer.
 export const marketingSectionBodyClass =
 	'max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl';
-
-// Brand wordmark used in the navbar and footer.
-export const marketingBrandClass = 'font-brand font-semibold tracking-tight text-foreground';
 
 // Elevated copyable command used on page backgrounds (not nested in a panel).
 export const marketingCopyCommandSurfaceClass =

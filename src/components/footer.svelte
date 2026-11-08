@@ -1,5 +1,5 @@
 <script lang="ts">
-	import logo from '@/assets/logo.svg';
+	import spikonadoLockup from '@/assets/spikonado-lockup.svg?raw';
 	import github_logo from '@/assets/github_logo.svg';
 	import x_logo from '@/assets/x_logo.svg';
 	import youtube_logo from '@/assets/youtube_logo.svg';
@@ -7,11 +7,7 @@
 	import facebook_logo from '@/assets/facebook_logo.svg';
 	import { SPROCKET_SITE_URL } from '@/lib/seo';
 	import { cn } from '@/utils';
-	import {
-		marketingBrandClass,
-		marketingSectionBodyClass,
-		marketingSectionShellClass
-	} from '@/styles/marketing';
+	import { marketingSectionBodyClass, marketingSectionShellClass } from '@/styles/marketing';
 
 	const productLinks = [
 		{ label: 'Sprocket', path: SPROCKET_SITE_URL },
@@ -50,9 +46,13 @@
 		class="relative mx-auto grid w-full max-w-6xl grid-cols-1 gap-12 text-center md:grid-cols-[minmax(0,2fr)_minmax(10rem,1fr)_minmax(10rem,1fr)] md:gap-16 md:text-left"
 	>
 		<div class="flex flex-col items-center gap-5 md:items-start">
-			<a href="/" class="flex items-center gap-3 transition-transform duration-150 hover:scale-105">
-				<img loading="lazy" src={logo.src} alt="" class="h-9 w-9" />
-				<span class={cn(marketingBrandClass, 'text-2xl sm:text-3xl')}>Spikonado</span>
+			<a
+				href="/"
+				aria-label="Spikonado"
+				class="flex h-9 text-foreground transition-transform duration-150 hover:scale-105 sm:h-10 [&>svg]:h-full [&>svg]:w-auto"
+			>
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- bundled SVG asset -->
+				{@html spikonadoLockup}
 			</a>
 			<p class={cn(marketingSectionBodyClass, 'text-base md:text-lg')}>Build more tech, faster.</p>
 		</div>
@@ -62,7 +62,7 @@
 			<ul class={linkListClass}>
 				{#each productLinks as link (link.label)}
 					<li>
-						<a href={link.path} class={cn(linkClass, 'font-brand')}>
+						<a href={link.path} class={linkClass}>
 							{link.label}
 						</a>
 					</li>
