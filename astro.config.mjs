@@ -27,13 +27,35 @@ export default defineConfig({
 	site: 'https://spikonado.com',
 	// No Astro.session usage on this site, so leave the session runtime out of the SSR bundle.
 	session: false,
+	security: {
+		csp: {
+			// Sources follow https://posthog.com/docs/advanced/content-security-policy so replay,
+			// surveys, and the PostHog and Vercel toolbars all load.
+			directives: ["worker-src 'self' blob: data:"],
+			scriptDirective: {
+				resources: [
+					"'self'",
+					'https://kpg.spikonado.com',
+					'https://*.posthog.com',
+					'https://vercel.live'
+				]
+			},
+			// Surveys and both toolbars inject <style> elements, which hashes can't cover.
+			styleDirective: {
+				resources: ["'self'", "'unsafe-inline'", 'https://*.posthog.com', 'https://vercel.live']
+			}
+		}
+	},
 	integrations: [
 		sitemap({
 			filter: (page) => !page.includes('/api/')
 		}),
 		react()
 	],
-	adapter: vercel(),
+	adapter: vercel({
+		// Prerendered pages otherwise only get CSP as a meta tag.
+		staticHeaders: true
+	}),
 
 	vite: {
 		plugins: [tailwindcss(), ...posthogSourceMaps]
